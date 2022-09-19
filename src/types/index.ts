@@ -37,3 +37,7 @@ export interface StoreAction extends StoreItem {
 export interface StoreMutation extends StoreItem {
   mutationName: string;
 }
+
+export interface EventCallback {
+  (event: Event): void;
+}

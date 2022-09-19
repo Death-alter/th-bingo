@@ -1,4 +1,4 @@
-// import { createStore } from "vuex";
-// import config from "./config";
+import { createStore } from "vuex";
+import config from "./config";
 
-// export default createStore(config);
+export default createStore(config);
