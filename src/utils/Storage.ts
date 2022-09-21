@@ -15,11 +15,12 @@ class LocalStorage implements Storage {
     }
   }
   get(key: string) {
-    let data = window.localStorage.getItem(key);
+    const data = window.localStorage.getItem(key);
     try {
-      data = JSON.parse(data || "");
-    } catch (e) {}
-    return data;
+      return JSON.parse(data || "");
+    } catch (e) {
+      return data;
+    }
   }
   remove(key: string) {
     window.localStorage.removeItem(key);
@@ -41,11 +42,12 @@ class SessionStorage implements Storage {
     }
   }
   get(key: string) {
-    let data = window.localStorage.getItem(key);
+    const data = window.localStorage.getItem(key);
     try {
-      data = JSON.parse(data || "");
-    } catch (e) {}
-    return data;
+      return JSON.parse(data || "");
+    } catch (e) {
+      return data;
+    }
   }
   remove(key: string) {
     window.sessionStorage.removeItem(key);

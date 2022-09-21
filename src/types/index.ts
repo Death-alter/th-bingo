@@ -5,7 +5,7 @@ export interface RequestParams {
 }
 
 export interface StoreData {
-  status: string;
+  status?: string;
   data?: any;
   error?: any;
 }
@@ -24,8 +24,8 @@ export interface MutationHandler {
 
 interface StoreItem {
   name: string;
-  dataHandler: ActionHandler | MutationHandler;
   default: any;
+  dataHandler?: ActionHandler | MutationHandler;
 }
 
 export interface StoreAction extends StoreItem {
@@ -40,4 +40,10 @@ export interface StoreMutation extends StoreItem {
 
 export interface EventCallback {
   (event: Event): void;
+}
+
+export interface UserData {
+  name: string;
+  token: string;
+  [index: string]: any;
 }

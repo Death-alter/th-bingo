@@ -9,12 +9,10 @@ import {
 import { Store } from "vuex";
 
 export const createGetter = (name: string, defaultValue: any, type: string) => {
-  if (type === "action") {
-    return (state: VuexState) => state[name].data || defaultValue;
-  } else if (type === "status") {
+  if (type === "status") {
     return (state: VuexState) => state[name].status || defaultValue;
   } else {
-    return (state: VuexState) => state[name] || defaultValue;
+    return (state: VuexState) => state[name].data || defaultValue;
   }
 };
 
@@ -66,7 +64,7 @@ export const createSyncMutation =
     if (callback) {
       state[name] = callback(data, state[name]);
     } else {
-      state[name] = { status: "", data };
+      state[name] = { data };
     }
   };
 

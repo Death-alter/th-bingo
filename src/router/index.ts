@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
+import store from "../store";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -26,6 +27,18 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
+  const userData = store.getters.userData;
+  if (to.path !== "/login") {
+    if (!userData.token) {
+      next("/login");
+      return;
+    }
+  } else {
+    if (userData.token) {
+      next("/");
+      return;
+    }
+  }
   next();
 });
 

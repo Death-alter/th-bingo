@@ -5,6 +5,12 @@ import {
   createAction,
 } from "./utils";
 import storeItems from "./storeItems";
+import {
+  StoreAction,
+  StoreMutation,
+  MutationHandler,
+  ActionHandler,
+} from "@/types";
 
 const config = {
   state: {},
@@ -22,9 +28,9 @@ for (const item of storeItems) {
     continue;
   }
 
-  if (item.mutationName) {
+  if ("mutationName" in item) {
     if (!config.state[item.name]) {
-      config.state[item.name] = item.default;
+      config.state[item.name] = { data: item.default };
       config.getters[item.name] = createGetter(
         item.name,
         item.default,
@@ -33,11 +39,11 @@ for (const item of storeItems) {
     }
     config.mutations[item.mutationName] = createSyncMutation(
       item.name,
-      item.dataHandler
+      <MutationHandler>item.dataHandler
     );
   }
 
-  if (item.actionName) {
+  if ("actionName" in item) {
     config.state[item.name] = { data: item.default };
     config.getters[item.name] = createGetter(item.name, item.default, "action");
     config.getters[item.name + "_status"] = createGetter(
@@ -54,7 +60,7 @@ for (const item of storeItems) {
       item.actionName,
       item.url,
       item.method || "get",
-      item.dataHandler
+      <ActionHandler>item.dataHandler
     );
   }
 }

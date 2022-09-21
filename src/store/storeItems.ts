@@ -1,42 +1,66 @@
 import { StoreData, RequestParams } from "@/types";
 import { AxiosResponse } from "axios";
+import { UserData, StoreAction, StoreMutation } from "@/types";
+import Storage from "@/utils/Storage";
 
-export default [
-  //common
+const list: Array<StoreAction | StoreMutation> = [
   {
-    name: "action",
-    actionName: "FETCH_ACTION",
-    url: "",
-    method: "socket",
-    dataHandler: (
-      res: AxiosResponse,
-      data: StoreData,
-      params: RequestParams
-    ) => {
-      return data;
-    },
-    default: {},
-  },
-  {
-    name: "action",
-    actionName: "FETCH_ACTION",
-    url: "",
-    method: "get",
-    dataHandler: (
-      res: AxiosResponse,
-      data: StoreData,
-      params: RequestParams
-    ) => {
-      return data;
-    },
-    default: {},
-  },
-  {
-    name: "mutation",
-    mutationName: "FETCH_MUTATION",
+    name: "userData",
+    mutationName: "UPDATE_USER_DATA",
     default: {},
     dataHandler: (newVal: RequestParams, oldVal: StoreData) => {
-      return oldVal;
+      const userData: UserData | null = Storage.local.get("userData");
+      if (!userData) {
+        return oldVal;
+      } else {
+        return {
+          data: userData,
+        };
+      }
+    },
+  },
+  {
+    name: "roomData",
+    actionName: "CREATE_ROOM",
+    url: "",
+    method: "socket",
+    default: {},
+    dataHandler: (
+      res: AxiosResponse,
+      data: StoreData,
+      params: RequestParams
+    ) => {
+      return data;
+    },
+  },
+  {
+    name: "roomData",
+    actionName: "JOIN_ROOM",
+    url: "",
+    method: "socket",
+    default: {},
+    dataHandler: (
+      res: AxiosResponse,
+      data: StoreData,
+      params: RequestParams
+    ) => {
+      return data;
+    },
+  },
+  {
+    name: "roomData",
+    actionName: "LEAVE_ROOM",
+    url: "",
+    method: "socket",
+    default: {},
+    dataHandler: (
+      res: AxiosResponse,
+      data: StoreData,
+      params: RequestParams
+    ) => {
+      return data;
     },
   },
 ];
+
+export default list;

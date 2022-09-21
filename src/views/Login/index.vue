@@ -1,6 +1,6 @@
 <template>
   <div class="login">
-    <div class="login-box">
+    <div class="login-box relative-center">
       <div class="login-box-item">
         <el-input
           v-model="userName"
@@ -38,9 +38,10 @@ export default defineComponent({
     login() {
       if (!Storage.local.has("userData")) {
         Storage.local.set("userData", {
-          name: this.userName,
+          userName: this.userName,
           token: Md5.hashStr(this.userName + new Date().getTime()),
         });
+        this.$store.commit("UPDATE_USER_DATA");
       }
       this.$router.push("/");
     },
@@ -57,10 +58,6 @@ export default defineComponent({
     width: 400px;
     height: 200px;
     border-radius: 5px;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
     box-shadow: #00000044 0 0 5px 5px;
     box-sizing: border-box;
     padding: 20px;

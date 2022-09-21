@@ -2,7 +2,19 @@
   <router-view />
 </template>
 
+<script lang="ts">
+import { defineComponent } from "vue";
+
+export default defineComponent({
+  created() {
+    this.$store.commit("UPDATE_USER_DATA");
+  },
+});
+</script>
+
 <style lang="scss">
+@import "@/assets/variable.scss";
+
 * {
   margin: 0;
   padding: 0;
@@ -16,7 +28,14 @@
   color: #2c3e50;
   width: 100vw;
   height: 100vh;
-  min-width: 800px;
-  min-height: 600px;
+  min-width: $minWidth;
+  min-height: $minHeight;
+}
+
+.relative-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 </style>

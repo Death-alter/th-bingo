@@ -1,4 +1,6 @@
-import { createStore } from "vuex";
+import { createStore, Store } from "vuex";
 import config from "./config";
 
-export default createStore(config);
+const store: Store<any> = createStore(config);
+
+export default store;
