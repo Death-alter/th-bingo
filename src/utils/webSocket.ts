@@ -4,6 +4,13 @@ interface WebSocketOption {
   url: string;
 }
 
+interface WebSocketMessage {
+  name: string;
+  data?: {
+    [index: string]: any;
+  };
+}
+
 class WS {
   private ws: WebSocket | null;
   private url: string;
@@ -11,12 +18,7 @@ class WS {
 
   constructor(option: WebSocketOption) {
     this.url = option.url;
-    this.eventList = {
-      message: [],
-      open: [],
-      close: [],
-      error: [],
-    };
+    this.eventList = {};
     this.ws = null;
     this.createConnection();
   }
@@ -28,7 +30,8 @@ class WS {
         console.log("ws已连接");
       };
       this.ws.onmessage = (event) => {
-        console.log(event.data);
+        const res = JSON.parse(event.data);
+        this.eventList[res.name];
       };
       this.ws.onclose = (event) => {
         console.log("ws已断开");
@@ -46,9 +49,9 @@ class WS {
     }
   }
 
-  send(data: string) {
+  send(data: WebSocketMessage) {
     if (this.ws) {
-      this.ws.send(data);
+      this.ws.send(JSON.stringify(data));
     }
   }
 

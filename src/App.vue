@@ -7,7 +7,7 @@ import { defineComponent } from "vue";
 
 export default defineComponent({
   created() {
-    this.$store.commit("UPDATE_USER_DATA");
+    this.$store.commit("LOGIN");
   },
 });
 </script>

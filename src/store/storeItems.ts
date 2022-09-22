@@ -6,7 +6,7 @@ import Storage from "@/utils/Storage";
 const list: Array<StoreAction | StoreMutation> = [
   {
     name: "userData",
-    mutationName: "UPDATE_USER_DATA",
+    mutationName: "LOGIN",
     default: {},
     dataHandler: (newVal: RequestParams, oldVal: StoreData) => {
       const userData: UserData | null = Storage.local.get("userData");
@@ -17,6 +17,14 @@ const list: Array<StoreAction | StoreMutation> = [
           data: userData,
         };
       }
+    },
+  },
+  {
+    name: "userData",
+    mutationName: "LOGOUT",
+    default: {},
+    dataHandler: (newVal: RequestParams, oldVal: StoreData) => {
+      return { data: {} };
     },
   },
   {

@@ -41,7 +41,7 @@ export default defineComponent({
           userName: this.userName,
           token: Md5.hashStr(this.userName + new Date().getTime()),
         });
-        this.$store.commit("UPDATE_USER_DATA");
+        this.$store.commit("LOGIN");
       }
       this.$router.push("/");
     },
