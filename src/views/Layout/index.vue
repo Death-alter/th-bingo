@@ -8,6 +8,7 @@
         <info-window></info-window>
       </div>
     </div>
+    <div class="layout-background"></div>
   </div>
 </template>
 
@@ -32,6 +33,7 @@ export default defineComponent({
 .layout {
   width: 100%;
   height: 100%;
+  position: relative;
 
   .layout-inner {
     width: $minWidth;
@@ -39,7 +41,7 @@ export default defineComponent({
     justify-content: space-between;
 
     .layout-main-window {
-      width: 900px;
+      width: 960px;
       height: $minHeight;
       box-shadow: #00000044 0 0 5px 5px;
       border-radius: 5px;
@@ -47,16 +49,31 @@ export default defineComponent({
       box-sizing: border-box;
       position: relative;
       overflow: hidden;
+      background-color: #ffffffdd;
     }
 
     .layout-info-window {
-      width: 300px;
-      height: 500px;
+      width: 320px;
+      height: $minHeight;
       box-shadow: #00000044 0 0 5px 5px;
       border-radius: 5px;
       padding: 10px 15px;
+      box-sizing: border-box;
       overflow: hidden;
+      background-color: #ffffffdd;
     }
+  }
+
+  .layout-background {
+    position: absolute;
+    z-index: -99;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: url("~@/assets/background.png") no-repeat center center;
+    background-size: cover;
+    opacity: 0.5;
   }
 }
 

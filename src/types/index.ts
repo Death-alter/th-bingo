@@ -30,8 +30,7 @@ interface StoreItem {
 
 export interface StoreAction extends StoreItem {
   actionName: string;
-  url: string;
-  method?: string;
+  wsName: string;
 }
 
 export interface StoreMutation extends StoreItem {

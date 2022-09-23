@@ -6,7 +6,7 @@ import Storage from "@/utils/Storage";
 const list: Array<StoreAction | StoreMutation> = [
   {
     name: "userData",
-    mutationName: "LOGIN",
+    mutationName: "login",
     default: {},
     dataHandler: (newVal: RequestParams, oldVal: StoreData) => {
       const userData: UserData | null = Storage.local.get("userData");
@@ -21,7 +21,7 @@ const list: Array<StoreAction | StoreMutation> = [
   },
   {
     name: "userData",
-    mutationName: "LOGOUT",
+    mutationName: "logout",
     default: {},
     dataHandler: (newVal: RequestParams, oldVal: StoreData) => {
       return { data: {} };
@@ -29,9 +29,8 @@ const list: Array<StoreAction | StoreMutation> = [
   },
   {
     name: "roomData",
-    actionName: "CREATE_ROOM",
-    url: "",
-    method: "socket",
+    actionName: "create_room",
+    wsName: "",
     default: {},
     dataHandler: (
       res: AxiosResponse,
@@ -43,9 +42,8 @@ const list: Array<StoreAction | StoreMutation> = [
   },
   {
     name: "roomData",
-    actionName: "JOIN_ROOM",
-    url: "",
-    method: "socket",
+    actionName: "join_room",
+    wsName: "",
     default: {},
     dataHandler: (
       res: AxiosResponse,
@@ -57,9 +55,8 @@ const list: Array<StoreAction | StoreMutation> = [
   },
   {
     name: "roomData",
-    actionName: "LEAVE_ROOM",
-    url: "",
-    method: "socket",
+    actionName: "leave_room",
+    wsName: "",
     default: {},
     dataHandler: (
       res: AxiosResponse,

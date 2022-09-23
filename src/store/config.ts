@@ -58,8 +58,7 @@ for (const item of storeItems) {
     config.actions[item.actionName] = createAction(
       item.name,
       item.actionName,
-      item.url,
-      item.method || "get",
+      item.wsName,
       <ActionHandler>item.dataHandler
     );
   }

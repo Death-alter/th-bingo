@@ -77,7 +77,7 @@ export default defineComponent({
     handleClick() {},
     logout() {
       Storage.local.remove("userData");
-      this.$store.commit("LOGOUT");
+      this.$store.commit("logout");
       this.$router.push("/login");
     },
   },

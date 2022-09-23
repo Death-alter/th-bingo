@@ -49,6 +49,8 @@ export default defineComponent({
             validator: (rule: any, value: any, callback: any) => {
               if (/[^a-zA-Z0-9]/.test(value)) {
                 callback(new Error("密码只能使用数字和字母"));
+              } else {
+                callback();
               }
             },
             trigger: "blur",
@@ -81,6 +83,7 @@ export default defineComponent({
       if (!this.formRef) return;
       this.formRef.validate((valid, fields) => {
         if (valid) {
+          this.$router.push("/room");
         }
       });
     },
