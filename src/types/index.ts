@@ -1,4 +1,7 @@
-import { AxiosResponse } from "axios";
+//默认对象类型
+export interface defaultData {
+  [index: string]: any;
+}
 
 export interface RequestParams {
   [index: string]: any;
@@ -6,7 +9,7 @@ export interface RequestParams {
 
 export interface StoreData {
   status?: string;
-  data?: any;
+  data?: defaultData | null;
   error?: any;
 }
 
@@ -15,17 +18,24 @@ export interface VuexState {
 }
 
 export interface ActionHandler {
-  (res: AxiosResponse, data: StoreData, params: RequestParams): StoreData;
+  (res: defaultData, data: defaultData, params: RequestParams): defaultData;
 }
 
 export interface MutationHandler {
-  (newVal: RequestParams, oldVal: StoreData): StoreData;
+  (newVal: RequestParams, oldVal: defaultData): defaultData;
+}
+
+export interface HandlerList {
+  pending?: ActionHandler;
+  replied?: ActionHandler;
+  received?: ActionHandler;
+  error?: ActionHandler;
 }
 
 interface StoreItem {
   name: string;
   default: any;
-  dataHandler?: ActionHandler | MutationHandler;
+  dataHandler?: ActionHandler | MutationHandler | HandlerList;
 }
 
 export interface StoreAction extends StoreItem {
