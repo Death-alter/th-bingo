@@ -1,13 +1,5 @@
 import ws from "@/utils/webSocket";
-import {
-  VuexState,
-  StoreData,
-  HandlerList,
-  ActionHandler,
-  MutationHandler,
-  RequestParams,
-  defaultData,
-} from "@/types";
+import { VuexState, StoreData, HandlerList, ActionHandler, MutationHandler, RequestParams, defaultData } from "@/types";
 import { ElMessage } from "element-plus";
 import { Store } from "vuex";
 import store from "./index";
@@ -62,8 +54,7 @@ export const createAsyncMutations = (name: string, actionName: string) => {
 };
 
 export const createSyncMutation =
-  (name: string, callback: MutationHandler) =>
-  (state: VuexState, data: RequestParams) => {
+  (name: string, callback: MutationHandler) => (state: VuexState, data: RequestParams) => {
     if (callback) {
       state[name] = { data: callback(data, state[name].data || {}) };
     } else {
@@ -75,22 +66,15 @@ export const createAction = (
   name: string,
   actionName: string,
   wsName: string,
-  callback: ActionHandler | HandlerList = (
-    res: defaultData,
-    data: defaultData,
-    params: RequestParams
-  ): defaultData => {
+  noParams: boolean = false,
+  callback: ActionHandler | HandlerList = (res: defaultData, data: defaultData, params: RequestParams): defaultData => {
     return data;
   }
 ) => {
   let requestParams: RequestParams;
   ws.on(wsName + "_cs", (resName, data) => {
     if (resName === "error_sc") {
-      if (
-        !(callback instanceof Function) &&
-        "error" in callback &&
-        callback.error
-      ) {
+      if (!(callback instanceof Function) && "error" in callback && callback.error) {
         data = callback.error(data, store.state[name].data, requestParams);
       }
       ElMessage({
@@ -125,9 +109,16 @@ export const createAction = (
 
   return ({ commit, state }: Store<any>, data: RequestParams) => {
     if (state[name].status !== "pending") {
-      commit(actionName + "_pending");
       requestParams = data;
-      ws.send(wsName + "_cs", data);
+      if (noParams) {
+        ws.send(wsName + "_cs");
+      } else {
+        ws.send(wsName + "_cs", data);
+      }
+      if ("replied" in callback && callback.pending) {
+        data = callback.pending({}, state[name].data, requestParams);
+      }
+      commit(actionName + "_pending", data);
     }
   };
 };

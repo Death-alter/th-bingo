@@ -22,13 +22,8 @@ module.exports = {
     "@typescript-eslint/no-explicit-any": ["off"],
     "@typescript-eslint/no-empty-function": "off",
     "@typescript-eslint/no-unused-vars": "off",
-    "prettier/prettier": [
-      "error",
-      {},
-      {
-        usePrettierrc: false,
-      },
-    ],
+    "@typescript-eslint/no-inferrable-types": "off",
+    "prettier/prettier": ["off"],
     "no-prototype-builtins": "off",
     "no-empty": "off",
   },

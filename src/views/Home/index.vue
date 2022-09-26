@@ -24,9 +24,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, computed, ref } from "vue";
 import { ElInput, ElButton, ElForm, ElFormItem } from "element-plus";
-import { ref } from "vue";
+import { useStore } from "vuex";
 import type { FormInstance } from "element-plus";
 
 export default defineComponent({
@@ -66,9 +66,12 @@ export default defineComponent({
     ElFormItem,
   },
   setup() {
+    const store = useStore();
     const formRef = ref<FormInstance>();
+
     return {
       formRef,
+      userData: computed(() => store.getters.userData),
     };
   },
   methods: {
@@ -76,6 +79,12 @@ export default defineComponent({
       if (!this.formRef) return;
       this.formRef.validate((valid, fields) => {
         if (valid) {
+          this.$store.dispatch("create_room", {
+            token: this.userData.token,
+            name: this.userData.name,
+            rid: this.form.roomPassword,
+            type: 1,
+          });
         }
       });
     },
@@ -83,7 +92,11 @@ export default defineComponent({
       if (!this.formRef) return;
       this.formRef.validate((valid, fields) => {
         if (valid) {
-          this.$router.push("/room");
+          this.$store.dispatch("join_room", {
+            token: this.userData.token,
+            name: this.userData.name,
+            rid: this.form.roomPassword,
+          });
         }
       });
     },

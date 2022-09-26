@@ -1,11 +1,6 @@
-import {
-  RequestParams,
-  defaultData,
-  UserData,
-  StoreAction,
-  StoreMutation,
-} from "@/types";
+import { RequestParams, defaultData, UserData, StoreAction, StoreMutation } from "@/types";
 import Storage from "@/utils/Storage";
+import router from "@/router";
 
 const list: Array<StoreAction | StoreMutation> = [
   {
@@ -33,27 +28,26 @@ const list: Array<StoreAction | StoreMutation> = [
     name: "wsTimeOut",
     actionName: "heart_beat",
     wsName: "heart",
+    noParams: true,
     default: {
       second: 5,
       time: 0,
       ping: 0,
     },
     dataHandler: {
-      // pending(res: defaultData, data: defaultData, params: RequestParams) {
-      //   const newData = { ...data };
-      //   newData.time = params.time;
-      //   return newData;
-      // },
-      replied(
-        res: defaultData,
-        data: defaultData,
-        params: RequestParams
-      ): defaultData {
-        // const newData = { ...data };
-        // newData.ping = newData.time - params.time;
-        // newData.time = params.time;
-        // console.log(newData.ping);
-        return data;
+      pending(res: defaultData, data: defaultData, params: RequestParams) {
+        const newData = { ...data };
+        newData.time = params.time;
+        return newData;
+      },
+      replied(res: defaultData, data: defaultData, params: RequestParams): defaultData {
+        const newData = { ...data };
+        if (params) {
+          newData.ping = newData.time - params.time;
+          newData.time = params.time;
+        }
+        console.log(newData.ping);
+        return newData;
       },
     },
   },
@@ -62,6 +56,12 @@ const list: Array<StoreAction | StoreMutation> = [
     actionName: "create_room",
     wsName: "create_room",
     default: {},
+    dataHandler: {
+      replied: (res: defaultData, data: defaultData, params: RequestParams): defaultData => {
+        router.push("/room");
+        return res;
+      },
+    },
   },
   {
     name: "roomData",
@@ -69,13 +69,10 @@ const list: Array<StoreAction | StoreMutation> = [
     wsName: "join_room",
     default: {},
     dataHandler: {
-      received: (
-        res: defaultData,
-        data: defaultData,
-        params: RequestParams
-      ): defaultData => {
+      received: (res: defaultData, data: defaultData, params: RequestParams): defaultData => {
         const newData = { ...data };
-        newData.names.push[res.name];
+        newData.names.push[res?.name];
+        router.push("/room");
         return newData;
       },
     },
@@ -85,11 +82,7 @@ const list: Array<StoreAction | StoreMutation> = [
     actionName: "leave_room",
     wsName: "leave_room",
     default: {},
-    dataHandler: (
-      res: defaultData,
-      data: defaultData,
-      params: RequestParams
-    ): defaultData => {
+    dataHandler: (res: defaultData, data: defaultData, params: RequestParams): defaultData => {
       return data;
     },
   },

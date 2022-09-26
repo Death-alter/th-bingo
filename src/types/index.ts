@@ -41,6 +41,7 @@ interface StoreItem {
 export interface StoreAction extends StoreItem {
   actionName: string;
   wsName: string;
+  noParams?: boolean;
 }
 
 export interface StoreMutation extends StoreItem {

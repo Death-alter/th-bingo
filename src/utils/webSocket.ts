@@ -25,7 +25,8 @@ class WS {
   private connecting = false;
   private heartBeatTimer = 0;
   private retryTime = 0;
-  static readonly heartBeatInterval: number = 5; //单位：秒
+  private autoReconnect = true;
+  static readonly heartBeatInterval: number = 20; //单位：秒
   static readonly retryLimit: number = 3; //单位：秒
 
   constructor(option: WebSocketOption) {
@@ -51,15 +52,16 @@ class WS {
       this.retryTime++;
       this.ws = new WebSocket(this.url);
       this.connecting = true;
+      this.autoReconnect = true;
+
       this.ws.onopen = (event) => {
         this.connecting = false;
         this.retryTime = 0;
         this.heartBeatTimer = window.setInterval(() => {
-          store.commit("heart_beat_pending");
-          this.send("heart_cs");
+          store.dispatch("heart_beat", { time: new Date().getTime() });
           setTimeout(() => {
             if (store.getters.wsTimeOut_status === "pending") {
-              this.closeConnection();
+              this.ws?.close();
             }
           }, store.getters.wsTimeOut.second * 1000);
         }, WS.heartBeatInterval * 1000);
@@ -67,6 +69,7 @@ class WS {
           console.log("ws已连接");
         }
       };
+
       this.ws.onmessage = (event) => {
         const res = JSON.parse(event.data);
         if (this.eventList[res.reply]) {
@@ -79,19 +82,23 @@ class WS {
           }
         }
       };
+
       this.ws.onclose = (event) => {
         window.clearInterval(this.heartBeatTimer);
         this.ws = null;
         if (process.env.NODE_ENV === "development") {
           console.log("ws已断开");
         }
-        this.createConnection();
+        if (this.autoReconnect) {
+          this.createConnection();
+        }
       };
+
       this.ws.onerror = (error) => {
         if (this.connecting) {
           this.connecting = false;
         }
-        this.closeConnection();
+        this.ws?.close();
         if (process.env.NODE_ENV === "development") {
           console.log(error);
         }
@@ -101,6 +108,7 @@ class WS {
 
   closeConnection() {
     if (this.ws) {
+      this.autoReconnect = false;
       this.ws.close();
     }
   }
