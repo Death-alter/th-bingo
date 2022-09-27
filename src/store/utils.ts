@@ -1,11 +1,11 @@
-import ws from "@/utils/webSocket";
-import { VuexState, StoreData, HandlerList, ActionHandler, MutationHandler, RequestParams, defaultData } from "@/types";
+import { VuexState, StoreData, HandlerList, ActionHandler, MutationHandler, RequestParams, DefaultData } from "@/types";
 import { Md5 } from "ts-md5";
 import { ElMessage } from "element-plus";
 import { Store } from "vuex";
 import store from "./index";
+import ws from "@/utils/webSocket";
 
-const promisePool: { [index: string]: defaultData } = {};
+const promisePool: { [index: string]: DefaultData } = {};
 
 export const createGetter = (name: string, defaultValue: any, type: string) => {
   if (type === "status") {
@@ -17,7 +17,7 @@ export const createGetter = (name: string, defaultValue: any, type: string) => {
 
 export const createAsyncMutations = (name: string, actionName: string) => {
   const obj = {};
-  obj[actionName + "_pending"] = (state: VuexState, data: defaultData) => {
+  obj[actionName + "_pending"] = (state: VuexState, data: DefaultData) => {
     const newVal = { ...state[name] };
     newVal.status = "pending";
     if (data) {
@@ -28,7 +28,7 @@ export const createAsyncMutations = (name: string, actionName: string) => {
       console.log(actionName + "_pending");
     }
   };
-  obj[actionName + "_replied"] = (state: VuexState, data: defaultData) => {
+  obj[actionName + "_replied"] = (state: VuexState, data: DefaultData) => {
     const newVal = { ...state[name] };
     newVal.status = "replied";
     if (data) {
@@ -39,7 +39,7 @@ export const createAsyncMutations = (name: string, actionName: string) => {
       console.log(actionName + "_replied");
     }
   };
-  obj[actionName + "_received"] = (state: VuexState, data: defaultData) => {
+  obj[actionName + "_received"] = (state: VuexState, data: DefaultData) => {
     const newVal = { ...state[name] };
     newVal.status = "received";
     if (data) {
@@ -50,7 +50,7 @@ export const createAsyncMutations = (name: string, actionName: string) => {
       console.log(actionName + "_received");
     }
   };
-  obj[actionName + "_error"] = (state: VuexState, data: defaultData) => {
+  obj[actionName + "_error"] = (state: VuexState, data: DefaultData) => {
     const newVal = { ...state[name] };
     newVal.status = "error";
     if (data) {
@@ -80,7 +80,7 @@ export const createAction = (
   actionName: string,
   wsName: string,
   noParams: boolean = false,
-  callback: ActionHandler | HandlerList = (res: defaultData, data: defaultData, params: RequestParams): defaultData => {
+  callback: ActionHandler | HandlerList = (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
     return data;
   }
 ) => {
@@ -137,11 +137,11 @@ export const createAction = (
         } else {
           ws.send(wsName + "_cs", data);
         }
-        let usedData: defaultData | null = null;
+        let usedData: DefaultData | null = null;
         if ("pending" in callback && callback.pending) {
           usedData = callback.pending({}, state[name].data, requestParams);
         }
-        commit(actionName + "_pending", usedData ? usedData : null);
+        commit(actionName + "_pending", usedData);
       } else {
         return;
       }

@@ -1,17 +1,18 @@
-import { RequestParams, defaultData, UserData, StoreAction, StoreMutation } from "@/types";
+import { RequestParams, DefaultData, UserData, StoreAction, StoreMutation } from "@/types";
 import Storage from "@/utils/Storage";
-import router from "@/router";
+import ws from "@/utils/webSocket";
 
 const list: Array<StoreAction | StoreMutation> = [
   {
     name: "userData",
     mutationName: "login",
     default: {},
-    dataHandler: (newVal: RequestParams, oldVal: defaultData): defaultData => {
+    dataHandler: (newVal: RequestParams, oldVal: DefaultData): DefaultData => {
       const userData: UserData | null = Storage.local.get("userData");
       if (!userData) {
         return oldVal;
       } else {
+        ws.createConnection();
         return userData;
       }
     },
@@ -20,7 +21,8 @@ const list: Array<StoreAction | StoreMutation> = [
     name: "userData",
     mutationName: "logout",
     default: {},
-    dataHandler: (newVal: RequestParams, oldVal: defaultData): defaultData => {
+    dataHandler: (newVal: RequestParams, oldVal: DefaultData): DefaultData => {
+      ws.closeConnection();
       return {};
     },
   },
@@ -30,17 +32,17 @@ const list: Array<StoreAction | StoreMutation> = [
     wsName: "heart",
     noParams: true,
     default: {
-      second: 5,
-      time: 0,
-      ping: 0,
+      second: 3, //发送心跳后多少秒内没收到回复判断掉线
+      time: 0, //本地时间戳
+      ping: 0, //ping值
     },
     dataHandler: {
-      pending(res: defaultData, data: defaultData, params: RequestParams) {
+      pending(res: DefaultData, data: DefaultData, params: RequestParams) {
         const newData = { ...data };
         newData.time = params.time;
         return newData;
       },
-      replied(res: defaultData, data: defaultData, params: RequestParams): defaultData {
+      replied(res: DefaultData, data: DefaultData, params: RequestParams): DefaultData {
         const newData = { ...data };
         if (params) {
           newData.ping = newData.time - params.time;
@@ -53,11 +55,22 @@ const list: Array<StoreAction | StoreMutation> = [
   },
   {
     name: "roomData",
+    actionName: "login",
+    wsName: "login",
+    default: {},
+    dataHandler: {
+      replied: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
+        return res;
+      },
+    },
+  },
+  {
+    name: "roomData",
     actionName: "create_room",
     wsName: "create_room",
     default: {},
     dataHandler: {
-      replied: (res: defaultData, data: defaultData, params: RequestParams): defaultData => {
+      replied: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
         return res;
       },
     },
@@ -68,7 +81,7 @@ const list: Array<StoreAction | StoreMutation> = [
     wsName: "join_room",
     default: {},
     dataHandler: {
-      received: (res: defaultData, data: defaultData, params: RequestParams): defaultData => {
+      received: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
         const newData = { ...data };
         newData.names.push[res.name];
         return newData;
@@ -80,7 +93,7 @@ const list: Array<StoreAction | StoreMutation> = [
     actionName: "leave_room",
     wsName: "leave_room",
     default: {},
-    dataHandler: (res: defaultData, data: defaultData, params: RequestParams): defaultData => {
+    dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
       return data;
     },
   },

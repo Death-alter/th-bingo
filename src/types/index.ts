@@ -1,5 +1,9 @@
 //默认对象类型
-export interface defaultData {
+export interface Data<T> {
+  [index: string]: T;
+}
+
+export interface DefaultData {
   [index: string]: any;
 }
 
@@ -9,7 +13,7 @@ export interface RequestParams {
 
 export interface StoreData {
   status?: string;
-  data?: defaultData | null;
+  data?: DefaultData | null;
   error?: any;
 }
 
@@ -18,11 +22,11 @@ export interface VuexState {
 }
 
 export interface ActionHandler {
-  (res: defaultData, data: defaultData, params: RequestParams): defaultData;
+  (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData;
 }
 
 export interface MutationHandler {
-  (newVal: RequestParams, oldVal: defaultData): defaultData;
+  (newVal: RequestParams, oldVal: DefaultData): DefaultData;
 }
 
 export interface HandlerList {
@@ -34,7 +38,7 @@ export interface HandlerList {
 
 interface StoreItem {
   name: string;
-  default: any;
+  default: DefaultData | Array<DefaultData>;
   dataHandler?: ActionHandler | MutationHandler | HandlerList;
 }
 

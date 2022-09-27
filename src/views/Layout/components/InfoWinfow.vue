@@ -13,7 +13,7 @@
               <div class="logout">
                 <el-button type="primary" @click="logout">退出登录</el-button>
               </div>
-              <el-divider style="margin: 10px 0"></el-divider>
+              <el-divider style="margin: 10px 0;"></el-divider>
             </div>
             <div class="room-info" v-if="roomData_status === 'success'">
               <el-form label-width="90px">
@@ -27,10 +27,8 @@
             </div>
           </div>
         </el-tab-pane>
-        <el-tab-pane label="房间设置" :name="1" class="tab-content">
-        </el-tab-pane>
-        <el-tab-pane label="操作记录" :name="2" class="tab-content">
-        </el-tab-pane>
+        <el-tab-pane label="房间设置" :name="1" class="tab-content"> </el-tab-pane>
+        <el-tab-pane label="操作记录" :name="2" class="tab-content"> </el-tab-pane>
       </el-tabs>
     </div>
   </div>
@@ -39,15 +37,9 @@
 <script lang="ts">
 import { defineComponent, computed } from "vue";
 import { useStore } from "vuex";
-import {
-  ElTabs,
-  ElTabPane,
-  ElDivider,
-  ElForm,
-  ElFormItem,
-  ElButton,
-} from "element-plus";
+import { ElTabs, ElTabPane, ElDivider, ElForm, ElFormItem, ElButton } from "element-plus";
 import Storage from "@/utils/Storage";
+import ws from "@/utils/webSocket";
 
 export default defineComponent({
   name: "InfoWinfow",

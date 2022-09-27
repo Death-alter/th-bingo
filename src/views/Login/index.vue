@@ -2,19 +2,10 @@
   <div class="login">
     <div class="login-box relative-center">
       <div class="login-box-item">
-        <el-input
-          v-model="userName"
-          placeholder="请输入想要使用的名称"
-        ></el-input>
+        <el-input v-model="userName" placeholder="请输入想要使用的名称"></el-input>
       </div>
       <div class="login-box-item">
-        <el-button
-          type="primary"
-          class="login-btn"
-          :disabled="!userName"
-          @click="login"
-          >登 录</el-button
-        >
+        <el-button type="primary" class="login-btn" :disabled="!userName" @click="login">登 录</el-button>
       </div>
     </div>
   </div>
@@ -25,6 +16,7 @@ import { defineComponent } from "vue";
 import { ElInput, ElButton } from "element-plus";
 import { Md5 } from "ts-md5";
 import Storage from "@/utils/Storage";
+import ws from "@/utils/webSocket";
 
 export default defineComponent({
   name: "Login",
