@@ -46,7 +46,7 @@ const list: Array<StoreAction | StoreMutation> = [
           newData.ping = newData.time - params.time;
           newData.time = params.time;
         }
-        console.log(newData.ping);
+        console.log("ping:", newData.ping);
         return newData;
       },
     },

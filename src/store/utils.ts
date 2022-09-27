@@ -18,9 +18,8 @@ export const createGetter = (name: string, defaultValue: any, type: string) => {
 export const createAsyncMutations = (name: string, actionName: string) => {
   const obj = {};
   obj[actionName + "_pending"] = (state: VuexState, data: defaultData) => {
-    const newVal: StoreData = {
-      status: "pending",
-    };
+    const newVal = { ...state[name] };
+    newVal.status = "pending";
     if (data) {
       newVal.data = data;
     }
@@ -30,9 +29,8 @@ export const createAsyncMutations = (name: string, actionName: string) => {
     }
   };
   obj[actionName + "_replied"] = (state: VuexState, data: defaultData) => {
-    const newVal: StoreData = {
-      status: "replied",
-    };
+    const newVal = { ...state[name] };
+    newVal.status = "replied";
     if (data) {
       newVal.data = data;
     }
@@ -42,15 +40,25 @@ export const createAsyncMutations = (name: string, actionName: string) => {
     }
   };
   obj[actionName + "_received"] = (state: VuexState, data: defaultData) => {
-    const newVal: StoreData = {
-      status: "received",
-    };
+    const newVal = { ...state[name] };
+    newVal.status = "received";
+    if (data) {
+      newVal.data = data;
+    }
+    state[name] = newVal;
+    if (process.env.NODE_ENV === "development") {
+      console.log(actionName + "_received");
+    }
+  };
+  obj[actionName + "_error"] = (state: VuexState, data: defaultData) => {
+    const newVal = { ...state[name] };
+    newVal.status = "error";
     if (data) {
       newVal.error = data;
     }
     state[name] = newVal;
     if (process.env.NODE_ENV === "development") {
-      console.log(actionName + "_received");
+      console.log(actionName + "_error");
     }
   };
   return obj;
@@ -87,6 +95,7 @@ export const createAction = (
         message: data.msg,
         type: "error",
       });
+      store.commit(actionName + "_error", data);
       promisePool[token].reject(data);
     } else {
       if (callback instanceof Function) {
@@ -128,10 +137,11 @@ export const createAction = (
         } else {
           ws.send(wsName + "_cs", data);
         }
-        if ("replied" in callback && callback.pending) {
-          data = callback.pending({}, state[name].data, requestParams);
+        let usedData: defaultData | null = null;
+        if ("pending" in callback && callback.pending) {
+          usedData = callback.pending({}, state[name].data, requestParams);
         }
-        commit(actionName + "_pending", data);
+        commit(actionName + "_pending", usedData ? usedData : null);
       } else {
         return;
       }

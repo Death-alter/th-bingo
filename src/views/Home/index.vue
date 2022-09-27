@@ -82,7 +82,7 @@ export default defineComponent({
           this.$store
             .dispatch("create_room", {
               token: this.userData.token,
-              name: this.userData.name,
+              name: this.userData.userName,
               rid: this.form.roomPassword,
               type: 1,
             })
@@ -100,7 +100,7 @@ export default defineComponent({
           this.$store
             .dispatch("join_room", {
               token: this.userData.token,
-              name: this.userData.name,
+              name: this.userData.userName,
               rid: this.form.roomPassword,
             })
             .then(() => {
