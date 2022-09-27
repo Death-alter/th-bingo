@@ -58,7 +58,6 @@ const list: Array<StoreAction | StoreMutation> = [
     default: {},
     dataHandler: {
       replied: (res: defaultData, data: defaultData, params: RequestParams): defaultData => {
-        router.push("/room");
         return res;
       },
     },
@@ -71,8 +70,7 @@ const list: Array<StoreAction | StoreMutation> = [
     dataHandler: {
       received: (res: defaultData, data: defaultData, params: RequestParams): defaultData => {
         const newData = { ...data };
-        newData.names.push[res?.name];
-        router.push("/room");
+        newData.names.push[res.name];
         return newData;
       },
     },

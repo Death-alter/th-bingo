@@ -1,4 +1,4 @@
-import { RequestParams } from "@/types";
+import { RequestParams, defaultData } from "@/types";
 import store from "@/store";
 import { ElMessage } from "element-plus";
 

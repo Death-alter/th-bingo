@@ -79,12 +79,17 @@ export default defineComponent({
       if (!this.formRef) return;
       this.formRef.validate((valid, fields) => {
         if (valid) {
-          this.$store.dispatch("create_room", {
-            token: this.userData.token,
-            name: this.userData.name,
-            rid: this.form.roomPassword,
-            type: 1,
-          });
+          this.$store
+            .dispatch("create_room", {
+              token: this.userData.token,
+              name: this.userData.name,
+              rid: this.form.roomPassword,
+              type: 1,
+            })
+            .then(() => {
+              this.$router.push("/room");
+            })
+            .catch((e) => {});
         }
       });
     },
@@ -92,11 +97,15 @@ export default defineComponent({
       if (!this.formRef) return;
       this.formRef.validate((valid, fields) => {
         if (valid) {
-          this.$store.dispatch("join_room", {
-            token: this.userData.token,
-            name: this.userData.name,
-            rid: this.form.roomPassword,
-          });
+          this.$store
+            .dispatch("join_room", {
+              token: this.userData.token,
+              name: this.userData.name,
+              rid: this.form.roomPassword,
+            })
+            .then(() => {
+              this.$router.push("/room");
+            });
         }
       });
     },

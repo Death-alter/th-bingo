@@ -1,8 +1,11 @@
 import ws from "@/utils/webSocket";
 import { VuexState, StoreData, HandlerList, ActionHandler, MutationHandler, RequestParams, defaultData } from "@/types";
+import { Md5 } from "ts-md5";
 import { ElMessage } from "element-plus";
 import { Store } from "vuex";
 import store from "./index";
+
+const promisePool: { [index: string]: defaultData } = {};
 
 export const createGetter = (name: string, defaultValue: any, type: string) => {
   if (type === "status") {
@@ -53,14 +56,16 @@ export const createAsyncMutations = (name: string, actionName: string) => {
   return obj;
 };
 
-export const createSyncMutation =
-  (name: string, callback: MutationHandler) => (state: VuexState, data: RequestParams) => {
-    if (callback) {
-      state[name] = { data: callback(data, state[name].data || {}) };
-    } else {
-      state[name] = { data };
-    }
-  };
+export const createSyncMutation = (name: string, callback: MutationHandler) => (
+  state: VuexState,
+  data: RequestParams
+) => {
+  if (callback) {
+    state[name] = { data: callback(data, state[name].data || {}) };
+  } else {
+    state[name] = { data };
+  }
+};
 
 export const createAction = (
   name: string,
@@ -71,6 +76,7 @@ export const createAction = (
     return data;
   }
 ) => {
+  const token = Md5.hashStr(wsName + "_cs");
   let requestParams: RequestParams;
   ws.on(wsName + "_cs", (resName, data) => {
     if (resName === "error_sc") {
@@ -81,6 +87,7 @@ export const createAction = (
         message: data.msg,
         type: "error",
       });
+      promisePool[token].reject(data);
     } else {
       if (callback instanceof Function) {
         data = callback(data, store.state[name].data, requestParams);
@@ -88,6 +95,7 @@ export const createAction = (
         data = callback.replied(data, store.state[name].data, requestParams);
       }
       store.commit(actionName + "_replied", data);
+      promisePool[token].resolve(data);
     }
   });
 
@@ -108,17 +116,25 @@ export const createAction = (
   });
 
   return ({ commit, state }: Store<any>, data: RequestParams) => {
-    if (state[name].status !== "pending") {
-      requestParams = data;
-      if (noParams) {
-        ws.send(wsName + "_cs");
+    return new Promise((resolve, reject) => {
+      if (state[name].status !== "pending") {
+        promisePool[token] = {
+          resolve,
+          reject,
+        };
+        requestParams = data;
+        if (noParams) {
+          ws.send(wsName + "_cs");
+        } else {
+          ws.send(wsName + "_cs", data);
+        }
+        if ("replied" in callback && callback.pending) {
+          data = callback.pending({}, state[name].data, requestParams);
+        }
+        commit(actionName + "_pending", data);
       } else {
-        ws.send(wsName + "_cs", data);
+        return;
       }
-      if ("replied" in callback && callback.pending) {
-        data = callback.pending({}, state[name].data, requestParams);
-      }
-      commit(actionName + "_pending", data);
-    }
+    });
   };
 };
