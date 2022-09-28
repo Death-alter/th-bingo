@@ -15,6 +15,9 @@ const list: Array<StoreAction | StoreMutation> = [
       } else {
         ws.createConnection();
         store.dispatch("login", { token: userData.token });
+        ws.on("reconnect", () => {
+          store.dispatch("login", { token: userData.token });
+        });
         return userData;
       }
     },

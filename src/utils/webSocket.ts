@@ -67,6 +67,7 @@ class WS {
             store.dispatch("heart_beat", { time: new Date().getTime() });
             setTimeout(() => {
               console.log(store.getters.wsTimeOut_status);
+              console.log("bufferedAmount:", this.ws?.bufferedAmount);
               if (store.getters.wsTimeOut_status === "pending") {
                 this.ws?.close();
               }
@@ -98,7 +99,13 @@ class WS {
             console.log("ws已断开");
           }
           if (this.autoReconnect) {
-            this.createConnection();
+            this.createConnection().then(() => {
+              if (this.eventList.reconnect) {
+                for (const callback of this.eventList.reconnect) {
+                  callback("reconnect", {});
+                }
+              }
+            });
           }
         };
 
