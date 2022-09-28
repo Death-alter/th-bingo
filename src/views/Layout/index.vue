@@ -28,7 +28,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-@import "@/assets/variable.scss";
+@import "@/assets/scss/variable.scss";
 
 .layout {
   width: 100%;
@@ -71,7 +71,7 @@ export default defineComponent({
     top: 0;
     width: 100%;
     height: 100%;
-    background: url("~@/assets/background.png") no-repeat center center;
+    background: url("~@/assets/image/background.png") no-repeat center center;
     background-size: cover;
     opacity: 0.5;
   }

@@ -1,6 +1,7 @@
 import { RequestParams, DefaultData, UserData, StoreAction, StoreMutation } from "@/types";
 import Storage from "@/utils/Storage";
 import ws from "@/utils/webSocket";
+import store from ".";
 
 const list: Array<StoreAction | StoreMutation> = [
   {
@@ -13,6 +14,7 @@ const list: Array<StoreAction | StoreMutation> = [
         return oldVal;
       } else {
         ws.createConnection();
+        store.dispatch("login", { token: userData.token });
         return userData;
       }
     },

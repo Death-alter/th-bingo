@@ -39,7 +39,6 @@ import { defineComponent, computed } from "vue";
 import { useStore } from "vuex";
 import { ElTabs, ElTabPane, ElDivider, ElForm, ElFormItem, ElButton } from "element-plus";
 import Storage from "@/utils/Storage";
-import ws from "@/utils/webSocket";
 
 export default defineComponent({
   name: "InfoWinfow",

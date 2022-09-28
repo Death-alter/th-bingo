@@ -35,7 +35,7 @@ class WS {
     if (!this.url) {
       console.error("没有设置url，无法创建socket连接");
     }
-    this.createConnection();
+    // this.createConnection();
   }
 
   createConnection() {
@@ -62,6 +62,7 @@ class WS {
           for (const func of this.initList) {
             func();
           }
+          this.initList = [];
           this.heartBeatTimer = window.setInterval(() => {
             store.dispatch("heart_beat", { time: new Date().getTime() });
             setTimeout(() => {
