@@ -20,7 +20,7 @@ import ws from "@/utils/webSocket";
 
 export default defineComponent({
   name: "Login",
-  data: () => {
+  data() {
     return {
       userName: "",
     };

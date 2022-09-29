@@ -1,15 +1,15 @@
 <template>
   <div class="rule-standard">
     <div class="bingo-wrap">
-      <spell-card-cell
-        v-for="(item, index) in spellCardList"
-        :key="index"
-        :name="item.name"
-        :level="item.level"
-      ></spell-card-cell>
-    </div>
-    <div class="count-down-wrap">
-      <count-down :seconds="300" v-model:paused="paused"></count-down>
+      <div class="bingo-items">
+        <spell-card-cell
+          v-for="(item, index) in spellCardList"
+          :key="index"
+          :name="item.name"
+          :level="item.level"
+        ></spell-card-cell>
+      </div>
+      <bingo-effect class="bingo-effect" />
     </div>
   </div>
 </template>
@@ -17,11 +17,11 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import SpellCardCell from "@/components/spell-card-cell.vue";
-import CountDown from "@/components/count-down.vue";
+import BingoEffect from "@/components/bingo-effect/index.vue";
 
 export default defineComponent({
   name: "Room",
-  data: () => {
+  data() {
     return {
       spellCardList: [
         {
@@ -155,7 +155,7 @@ export default defineComponent({
   },
   components: {
     SpellCardCell,
-    CountDown,
+    BingoEffect,
   },
   mounted() {
     if (this.spellCardList.length > 25) {
@@ -178,16 +178,25 @@ export default defineComponent({
 .bingo-wrap {
   width: 100%;
   height: 100%;
-  display: flex;
-  flex-wrap: wrap;
+  position: relative;
 
-  & > * {
-    border-left: 1px solid #000;
-    border-top: 1px solid #000;
+  .bingo-items {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    & > * {
+      border-left: 1px solid #000;
+      border-top: 1px solid #000;
+    }
   }
 }
 
-.count-down-wrap {
-  font-size: 30px;
+.bingo-effect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 99;
 }
 </style>

@@ -17,7 +17,7 @@ import { defineComponent } from "vue";
 
 export default defineComponent({
   name: "CountDown",
-  data: () => {
+  data() {
     return {
       timer: 0,
       value: 0,

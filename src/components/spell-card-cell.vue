@@ -10,9 +10,7 @@
             level3: level === 3,
           }"
         >
-          <el-icon v-for="(item, index) in new Array(level)" :key="index"
-            ><StarFilled
-          /></el-icon>
+          <el-icon v-for="(item, index) in new Array(level)" :key="index"><StarFilled /></el-icon>
         </div>
       </div>
       <div class="name">{{ name }}</div>
@@ -27,7 +25,7 @@ import { ElIcon } from "element-plus";
 
 export default defineComponent({
   name: "SpellCardCell",
-  data: () => {
+  data() {
     return {};
   },
   components: {

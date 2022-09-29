@@ -7,6 +7,9 @@
         <div class="game">
           <standard v-if="gameRule === 'standard'" />
         </div>
+        <div class="count-down-wrap">
+          <count-down :seconds="300" v-model:paused="paused"></count-down>
+        </div>
       </el-col>
       <el-col :span="4"></el-col>
     </el-row>
@@ -17,19 +20,23 @@
 import { defineComponent } from "vue";
 import { ElRow, ElCol } from "element-plus";
 import standard from "./games/standard.vue";
+import CountDown from "@/components/count-down.vue";
 
 export default defineComponent({
   name: "Room",
-  data: () => {
+  data() {
     return {
       gameRule: "standard",
       title: "A VS B",
+      paused: true,
+      seconds: 10,
     };
   },
   components: {
     standard,
     ElRow,
     ElCol,
+    CountDown,
   },
   methods: {},
 });
@@ -40,6 +47,10 @@ export default defineComponent({
   .room-title {
     font-size: 28px;
     margin: 16px 0;
+  }
+
+  .count-down-wrap {
+    font-size: 30px;
   }
 }
 </style>
