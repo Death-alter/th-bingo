@@ -1,7 +1,6 @@
 import { RequestParams, DefaultData, UserData, StoreAction, StoreMutation } from "@/types";
 import Storage from "@/utils/Storage";
-import ws, { WS } from "@/utils/webSocket";
-import store from ".";
+import ws from "@/utils/webSocket";
 
 const list: Array<StoreAction | StoreMutation> = [
   {

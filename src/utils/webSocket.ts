@@ -1,4 +1,4 @@
-import { RequestParams, DefaultData } from "@/types";
+import { RequestParams } from "@/types";
 import { ElMessage } from "element-plus";
 import config from "@/config";
 
@@ -41,7 +41,6 @@ export class WS {
     if (!this.url) {
       console.error("没有设置url，无法创建socket连接");
     }
-    // this.createConnection();
   }
 
   get bufferedAmount() {
@@ -64,7 +63,7 @@ export class WS {
       if (this.retryTime >= WS.retryLimit) {
         ElMessage({
           type: "error",
-          message: "无法连接到服务器，请稍后再试",
+          message: "无法连接到服务器，请稍检查网络连接并刷新页面重试",
         });
         return;
       }
@@ -73,6 +72,12 @@ export class WS {
         this.ws = new WebSocket(this.url);
         this.autoReconnect = true; //连接以后开启自动重连
         this.ws.onopen = (event) => {
+          if (this.retryTime > 1) {
+            ElMessage({
+              type: "success",
+              message: "重新连接服务器成功",
+            });
+          }
           this.retryTime = 0;
           for (const func of this.initList) {
             func();
@@ -84,9 +89,7 @@ export class WS {
           if (this.heartBeat) {
             this.heartBeatTimer = window.setInterval(this.heartBeat, WS.heartBeatInterval * 1000);
           }
-          if (process.env.NODE_ENV === "development") {
             console.log("ws已连接");
-          }
           resolve(event);
         };
 
@@ -109,9 +112,13 @@ export class WS {
           for (const callback of this.eventList.disconnect) {
             callback("disconnect", {}, this);
           }
-          if (process.env.NODE_ENV === "development") {
-            console.log("ws已断开");
+          if (this.retryTime == 1) {
+            ElMessage({
+              type: "error",
+              message: "网络连接已断开，正在尝试重新连接",
+            });
           }
+            console.log("ws已断开");
           if (this.autoReconnect) {
             this.createConnection().then(() => {
               for (const callback of this.eventList.reconnect) {
@@ -126,9 +133,7 @@ export class WS {
             callback("error", {}, this);
           }
           this.reconnect();
-          if (process.env.NODE_ENV === "development") {
-            console.log(error);
-          }
+          console.log(error);
           reject(error);
         };
       }

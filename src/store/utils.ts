@@ -1,4 +1,4 @@
-import { VuexState, StoreData, HandlerList, ActionHandler, MutationHandler, RequestParams, DefaultData } from "@/types";
+import { VuexState, HandlerList, ActionHandler, MutationHandler, RequestParams, DefaultData } from "@/types";
 import { Md5 } from "ts-md5";
 import { ElMessage } from "element-plus";
 import { Store } from "vuex";
@@ -24,9 +24,7 @@ export const createAsyncMutations = (name: string, actionName: string) => {
       newVal.data = data;
     }
     state[name] = newVal;
-    if (process.env.NODE_ENV === "development") {
-      console.log(actionName + "_pending");
-    }
+    console.log(actionName + "_pending");
   };
   obj[actionName + "_replied"] = (state: VuexState, data: DefaultData) => {
     const newVal = { ...state[name] };
@@ -35,9 +33,7 @@ export const createAsyncMutations = (name: string, actionName: string) => {
       newVal.data = data;
     }
     state[name] = newVal;
-    if (process.env.NODE_ENV === "development") {
-      console.log(actionName + "_replied");
-    }
+    console.log(actionName + "_replied");
   };
   obj[actionName + "_received"] = (state: VuexState, data: DefaultData) => {
     const newVal = { ...state[name] };
@@ -46,9 +42,7 @@ export const createAsyncMutations = (name: string, actionName: string) => {
       newVal.data = data;
     }
     state[name] = newVal;
-    if (process.env.NODE_ENV === "development") {
-      console.log(actionName + "_received");
-    }
+    console.log(actionName + "_received");
   };
   obj[actionName + "_error"] = (state: VuexState, data: DefaultData) => {
     const newVal = { ...state[name] };
@@ -57,9 +51,7 @@ export const createAsyncMutations = (name: string, actionName: string) => {
       newVal.error = data;
     }
     state[name] = newVal;
-    if (process.env.NODE_ENV === "development") {
-      console.log(actionName + "_error");
-    }
+    console.log(actionName + "_error");
   };
   return obj;
 };

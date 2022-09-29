@@ -15,14 +15,14 @@
               </div>
               <el-divider style="margin: 10px 0;"></el-divider>
             </div>
-            <div class="room-info" v-if="roomData_status === 'success'">
+            <div class="room-info" v-if="$route.path === '/room'">
               <el-form label-width="90px">
                 <el-form-item label="房间密码：">******</el-form-item>
                 <el-form-item label="规则：">标准赛</el-form-item>
                 <el-form-item label="创建者：">Death</el-form-item>
               </el-form>
             </div>
-            <div class="room-info-none" v-if="roomData_status !== 'success'">
+            <div class="room-info-none" v-if="$route.path !== '/room'">
               目前尚未加入房间
             </div>
           </div>
