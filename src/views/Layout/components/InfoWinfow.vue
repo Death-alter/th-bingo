@@ -38,7 +38,7 @@
 import { defineComponent, computed } from "vue";
 import { useStore } from "vuex";
 import { ElTabs, ElTabPane, ElDivider, ElForm, ElFormItem, ElButton } from "element-plus";
-import Storage from "@/utils/Storage";
+import ws from "@/utils/webSocket";
 
 export default defineComponent({
   name: "InfoWinfow",
@@ -67,8 +67,8 @@ export default defineComponent({
   methods: {
     handleClick() {},
     logout() {
-      Storage.local.remove("userData");
-      this.$store.commit("logout");
+      this.$store.commit("remove_user_data");
+      ws.closeConnection();
       this.$router.push("/login");
     },
   },

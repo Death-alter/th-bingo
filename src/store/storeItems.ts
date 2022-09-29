@@ -1,43 +1,37 @@
 import { RequestParams, DefaultData, UserData, StoreAction, StoreMutation } from "@/types";
 import Storage from "@/utils/Storage";
-import ws from "@/utils/webSocket";
+import ws, { WS } from "@/utils/webSocket";
 import store from ".";
 
 const list: Array<StoreAction | StoreMutation> = [
   {
     name: "userData",
-    mutationName: "login",
+    mutationName: "get_user_data",
     default: {},
     dataHandler: (newVal: RequestParams, oldVal: DefaultData): DefaultData => {
       const userData: UserData | null = Storage.local.get("userData");
       if (!userData) {
         return oldVal;
       } else {
-        ws.createConnection();
-        store.dispatch("login", { token: userData.token });
-        ws.on("reconnect", () => {
-          store.dispatch("login", { token: userData.token });
-        });
         return userData;
       }
     },
   },
   {
     name: "userData",
-    mutationName: "logout",
+    mutationName: "remove_user_data",
     default: {},
     dataHandler: (newVal: RequestParams, oldVal: DefaultData): DefaultData => {
-      ws.closeConnection();
+      Storage.local.remove("userData");
       return {};
     },
   },
   {
-    name: "wsTimeOut",
+    name: "heartBeat",
     actionName: "heart_beat",
     wsName: "heart",
     noParams: true,
     default: {
-      second: 3, //发送心跳后多少秒内没收到回复判断掉线
       time: 0, //本地时间戳
       ping: 0, //ping值
     },
@@ -65,6 +59,10 @@ const list: Array<StoreAction | StoreMutation> = [
     default: {},
     dataHandler: {
       replied: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
+        return res;
+      },
+      error: (res: DefaultData, data: DefaultData, params: RequestParams) => {
+        ws.closeConnection();
         return res;
       },
     },

@@ -1,13 +1,13 @@
 import { RequestParams, DefaultData } from "@/types";
-import store from "@/store";
 import { ElMessage } from "element-plus";
+import config from "@/config";
 
 interface WebSocketOption {
   url: string;
 }
 
 interface WebSocketCallBack {
-  (name: string, data: { [index: string]: any }): void;
+  (name: string, data: { [index: string]: any }, webSocket: WS): void;
 }
 
 export interface WebSocketData {
@@ -16,19 +16,25 @@ export interface WebSocketData {
   data: { [index: string]: any };
 }
 
-const url = process.env.VUE_APP_WS_API || "";
-
-class WS {
+export class WS {
   private url: string;
   private ws: WebSocket | null = null;
-  private eventList: { [index: string]: Array<WebSocketCallBack> } = {};
+  private eventList: { [index: string]: Array<WebSocketCallBack> } = {
+    connect: [],
+    reconnect: [],
+    disconnect: [],
+    error: [],
+  };
   private initList: Array<{ (): void }> = [];
-  private connecting = false;
   private heartBeatTimer = 0;
   private retryTime = 0;
   private autoReconnect = true;
-  static readonly heartBeatInterval: number = 20; //单位：秒
-  static readonly retryLimit: number = 3; //最大重连次数
+
+  private heartBeat: { (): void } | null = null;
+
+  public static readonly heartBeatInterval: number = config.webSocket.heartBeatInterval; //单位：秒
+  public static readonly retryLimit: number = config.webSocket.maxRetryTimes; //最大重连次数
+  public static readonly timeOutSeconds: number = config.webSocket.timeOutSeconds;
 
   constructor(option: WebSocketOption) {
     this.url = option.url;
@@ -36,6 +42,18 @@ class WS {
       console.error("没有设置url，无法创建socket连接");
     }
     // this.createConnection();
+  }
+
+  get bufferedAmount() {
+    return this.ws?.bufferedAmount;
+  }
+
+  get state() {
+    return this.ws?.readyState;
+  }
+
+  get connecting() {
+    return this.ws && this.state === this.ws.CONNECTING;
   }
 
   createConnection() {
@@ -53,26 +71,19 @@ class WS {
       if (this.ws == null) {
         this.retryTime++;
         this.ws = new WebSocket(this.url);
-        this.connecting = true;
         this.autoReconnect = true; //连接以后开启自动重连
-
         this.ws.onopen = (event) => {
-          this.connecting = false;
           this.retryTime = 0;
           for (const func of this.initList) {
             func();
           }
           this.initList = [];
-          this.heartBeatTimer = window.setInterval(() => {
-            store.dispatch("heart_beat", { time: new Date().getTime() });
-            setTimeout(() => {
-              console.log(store.getters.wsTimeOut_status);
-              console.log("bufferedAmount:", this.ws?.bufferedAmount);
-              if (store.getters.wsTimeOut_status === "pending") {
-                this.ws?.close();
-              }
-            }, store.getters.wsTimeOut.second * 1000);
-          }, WS.heartBeatInterval * 1000);
+          for (const callback of this.eventList.connect) {
+            callback("connect", {}, this);
+          }
+          if (this.heartBeat) {
+            this.heartBeatTimer = window.setInterval(this.heartBeat, WS.heartBeatInterval * 1000);
+          }
           if (process.env.NODE_ENV === "development") {
             console.log("ws已连接");
           }
@@ -83,11 +94,11 @@ class WS {
           const res = JSON.parse(event.data);
           if (this.eventList[res.reply]) {
             for (const callback of this.eventList[res.reply]) {
-              callback(res.name, res.data);
+              callback(res.name, res.data, this);
             }
           } else if (this.eventList[res.name]) {
             for (const callback of this.eventList[res.name]) {
-              callback(res.name, res.data);
+              callback(res.name, res.data, this);
             }
           }
         };
@@ -95,25 +106,26 @@ class WS {
         this.ws.onclose = (event) => {
           window.clearInterval(this.heartBeatTimer);
           this.ws = null;
+          for (const callback of this.eventList.disconnect) {
+            callback("disconnect", {}, this);
+          }
           if (process.env.NODE_ENV === "development") {
             console.log("ws已断开");
           }
           if (this.autoReconnect) {
             this.createConnection().then(() => {
-              if (this.eventList.reconnect) {
-                for (const callback of this.eventList.reconnect) {
-                  callback("reconnect", {});
-                }
+              for (const callback of this.eventList.reconnect) {
+                callback("reconnect", {}, this);
               }
             });
           }
         };
 
         this.ws.onerror = (error) => {
-          if (this.connecting) {
-            this.connecting = false;
+          for (const callback of this.eventList.error) {
+            callback("error", {}, this);
           }
-          this.ws?.close();
+          this.reconnect();
           if (process.env.NODE_ENV === "development") {
             console.log(error);
           }
@@ -121,6 +133,10 @@ class WS {
         };
       }
     });
+  }
+
+  reconnect() {
+    this.ws?.close();
   }
 
   closeConnection() {
@@ -140,6 +156,10 @@ class WS {
     }
   }
 
+  setHeartBeatFunction(func: { (): void }) {
+    this.heartBeat = func;
+  }
+
   on(name: string, callback: WebSocketCallBack) {
     if (!this.eventList[name]) {
       this.eventList[name] = [];
@@ -148,4 +168,4 @@ class WS {
   }
 }
 
-export default new WS({ url });
+export default new WS({ url: config.webSocket.url });
