@@ -16,7 +16,6 @@ import { defineComponent } from "vue";
 import { ElInput, ElButton } from "element-plus";
 import { Md5 } from "ts-md5";
 import Storage from "@/utils/Storage";
-import ws from "@/utils/webSocket";
 
 export default defineComponent({
   name: "Login",

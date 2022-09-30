@@ -68,27 +68,35 @@ const list: Array<StoreAction | StoreMutation> = [
   },
   {
     name: "roomData",
+    mutationName: "room_info_received",
+    wsName: "room_info",
+    default: {},
+    dataHandler(newVal: RequestParams, oldVal: DefaultData) {
+      console.log(newVal);
+      return newVal;
+    },
+  },
+  {
+    name: "globalData",
+    mutationName: "global_info_received",
+    wsName: "global_info",
+    default: {},
+    dataHandler(newVal: RequestParams, oldVal: DefaultData) {
+      console.log(newVal);
+      return newVal;
+    },
+  },
+  {
+    name: "roomData",
     actionName: "create_room",
     wsName: "create_room",
     default: {},
-    dataHandler: {
-      replied: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
-        return res;
-      },
-    },
   },
   {
     name: "roomData",
     actionName: "join_room",
     wsName: "join_room",
     default: {},
-    dataHandler: {
-      received: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
-        const newData = { ...data };
-        newData.names.push[res.name];
-        return newData;
-      },
-    },
   },
   {
     name: "roomData",
@@ -96,8 +104,20 @@ const list: Array<StoreAction | StoreMutation> = [
     wsName: "leave_room",
     default: {},
     dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
-      return data;
+      return {};
     },
+  },
+  {
+    name: "roomData",
+    actionName: "update_room_type",
+    wsName: "update_room_type",
+    default: {},
+  },
+  {
+    name: "roomData",
+    actionName: "update_name",
+    wsName: "update_name",
+    default: {},
   },
 ];
 

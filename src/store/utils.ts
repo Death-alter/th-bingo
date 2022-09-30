@@ -35,15 +35,6 @@ export const createAsyncMutations = (name: string, actionName: string) => {
     state[name] = newVal;
     console.log(actionName + "_replied");
   };
-  obj[actionName + "_received"] = (state: VuexState, data: DefaultData) => {
-    const newVal = { ...state[name] };
-    newVal.status = "received";
-    if (data) {
-      newVal.data = data;
-    }
-    state[name] = newVal;
-    console.log(actionName + "_received");
-  };
   obj[actionName + "_error"] = (state: VuexState, data: DefaultData) => {
     const newVal = { ...state[name] };
     newVal.status = "error";
@@ -56,15 +47,27 @@ export const createAsyncMutations = (name: string, actionName: string) => {
   return obj;
 };
 
-export const createSyncMutation = (name: string, callback: MutationHandler) => (
-  state: VuexState,
-  data: RequestParams
-) => {
-  if (callback) {
-    state[name] = { data: callback(data, state[name].data || {}) };
-  } else {
-    state[name] = { data };
+export const createSyncMutation = (name: string, wsName: string | undefined, callback: MutationHandler) => {
+  if (wsName) {
+    ws.on(wsName + "_sc", (resName, data) => {
+      if (resName === "error_sc") {
+        ElMessage({
+          message: data.msg,
+          type: "error",
+        });
+      } else{
+        store.commit(wsName + "_received", data);
+      }
+    });
   }
+
+  return (state: VuexState, data: RequestParams) => {
+    if (callback) {
+      state[name].data = callback(data, state[name].data || {});
+    } else {
+      state[name].data = data;
+    }
+  };
 };
 
 export const createAction = (
@@ -73,7 +76,7 @@ export const createAction = (
   wsName: string,
   noParams: boolean = false,
   callback: ActionHandler | HandlerList = (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
-    return data;
+    return res;
   }
 ) => {
   const token = Md5.hashStr(wsName + "_cs");
@@ -97,22 +100,6 @@ export const createAction = (
       }
       store.commit(actionName + "_replied", data);
       promisePool[token].resolve(data);
-    }
-  });
-
-  ws.on(wsName + "_ntf_sc", (resName, data) => {
-    if (resName === "error_sc") {
-      ElMessage({
-        message: data.msg,
-        type: "error",
-      });
-    } else {
-      if (callback instanceof Function) {
-        data = callback(data, store.state[name].data, requestParams);
-      } else if ("received" in callback && callback.received) {
-        data = callback.received(data, store.state[name].data, requestParams);
-      }
-      store.commit(actionName + "_received", data);
     }
   });
 

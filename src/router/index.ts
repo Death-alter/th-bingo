@@ -62,6 +62,19 @@ router.beforeEach((to, from, next) => {
       });
     }
   }
+
+  if (to.path === "/room") {
+    if (!store.getters.roomData.rid) {
+      next("/");
+      return;
+    }
+  } else {
+    if (store.getters.roomData.rid) {
+      next("/room");
+      return;
+    }
+  }
+
   next();
 });
 

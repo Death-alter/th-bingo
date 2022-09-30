@@ -1,6 +1,6 @@
 import { createGetter, createAsyncMutations, createSyncMutation, createAction } from "./utils";
 import storeItems from "./storeItems";
-import { StoreAction, StoreMutation, MutationHandler, ActionHandler } from "@/types";
+import { MutationHandler, ActionHandler } from "@/types";
 
 const config = {
   state: {},
@@ -23,7 +23,11 @@ for (const item of storeItems) {
       config.state[item.name] = { data: item.default };
       config.getters[item.name] = createGetter(item.name, item.default, "mutation");
     }
-    config.mutations[item.mutationName] = createSyncMutation(item.name, <MutationHandler>item.dataHandler);
+    config.mutations[item.mutationName] = createSyncMutation(
+      item.name,
+      item.wsName,
+      <MutationHandler>item.dataHandler
+    );
   }
 
   if ("actionName" in item) {
@@ -44,6 +48,6 @@ for (const item of storeItems) {
   }
 }
 
-console.log(config)
+console.log(config);
 
 export default config;

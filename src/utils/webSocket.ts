@@ -89,17 +89,18 @@ export class WS {
           if (this.heartBeat) {
             this.heartBeatTimer = window.setInterval(this.heartBeat, WS.heartBeatInterval * 1000);
           }
-            console.log("ws已连接");
+          console.log("ws已连接");
           resolve(event);
         };
 
         this.ws.onmessage = (event) => {
           const res = JSON.parse(event.data);
-          if (this.eventList[res.reply]) {
+          if (res.reply && this.eventList[res.reply]) {
             for (const callback of this.eventList[res.reply]) {
               callback(res.name, res.data, this);
             }
-          } else if (this.eventList[res.name]) {
+          }
+          if (!res.reply && this.eventList[res.name]) {
             for (const callback of this.eventList[res.name]) {
               callback(res.name, res.data, this);
             }
@@ -118,7 +119,7 @@ export class WS {
               message: "网络连接已断开，正在尝试重新连接",
             });
           }
-            console.log("ws已断开");
+          console.log("ws已断开");
           if (this.autoReconnect) {
             this.createConnection().then(() => {
               for (const callback of this.eventList.reconnect) {

@@ -50,6 +50,7 @@ export interface StoreAction extends StoreItem {
 
 export interface StoreMutation extends StoreItem {
   mutationName: string;
+  wsName?: string;
 }
 
 export interface EventCallback {
