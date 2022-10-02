@@ -27,14 +27,15 @@ module.exports = {
     //     },
     //   },
     // },
-    disableHostCheck: true,
+    disableHostCheck: true
   },
   configureWebpack: {
-    name: "THBingo",
+    name: "th-bingo",
     resolve: {
       alias: {
         "@": resolve("src"),
-      },
+        components: "@/components"
+      }
     },
-  },
+  }
 };

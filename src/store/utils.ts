@@ -53,9 +53,9 @@ export const createSyncMutation = (name: string, wsName: string | undefined, cal
       if (resName === "error_sc") {
         ElMessage({
           message: data.msg,
-          type: "error",
+          type: "error"
         });
-      } else{
+      } else {
         store.commit(wsName + "_received", data);
       }
     });
@@ -88,7 +88,7 @@ export const createAction = (
       }
       ElMessage({
         message: data.msg,
-        type: "error",
+        type: "error"
       });
       store.commit(actionName + "_error", data);
       promisePool[token].reject(data);
@@ -105,10 +105,18 @@ export const createAction = (
 
   return ({ commit, state }: Store<any>, data: RequestParams) => {
     return new Promise((resolve, reject) => {
+      if (ws.state !== 1) {
+        ElMessage({
+          message: "网络连接异常，请刷新页面重试",
+          type: "error"
+        });
+        reject();
+      }
+
       if (state[name].status !== "pending") {
         promisePool[token] = {
           resolve,
-          reject,
+          reject
         };
         requestParams = data;
         if (noParams) {

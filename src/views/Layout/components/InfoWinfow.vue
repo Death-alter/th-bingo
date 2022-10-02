@@ -7,7 +7,13 @@
             <div class="user-info">
               <el-form label-width="90px">
                 <el-form-item label="用户名：">
-                  <span>{{ userData.userName }}</span>
+                  <div class="label-with-button">
+                    <div class="userName">
+                      <el-input v-if="showNameInput" v-model="userName"></el-input>
+                      <span v-else>{{ userData.userName }}</span>
+                    </div>
+                    <el-button link type="primary" @click="editName">{{ showNameInput ? "确认" : "修改" }}</el-button>
+                  </div>
                 </el-form-item>
               </el-form>
               <div class="info-button">
@@ -15,22 +21,34 @@
               </div>
               <el-divider style="margin: 10px 0"></el-divider>
             </div>
-            <div class="room-info" v-if="roomData.rid">
+            <div class="room-info" v-if="inRoom">
               <el-form label-width="90px">
                 <el-form-item label="房间密码：">
-                  <div class="room-passward">
+                  <div class="label-with-button">
                     <span>******</span>
                     <el-button link type="primary" @click="copyPassword">复制</el-button>
                   </div>
                 </el-form-item>
-                <el-form-item label="规则：">{{ getRoomTypeText(roomData.type) }}</el-form-item>
+                <el-form-item label="规则：">
+                  <div class="label-with-button">
+                    <div class="userName">
+                      <el-select v-if="showTypeInput" v-model="roomType">
+                        <el-option label="bingo 标准赛" :value="1"></el-option>
+                        <el-option label="bingo BP赛" :value="2"></el-option>
+                        <el-option label="bingo 自定义" :value="3"></el-option>
+                      </el-select>
+                      <span v-else> {{ getRoomTypeText(roomData.type) }}</span>
+                    </div>
+                    <el-button link type="primary" @click="editType">{{ showTypeInput ? "确认" : "修改" }}</el-button>
+                  </div>
+                </el-form-item>
                 <el-form-item label="创建者：">{{ roomData.host }}</el-form-item>
               </el-form>
               <div class="info-button">
                 <el-button type="primary" @click="leaveRoom">退出房间</el-button>
               </div>
             </div>
-            <div class="room-info-none" v-if="!roomData.rid">目前尚未加入房间</div>
+            <div class="room-info-none" v-if="!inRoom">目前尚未加入房间</div>
           </div>
         </el-tab-pane>
         <el-tab-pane label="房间设置" :name="1" class="tab-content"> </el-tab-pane>
@@ -43,13 +61,28 @@
 <script lang="ts">
 import { defineComponent, computed } from "vue";
 import { useStore } from "vuex";
-import { ElTabs, ElTabPane, ElDivider, ElForm, ElFormItem, ElButton, ElMessage } from "element-plus";
+import {
+  ElTabs,
+  ElTabPane,
+  ElDivider,
+  ElForm,
+  ElFormItem,
+  ElButton,
+  ElMessage,
+  ElInput,
+  ElSelect,
+  ElOption
+} from "element-plus";
 import ws from "@/utils/webSocket";
 export default defineComponent({
   name: "InfoWinfow",
   data() {
     return {
       tabIndex: 0,
+      showNameInput: false,
+      showTypeInput: false,
+      userName: "",
+      roomType: 1
     };
   },
   components: {
@@ -59,6 +92,9 @@ export default defineComponent({
     ElForm,
     ElFormItem,
     ElButton,
+    ElInput,
+    ElSelect,
+    ElOption
   },
   computed: {},
   setup() {
@@ -66,25 +102,43 @@ export default defineComponent({
     return {
       userData: computed(() => store.getters.userData),
       roomData: computed(() => store.getters.roomData),
+      inRoom: computed(() => !!store.getters.roomData.rid)
     };
+  },
+  mounted() {
+    this.userName = this.userData && this.userData.userName;
+    this.roomType = this.roomData && this.roomData.type;
+  },
+  watch: {
+    userData(val) {
+      this.userName = val.userName;
+    },
+    roomData(val) {
+      this.roomType = val.type;
+    },
   },
   methods: {
     handleClick() {},
     logout() {
       this.$store.commit("remove_user_data");
-      this.$store.dispatch("leave_room").then(() => {
+      if (this.inRoom) {
+        this.$store.dispatch("leave_room").then(() => {
+          ws.closeConnection();
+          this.$router.push("/login");
+        });
+      } else {
         ws.closeConnection();
         this.$router.push("/login");
-      });
+      }
     },
     getRoomTypeText(type: number) {
       switch (type) {
         case 1:
-          return "bingo标准赛";
+          return "bingo 标准赛";
         case 2:
           return "bingo BP赛";
         case 3:
-          return "";
+          return "bingo 自定义";
         default:
           return "未选择比赛类型";
       }
@@ -100,17 +154,48 @@ export default defineComponent({
         .then(() => {
           ElMessage({
             message: "已复制密码到剪切板",
-            type: "success",
+            type: "success"
           });
         })
         .catch(() => {
           ElMessage({
             message: "复制失败",
-            type: "error",
+            type: "error"
           });
         });
     },
-  },
+    editName() {
+      if (this.showNameInput === false) {
+        this.showNameInput = true;
+      } else {
+        if (this.userName !== this.userData.userName) {
+          const data = { ...this.userData };
+          data.userName = this.userName;
+          if (this.inRoom) {
+            this.$store.dispatch("update_name", { name: this.userName }).then(() => {
+              this.$store.commit("set_user_data", data);
+            });
+          } else {
+            this.$store.commit("set_user_data", data);
+          }
+        }
+        this.showNameInput = false;
+      }
+    },
+    editType() {
+      if (this.showTypeInput === false) {
+        this.showTypeInput = true;
+      } else {
+        if (this.roomType !== this.roomData.type) {
+          this.$store.dispatch("update_room_type", { type: this.roomType }).then(() => {
+            this.showTypeInput = false;
+          });
+        } else {
+          this.showTypeInput = false;
+        }
+      }
+    }
+  }
 });
 </script>
 
@@ -169,9 +254,16 @@ export default defineComponent({
   margin-top: 20px;
 }
 
-.room-passward {
+.label-with-button {
   width: 100%;
   display: flex;
   justify-content: space-between;
+}
+
+.userName {
+  width: 70%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 </style>
