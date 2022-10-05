@@ -62,3 +62,5 @@ export interface UserData {
   token: string;
   [index: string]: any;
 }
+
+export type Constructor<T> = new (...args: any[]) => T;

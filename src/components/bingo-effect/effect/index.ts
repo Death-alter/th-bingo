@@ -1,6 +1,7 @@
-import Effect from "./effect";
-// import { Flame } from "./flame";
+import Effect from "./lib/Effect";
 
-// Effect.add({ flame: Flame });
+import { Flame } from "./animation/flame";
+
+Effect.add("flame", Flame);
 
 export default Effect;
