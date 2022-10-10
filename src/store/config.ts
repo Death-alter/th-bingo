@@ -1,10 +1,15 @@
 import { createGetter, createAsyncMutations, createSyncMutation, createAction } from "./utils";
 import storeItems from "./storeItems";
-import { MutationHandler, ActionHandler } from "@/types";
+import { MutationHandler, ActionHandler, VuexState } from "@/types";
 
 const config = {
   state: {},
-  getters: {},
+  getters: {
+    inRoom: (state: VuexState) => !!state.roomData.data?.rid,
+    isHost: (state: VuexState) =>
+      state.roomData.data?.host && state.roomData.data?.host === state.userData.data?.userName,
+    inGame: (state: VuexState) => !!state.roomData.data?.started,
+  },
   mutations: {},
   actions: {},
 };
@@ -23,11 +28,7 @@ for (const item of storeItems) {
       config.state[item.name] = { data: item.default };
       config.getters[item.name] = createGetter(item.name, item.default, "mutation");
     }
-    config.mutations[item.mutationName] = createSyncMutation(
-      item.name,
-      item.wsName,
-      <MutationHandler>item.dataHandler
-    );
+    config.mutations[item.mutationName] = createSyncMutation(item.name, item.wsName, <MutationHandler>item.dataHandler);
   }
 
   if ("actionName" in item) {

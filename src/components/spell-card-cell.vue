@@ -1,7 +1,7 @@
 <template>
   <div class="spell-card-cell">
     <div class="spell-card-info">
-      <div class="level">
+      <div class="level" v-if="level">
         <div
           class="level-icons"
           :class="{
@@ -34,7 +34,7 @@ export default defineComponent({
   props: {
     level: {
       type: Number,
-      required: true,
+      default: 0,
     },
     name: {
       type: String,
@@ -63,6 +63,8 @@ export default defineComponent({
   position: relative;
   box-sizing: border-box;
   padding: 5px;
+  cursor: pointer;
+  user-select: none;
 
   .spell-card-info {
     width: 100%;

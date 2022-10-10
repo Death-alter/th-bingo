@@ -58,7 +58,9 @@ router.beforeEach((to, from, next) => {
         store.dispatch("login", { token: userData.token });
       });
       ws.on("reconnect", () => {
-        store.dispatch("login", { token: userData.token });
+        store.dispatch("login", { token: userData.token }).then(() => {
+          store.dispatch("get_spells");
+        });
       });
     }
   }

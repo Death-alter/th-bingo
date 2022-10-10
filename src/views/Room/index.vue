@@ -11,9 +11,6 @@
         <div class="game">
           <standard v-if="gameRule === 'standard'" />
         </div>
-        <div class="count-down-wrap">
-          <count-down :seconds="300" v-model:paused="paused"></count-down>
-        </div>
       </el-col>
       <el-col :span="4"></el-col>
     </el-row>
@@ -25,30 +22,29 @@ import { defineComponent, computed } from "vue";
 import { useStore } from "vuex";
 import { ElRow, ElCol } from "element-plus";
 import standard from "./games/standard.vue";
-import CountDown from "@/components/count-down.vue";
 
 export default defineComponent({
   name: "Room",
   data() {
     return {
       gameRule: "standard",
-      paused: true,
-      seconds: 10
     };
   },
   components: {
     standard,
     ElRow,
     ElCol,
-    CountDown
   },
   setup() {
     const store = useStore();
+    if(store.getters.roomData.started){
+      store.dispatch("get_spells")
+    }
     return {
-      roomData: computed(() => store.getters.roomData)
+      roomData: computed(() => store.getters.roomData),
     };
   },
-  methods: {}
+  methods: {},
 });
 </script>
 
@@ -75,10 +71,6 @@ export default defineComponent({
       text-align: left;
       width: 40%;
     }
-  }
-
-  .count-down-wrap {
-    font-size: 30px;
   }
 }
 </style>

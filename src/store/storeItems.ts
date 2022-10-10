@@ -16,7 +16,7 @@ const list: Array<StoreAction | StoreMutation> = [
       } else {
         return userData;
       }
-    }
+    },
   },
   {
     name: "userData",
@@ -25,7 +25,7 @@ const list: Array<StoreAction | StoreMutation> = [
     dataHandler: (newVal: RequestParams, oldVal: DefaultData): DefaultData => {
       Storage.local.set("userData", newVal);
       return newVal;
-    }
+    },
   },
   {
     name: "userData",
@@ -34,7 +34,7 @@ const list: Array<StoreAction | StoreMutation> = [
     dataHandler: (newVal: RequestParams, oldVal: DefaultData): DefaultData => {
       Storage.local.remove("userData");
       return {};
-    }
+    },
   },
   {
     name: "heartBeat",
@@ -43,7 +43,7 @@ const list: Array<StoreAction | StoreMutation> = [
     noParams: true,
     default: {
       time: 0, //本地时间戳
-      ping: 0 //ping值
+      ping: 0, //ping值
     },
     dataHandler: {
       pending(res: DefaultData, data: DefaultData, params: RequestParams) {
@@ -59,8 +59,8 @@ const list: Array<StoreAction | StoreMutation> = [
         }
         console.log("ping:", newData.ping);
         return newData;
-      }
-    }
+      },
+    },
   },
   {
     name: "roomData",
@@ -69,13 +69,14 @@ const list: Array<StoreAction | StoreMutation> = [
     default: {},
     dataHandler: {
       replied: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
+        router.push("/room");
         return res;
       },
       error: (res: DefaultData, data: DefaultData, params: RequestParams) => {
         ws.closeConnection();
         return res;
-      }
-    }
+      },
+    },
   },
   {
     name: "roomData",
@@ -86,11 +87,11 @@ const list: Array<StoreAction | StoreMutation> = [
       if (!newVal) {
         router.push("/");
         ElMessage({
-          message: "由于房主退出，房间已关闭"
+          message: "由于房主退出，房间已关闭",
         });
       }
       return newVal;
-    }
+    },
   },
   {
     name: "globalData",
@@ -100,19 +101,19 @@ const list: Array<StoreAction | StoreMutation> = [
     dataHandler(newVal: RequestParams, oldVal: DefaultData) {
       console.log(newVal);
       return newVal;
-    }
+    },
   },
   {
     name: "roomData",
     actionName: "create_room",
     wsName: "create_room",
-    default: {}
+    default: {},
   },
   {
     name: "roomData",
     actionName: "join_room",
     wsName: "join_room",
-    default: {}
+    default: {},
   },
   {
     name: "roomData",
@@ -121,19 +122,19 @@ const list: Array<StoreAction | StoreMutation> = [
     default: {},
     dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
       return {};
-    }
+    },
   },
   {
     name: "roomData",
     actionName: "update_room_type",
     wsName: "update_room_type",
-    default: {}
+    default: {},
   },
   {
     name: "roomData",
     actionName: "update_name",
     wsName: "update_name",
-    default: {}
+    default: {},
   },
   {
     name: "logList",
@@ -144,8 +145,36 @@ const list: Array<StoreAction | StoreMutation> = [
         oldVal.push(item);
       }
       return oldVal;
-    }) as MutationHandler
-  }
+    }) as MutationHandler,
+  },
+  {
+    name: "gameData",
+    actionName: "start_game",
+    wsName: "start_game",
+    default: {},
+  },
+  {
+    name: "gameData",
+    actionName: "get_spells",
+    wsName: "get_spells",
+    default: {},
+  },
+  {
+    name: "gameData",
+    actionName: "stop_game",
+    wsName: "stop_game",
+    default: {},
+  },
+
+  {
+    name: "roomSettings",
+    mutationName: "modify_room_settings",
+    default: {},
+    dataHandler: ((newVal: Array<any>, oldVal: DefaultData): DefaultData => {
+      console.log(newVal);
+      return newVal;
+    }) as MutationHandler,
+  },
 ];
 
 export default list;

@@ -60,6 +60,7 @@ export default defineComponent({
           this.minute = Math.floor(value / 60);
         }
       },
+      immediate: true,
     },
     paused: {
       handler(value) {
@@ -71,6 +72,7 @@ export default defineComponent({
           }
         }
       },
+      immediate: true,
     },
   },
   methods: {

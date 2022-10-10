@@ -1,183 +1,84 @@
 <template>
   <div class="rule-standard">
     <div class="bingo-wrap">
-      <div class="bingo-items">
-        <spell-card-cell
-          v-for="(item, index) in spellCardList"
-          :key="index"
-          :name="item.name"
-          :level="item.level"
-        ></spell-card-cell>
+      <div :class="{ 'bingo-items': true, empty: !gameData.spells || !gameData.spells.length }">
+        <spell-card-cell v-for="(item, index) in gameData.spells" :key="index" :name="item.name"></spell-card-cell>
       </div>
       <bingo-effect class="bingo-effect" />
+    </div>
+    <div class="count-down-wrap">
+      <count-down :seconds="roomSettings.countDownTime" v-model:paused="paused"></count-down>
+    </div>
+    <div v-if="isHost">
+      <el-button type="primary" @click="start">{{ inGame ? "结 束" : "开 始" }}</el-button>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, computed } from "vue";
+import { useStore } from "vuex";
 import SpellCardCell from "@/components/spell-card-cell.vue";
 import BingoEffect from "@/components/bingo-effect/index.vue";
+import CountDown from "@/components/count-down.vue";
+import { ElButton } from "element-plus";
 
 export default defineComponent({
   name: "Room",
   data() {
     return {
-      spellCardList: [
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 2,
-          name: "火符「火神之光辉」 ",
-        },
-        {
-          level: 3,
-          name: "「红色的幻想乡」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 3,
-          name: "采掘「妖怪们的盾构法」（即发狂）  ",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-        {
-          level: 1,
-          name: "月符「月光」",
-        },
-      ],
+      spellCardList: [],
       paused: true,
-      seconds: 10,
+      seconds: 300,
     };
   },
+
   components: {
     SpellCardCell,
     BingoEffect,
+    CountDown,
+    ElButton,
   },
-  mounted() {
-    if (this.spellCardList.length > 25) {
-      this.spellCardList = this.spellCardList.slice(0, 25);
-    }
+  setup() {
+    const store = useStore();
+    return {
+      gameData: computed(() => store.getters.gameData),
+      roomSettings: computed(() => store.getters.roomSettings),
+      inRoom: computed(() => store.getters.inRoom),
+      isHost: computed(() => store.getters.isHost),
+      inGame: computed(() => store.getters.inGame),
+    };
   },
-  methods: {},
+  methods: {
+    start() {
+      if (this.inGame) {
+        this.$store.dispatch("stop_game");
+      } else {
+        this.$store
+          .dispatch("start_game", {
+            time: this.roomSettings.gameTimeLimit,
+            games: this.roomSettings.checkList,
+          })
+          .then(() => {
+            this.paused = false;
+          });
+      }
+    },
+  },
 });
 </script>
 
 <style lang="scss" scoped>
 .rule-standard {
   width: 100%;
-  height: 560px;
-  box-sizing: border-box;
-  border-right: 1px solid #000;
-  border-bottom: 1px solid #000;
+  height: 100%;
 }
 
 .bingo-wrap {
   width: 100%;
-  height: 100%;
+  height: 500px;
+  box-sizing: border-box;
+
   position: relative;
 
   .bingo-items {
@@ -185,10 +86,26 @@ export default defineComponent({
     height: 100%;
     display: flex;
     flex-wrap: wrap;
+    border-bottom: 1px solid #000;
+    border-right: 1px solid #000;
+
+    &.empty {
+      border-top: 1px solid #000;
+      border-left: 1px solid #000;
+    }
+
     & > * {
       border-left: 1px solid #000;
       border-top: 1px solid #000;
     }
+
+    // &:nth-child(5n) {
+    //   border-left: 1px solid #000;
+    // }
+
+    // &:nth-child(n<5) {
+    //   border-top: 1px solid #000;
+    // }
   }
 }
 
@@ -198,5 +115,10 @@ export default defineComponent({
   left: 0;
   pointer-events: none;
   z-index: 99;
+}
+
+.count-down-wrap {
+  font-size: 30px;
+  margin: 10px 0;
 }
 </style>
