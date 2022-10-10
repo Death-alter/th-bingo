@@ -170,10 +170,6 @@ const list: Array<StoreAction | StoreMutation> = [
     name: "roomSettings",
     mutationName: "modify_room_settings",
     default: {},
-    dataHandler: ((newVal: Array<any>, oldVal: DefaultData): DefaultData => {
-      console.log(newVal);
-      return newVal;
-    }) as MutationHandler,
   },
 ];
 
