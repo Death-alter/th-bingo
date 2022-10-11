@@ -14,6 +14,7 @@ export default defineComponent({
 
 <style lang="scss">
 @import "@/assets/scss/variable.scss";
+@import "@/assets/scss/animation.scss";
 
 * {
   margin: 0;

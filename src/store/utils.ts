@@ -57,6 +57,7 @@ export const createSyncMutation = (name: string, wsName: string | undefined, cal
         });
       } else {
         store.commit(wsName + "_received", data);
+            console.log(wsName + "_received");
       }
     });
   }

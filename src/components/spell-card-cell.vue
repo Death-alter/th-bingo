@@ -20,7 +20,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, computed } from "vue";
+import { useStore } from "vuex";
 import { ElIcon } from "element-plus";
 
 export default defineComponent({
@@ -44,13 +45,19 @@ export default defineComponent({
       type: String,
       default: "",
     },
-    colors: {
-      type: Array,
-      default: () => ["red", "black"],
+    disabled: {
+      type: Boolean,
+      default: false,
     },
-    index: {
-      type: Number,
+    selecter: {
+      type: String,
     },
+  },
+  setup() {
+    const store = useStore();
+    return {
+      roomSettings: computed(() => store.getters.roomSettings),
+    };
   },
   methods: {},
 });
@@ -65,6 +72,7 @@ export default defineComponent({
   padding: 5px;
   cursor: pointer;
   user-select: none;
+  z-index: 1;
 
   .spell-card-info {
     width: 100%;
@@ -98,5 +106,22 @@ export default defineComponent({
       font-size: 14px;
     }
   }
+
+  // &::before {
+  //   content: "";
+  //   position: absolute;
+  //   left: 0;
+  //   top: 0;
+  //   width: 100%;
+  //   height: 100%;
+  //   background-color: var(--A-color);
+  //   z-index: -1;
+  //   -webkit-animation: breath 5s infinite linear;
+  //   animation: breath 5s infinite linear;
+  // }
+
+  // &::after {
+  //   background-color: var(--B-color);
+  // }
 }
 </style>

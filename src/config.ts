@@ -52,24 +52,38 @@ const gameOptionList = [
   },
   {
     code: "18",
-    name: "红龙洞",
+    name: "虹龙洞",
   },
 ];
 
-const predefineColors = [
-  "#ff4500",
-  "#ff8c00",
-  "#ffd700",
-  "#90ee90",
-  "#00ced1",
-  "#1e90ff",
-  "#c71585",
+const predefineColors = ["#ff4500", "#ff8c00", "#ffd700", "#90ee90", "#00ced1", "#1e90ff", "#c71585"];
+
+const gameTypeList = [
+  {
+    name: "bingo 标准赛",
+    type: 1,
+    timeLimit: 60, //分钟
+    countdown: 180, //秒
+  },
+  {
+    name: "bingo BP赛",
+    type: 2,
+    timeLimit: 60,
+    countdown: 300,
+  },
+  {
+    name: "bingo 自定义",
+    type: 3,
+    timeLimit: 60,
+    countdown: 300,
+  },
 ];
 
 class Config {
   public static readonly webSocket = WebSocketConfig;
   public static readonly gameOptionList = gameOptionList;
   public static readonly predefineColors = predefineColors;
+  public static readonly gameTypeList = gameTypeList;
 }
 
 export default Config;

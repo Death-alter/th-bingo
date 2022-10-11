@@ -1,0 +1,18 @@
+@keyframes breath {
+  from {
+    opacity: 0.2;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
+
+  to {
+    opacity: 0.2;
+  }
+}
+
+.breath {
+  -webkit-animation: breath 10s infinite linear;
+  animation: breath 10s infinite linear;
+}

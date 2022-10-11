@@ -26,7 +26,7 @@ export interface ActionHandler {
 }
 
 export interface MutationHandler {
-  (newVal: RequestParams | Array<any>, oldVal: DefaultData): DefaultData;
+  (newVal: any, oldVal: DefaultData): DefaultData;
 }
 
 export interface HandlerList {

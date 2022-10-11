@@ -30,17 +30,7 @@
                   </div>
                 </el-form-item>
                 <el-form-item label="规则：">
-                  <div class="label-with-button">
-                    <div>
-                      <el-select v-if="showTypeInput" v-model="roomType">
-                        <el-option label="bingo 标准赛" :value="1"></el-option>
-                        <el-option label="bingo BP赛" :value="2"></el-option>
-                        <el-option label="bingo 自定义" :value="3"></el-option>
-                      </el-select>
-                      <span v-else> {{ getRoomTypeText(roomData.type) }}</span>
-                    </div>
-                    <el-button link type="primary" @click="editType">{{ showTypeInput ? "确认" : "修改" }}</el-button>
-                  </div>
+                  {{ getRoomTypeText(roomData.type) }}
                 </el-form-item>
                 <el-form-item label="创建者：">{{ roomData.host }}</el-form-item>
               </el-form>
@@ -55,6 +45,22 @@
           <template v-if="isHost">
             <div class="setting-title">房间设置</div>
             <el-form label-width="90px">
+              <el-form-item label="规则：">
+                <div class="label-with-button">
+                  <div>
+                    <el-select v-if="showTypeInput" v-model="roomType">
+                      <el-option
+                        v-for="(item, index) in gameTypeList"
+                        :key="index"
+                        :label="item.name"
+                        :value="item.type"
+                      ></el-option>
+                    </el-select>
+                    <span v-else> {{ getRoomTypeText(roomData.type) }}</span>
+                  </div>
+                  <el-button link type="primary" @click="editType">{{ showTypeInput ? "确认" : "修改" }}</el-button>
+                </div>
+              </el-form-item>
               <el-form-item label="比赛时长：">
                 <el-input-number
                   class="input-number"
@@ -104,7 +110,7 @@
                 @change="synchroRoomSettings"
               />
             </el-form-item>
-            <el-form-item label="延迟时间：">
+            <el-form-item label="延迟时间：" v-if="isHost">
               <el-input-number
                 class="input-number"
                 v-model="roomSettings.playerA.delay"
@@ -129,7 +135,7 @@
                 @change="synchroRoomSettings"
               />
             </el-form-item>
-            <el-form-item label="延迟时间：">
+            <el-form-item label="延迟时间：" v-if="isHost">
               <el-input-number
                 class="input-number"
                 v-model="roomSettings.playerB.delay"
@@ -181,6 +187,7 @@ export default defineComponent({
       roomType: 1,
       gameList: config.gameOptionList,
       predefineColors: config.predefineColors,
+      gameTypeList: config.gameTypeList,
       roomSettings: {
         gameTimeLimit: 60,
         countDownTime: 300,
@@ -225,6 +232,10 @@ export default defineComponent({
   mounted() {
     this.userName = this.userData && this.userData.userName;
     this.roomType = this.roomData && this.roomData.type;
+    if (this.roomType) {
+      this.roomSettings.gameTimeLimit = this.gameTypeList[this.roomType - 1].timeLimit;
+      this.roomSettings.countDownTime = this.gameTypeList[this.roomType - 1].countdown;
+    }
     this.$store.commit("modify_room_settings", this.roomSettings);
   },
   watch: {
@@ -233,6 +244,22 @@ export default defineComponent({
     },
     roomData(val) {
       this.roomType = val.type;
+      if (this.roomType) {
+        this.roomSettings.gameTimeLimit = this.gameTypeList[this.roomType - 1].timeLimit;
+        this.roomSettings.countDownTime = this.gameTypeList[this.roomType - 1].countdown;
+      }
+    },
+    inRoom(val) {
+      if (val) {
+        this.tabIndex = 1;
+      } else {
+        this.tabIndex = 0;
+      }
+    },
+    inGame(val) {
+      if (val) {
+        this.tabIndex = 2;
+      }
     },
   },
   methods: {

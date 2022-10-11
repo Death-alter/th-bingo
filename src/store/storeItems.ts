@@ -3,6 +3,7 @@ import Storage from "@/utils/Storage";
 import ws from "@/utils/webSocket";
 import router from "@/router";
 import { ElMessage } from "element-plus";
+import store from ".";
 
 const list: Array<StoreAction | StoreMutation> = [
   {
@@ -98,10 +99,6 @@ const list: Array<StoreAction | StoreMutation> = [
     mutationName: "global_info_received",
     wsName: "global_info",
     default: {},
-    dataHandler(newVal: RequestParams, oldVal: DefaultData) {
-      console.log(newVal);
-      return newVal;
-    },
   },
   {
     name: "roomData",
@@ -137,6 +134,23 @@ const list: Array<StoreAction | StoreMutation> = [
     default: {},
   },
   {
+    name: "roomData",
+    mutationName: "change_game_state",
+    default: {},
+    dataHandler: ((newVal: boolean, oldVal: DefaultData): DefaultData => {
+      if (newVal !== undefined) {
+        oldVal.started = !!newVal;
+      } else {
+        if (oldVal.started) {
+          oldVal.started = false;
+        } else {
+          oldVal.started = true;
+        }
+      }
+      return oldVal;
+    }) as MutationHandler,
+  },
+  {
     name: "logList",
     mutationName: "add_log",
     default: [],
@@ -165,7 +179,26 @@ const list: Array<StoreAction | StoreMutation> = [
     wsName: "stop_game",
     default: {},
   },
-
+  {
+    name: "gameData",
+    mutationName: "stop_game_received",
+    wsName: "stop_game",
+    default: {},
+    dataHandler: ((newVal: null, oldVal: DefaultData): DefaultData => {
+      store.commit("change_game_state", false);
+      return oldVal;
+    }) as MutationHandler,
+  },
+  {
+    name: "gameData",
+    mutationName: "spell_list_received",
+    wsName: "spell_list",
+    default: {},
+    dataHandler: ((newVal: Array<any>, oldVal: DefaultData): DefaultData => {
+      store.commit("change_game_state", true);
+      return newVal;
+    }) as MutationHandler,
+  },
   {
     name: "roomSettings",
     mutationName: "modify_room_settings",

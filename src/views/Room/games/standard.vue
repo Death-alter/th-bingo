@@ -2,12 +2,22 @@
   <div class="rule-standard">
     <div class="bingo-wrap">
       <div :class="{ 'bingo-items': true, empty: !gameData.spells || !gameData.spells.length }">
-        <spell-card-cell v-for="(item, index) in gameData.spells" :key="index" :name="item.name"></spell-card-cell>
+        <spell-card-cell
+          v-for="(item, index) in gameData.spells"
+          :key="index"
+          :name="item.name"
+          @click="selectSpellCard"
+        ></spell-card-cell>
       </div>
       <bingo-effect class="bingo-effect" />
     </div>
     <div class="count-down-wrap">
-      <count-down :seconds="roomSettings.countDownTime" v-model:paused="paused"></count-down>
+      <count-down
+        ref="countDown"
+        :seconds="countDownSeconds || roomSettings.countDownTime"
+        @complete="onCountDownComplete"
+        v-show="standbyPhase"
+      ></count-down>
     </div>
     <div v-if="isHost">
       <el-button type="primary" @click="start">{{ inGame ? "结 束" : "开 始" }}</el-button>
@@ -16,7 +26,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed } from "vue";
+import { defineComponent, computed, ref } from "vue";
 import { useStore } from "vuex";
 import SpellCardCell from "@/components/spell-card-cell.vue";
 import BingoEffect from "@/components/bingo-effect/index.vue";
@@ -27,9 +37,9 @@ export default defineComponent({
   name: "Room",
   data() {
     return {
-      spellCardList: [],
       paused: true,
-      seconds: 300,
+      countDownSeconds: 0,
+      standbyPhase: false,
     };
   },
 
@@ -41,29 +51,64 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
+    const countDown = ref();
     return {
       gameData: computed(() => store.getters.gameData),
       roomSettings: computed(() => store.getters.roomSettings),
       inRoom: computed(() => store.getters.inRoom),
       isHost: computed(() => store.getters.isHost),
       inGame: computed(() => store.getters.inGame),
+      countDown,
     };
+  },
+  mounted() {
+    this.countDownSeconds = this.roomSettings.countDownTime;
+  },
+  watch: {
+    gameData(value) {
+      if (value.countdown && value.countdown !== this.countDownSeconds) {
+        this.countDownSeconds = value.countdown;
+      }
+      if (value.start_time) {
+        const seconds = this.countDownSeconds - (value.time - value.start_time) / 1000;
+        if (seconds > 0) {
+          this.standbyPhase = true;
+          this.countDownSeconds = Math.ceil(seconds);
+        }
+      }
+      if (value.spells) {
+        this.$nextTick(() => {
+          this.countDown.start();
+        });
+      }
+    },
   },
   methods: {
     start() {
       if (this.inGame) {
-        this.$store.dispatch("stop_game");
+        this.$store.dispatch("stop_game").then(() => {
+          this.$store.commit("change_game_state");
+          this.countDown.reset();
+        });
       } else {
         this.$store
           .dispatch("start_game", {
-            time: this.roomSettings.gameTimeLimit,
+            game_time: this.roomSettings.gameTimeLimit,
+            countdown: this.roomSettings.countDownTime,
             games: this.roomSettings.checkList,
           })
           .then(() => {
-            this.paused = false;
+            this.$store.commit("change_game_state");
+            this.standbyPhase = true;
+            this.countDown.start();
           });
       }
     },
+    onCountDownComplete() {
+      this.standbyPhase = false;
+    },
+    selectSpellCard() {},
+    confirmSelect() {},
   },
 });
 </script>
@@ -120,5 +165,6 @@ export default defineComponent({
 .count-down-wrap {
   font-size: 30px;
   margin: 10px 0;
+  height: 35px;
 }
 </style>

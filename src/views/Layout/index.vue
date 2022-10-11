@@ -1,5 +1,11 @@
 <template>
-  <div class="layout">
+  <div
+    class="layout"
+    :style="{
+      '--A-color': roomSettings.playerA && roomSettings.playerA.color,
+      '--B-color': roomSettings.playerB && roomSettings.playerB.color,
+    }"
+  >
     <div class="layout-inner">
       <div class="layout-main-window">
         <router-view />
@@ -13,7 +19,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, computed } from "vue";
+import { useStore } from "vuex";
 import InfoWindow from "./components/InfoWinfow.vue";
 
 export default defineComponent({
@@ -23,6 +30,12 @@ export default defineComponent({
   },
   components: {
     InfoWindow,
+  },
+  setup() {
+    const store = useStore();
+    return {
+      roomSettings: computed(() => store.getters.roomSettings),
+    };
   },
 });
 </script>

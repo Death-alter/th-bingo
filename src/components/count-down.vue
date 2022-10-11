@@ -31,16 +31,12 @@ export default defineComponent({
       type: Number,
       default: 60,
     },
-    paused: {
-      type: Boolean,
-      default: true,
-    },
   },
   watch: {
     seconds: {
       handler(value) {
-        this.stop();
         this.value = value;
+        this.pause();
         this.$emit("reset");
       },
       immediate: true,
@@ -58,18 +54,6 @@ export default defineComponent({
           this.minute = Math.floor(value / 60) % 60;
         } else if (value >= 60) {
           this.minute = Math.floor(value / 60);
-        }
-      },
-      immediate: true,
-    },
-    paused: {
-      handler(value) {
-        if (this.seconds > 0) {
-          if (value) {
-            this.pause();
-          } else {
-            this.start();
-          }
         }
       },
       immediate: true,
@@ -95,10 +79,13 @@ export default defineComponent({
     },
     stop() {
       this.pause();
-      this.$emit("update:paused", true);
       this.hour = 0;
       this.minute = 0;
       this.second = 0;
+    },
+    reset() {
+      this.stop();
+      this.value = this.seconds;
     },
     format(number: number): string {
       return number < 10 ? `0${number}` : "" + number;
