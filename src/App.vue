@@ -29,8 +29,37 @@ export default defineComponent({
   color: #2c3e50;
   width: 100vw;
   height: 100vh;
-  min-width: $minWidth;
-  min-height: $minHeight;
+}
+
+#app::after {
+  content: "";
+  position: absolute;
+  z-index: -99;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: url("~@/assets/image/background.png") no-repeat center center;
+  background-size: cover;
+  opacity: 0.5;
+}
+
+@media (max-width: $minWidth) {
+  #app {
+    width: $minWidth;
+  }
+  #app::after {
+    width: $minWidth;
+  }
+}
+
+@media (max-height: $minHeight) {
+  #app {
+    height: $minHeight;
+  }
+  #app::after {
+    height: $minHeight;
+  }
 }
 
 .relative-center {

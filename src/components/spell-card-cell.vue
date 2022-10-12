@@ -1,5 +1,15 @@
 <template>
-  <div class="spell-card-cell">
+  <div
+    :class="{
+      'spell-card-cell': true,
+      'A-selected': status === 1 || status === 5,
+      'A-attained': status === 2,
+      'B-selected': status === 4 || status === 5,
+      'B-attained': status === 8,
+      'A-local-selected': isPlayerA && selected,
+      'B-local-selected': isPlayerB && selected,
+    }"
+  >
     <div class="spell-card-info">
       <div class="level" v-if="level">
         <div
@@ -41,22 +51,25 @@ export default defineComponent({
       type: String,
       required: true,
     },
-    selectMode: {
-      type: String,
-      default: "",
-    },
     disabled: {
       type: Boolean,
       default: false,
     },
-    selecter: {
-      type: String,
+    status: {
+      type: Number,
+      default: 0,
+    },
+    selected: {
+      type: Boolean,
+      default: false,
     },
   },
   setup() {
     const store = useStore();
     return {
       roomSettings: computed(() => store.getters.roomSettings),
+      isPlayerA: computed(() => store.getters.isPlayerA),
+      isPlayerB: computed(() => store.getters.isPlayerB),
     };
   },
   methods: {},
@@ -65,14 +78,15 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 .spell-card-cell {
-  width: 20%;
-  height: 20%;
+  width: 100%;
+  height: 100%;
   position: relative;
   box-sizing: border-box;
-  padding: 5px;
+  padding: 4px;
   cursor: pointer;
   user-select: none;
   z-index: 1;
+  overflow: hidden;
 
   .spell-card-info {
     width: 100%;
@@ -107,21 +121,77 @@ export default defineComponent({
     }
   }
 
-  // &::before {
-  //   content: "";
-  //   position: absolute;
-  //   left: 0;
-  //   top: 0;
-  //   width: 100%;
-  //   height: 100%;
-  //   background-color: var(--A-color);
-  //   z-index: -1;
-  //   -webkit-animation: breath 5s infinite linear;
-  //   animation: breath 5s infinite linear;
-  // }
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+  }
 
-  // &::after {
-  //   background-color: var(--B-color);
-  // }
+  &::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+  }
+
+  &.A-selected {
+    &::before {
+      background-color: var(--A-color);
+      -webkit-animation: breath 5s infinite linear;
+      animation: breath 5s infinite linear;
+    }
+  }
+
+  &.B-selected {
+    &::after {
+      background-color: var(--B-color);
+      -webkit-animation: breath 5s infinite linear;
+      animation: breath 5s infinite linear;
+    }
+  }
+
+  &.A-selected.B-selected {
+    &::before {
+      transform: skew(-0.89rad) translateX(0%);
+      left: -50%;
+    }
+    &::after {
+      transform: skew(-0.89rad) translateX(0%);
+      left: 50%;
+    }
+  }
+
+  &.A-local-selected {
+    &::before {
+      background-color: var(--A-color);
+      opacity: 0.2;
+    }
+  }
+
+  &.B-local-selected {
+    &::after {
+      background-color: var(--B-color);
+      opacity: 0.2;
+    }
+  }
+
+  &.A-attained {
+    &::before {
+      background-color: var(--A-color);
+    }
+  }
+
+  &.B-attained {
+    &::before {
+      background-color: var(--B-color);
+    }
+  }
 }
 </style>

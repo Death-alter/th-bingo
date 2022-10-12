@@ -166,12 +166,35 @@ const list: Array<StoreAction | StoreMutation> = [
     actionName: "start_game",
     wsName: "start_game",
     default: {},
+    dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
+      if (!res.status) {
+        res.status = new Array(25).fill(0);
+      }
+      return res;
+    },
   },
   {
     name: "gameData",
     actionName: "get_spells",
     wsName: "get_spells",
     default: {},
+    dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
+      if (store.getters.isPlayerA) {
+        res.status.forEach((item: number, index: number) => {
+          if (item === 4 || item === 5) {
+            res.status[index] = item - 4;
+          }
+        });
+      }
+      if (store.getters.isPlayerB) {
+        res.status.forEach((item: number, index: number) => {
+          if (item === 1 || item === 5) {
+            res.status[index] = item - 1;
+          }
+        });
+      }
+      return res;
+    },
   },
   {
     name: "gameData",
@@ -194,9 +217,43 @@ const list: Array<StoreAction | StoreMutation> = [
     mutationName: "spell_list_received",
     wsName: "spell_list",
     default: {},
-    dataHandler: ((newVal: Array<any>, oldVal: DefaultData): DefaultData => {
+    dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
       store.commit("change_game_state", true);
+      if (!newVal.status) {
+        newVal.status = new Array(25).fill(0);
+      }
       return newVal;
+    }) as MutationHandler,
+  },
+  {
+    name: "gameData",
+    actionName: "update_spell",
+    wsName: "update_spell",
+    default: {},
+    dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
+      data.status[params.idx] = params.status;
+      return data;
+    },
+  },
+  {
+    name: "gameData",
+    mutationName: "update_spell_received",
+    wsName: "update_spell",
+    default: {},
+    dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
+      if (store.getters.isPlayerA) {
+        if (newVal.status === 4 || newVal.status === 5) {
+          oldVal.status[newVal.idx] = newVal.status - 4;
+        }
+      } else if (store.getters.isPlayerB) {
+        if (newVal.status === 1 || newVal.status === 5) {
+          oldVal.status[newVal.idx] = newVal.status - 1;
+        }
+      } else {
+        oldVal.status[newVal.idx] = newVal.status;
+      }
+
+      return oldVal;
     }) as MutationHandler,
   },
   {

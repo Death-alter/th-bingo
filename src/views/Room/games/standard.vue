@@ -1,13 +1,16 @@
+<!-- eslint-disable vue/no-parsing-error -->
 <template>
   <div class="rule-standard">
     <div class="bingo-wrap">
-      <div :class="{ 'bingo-items': true, empty: !gameData.spells || !gameData.spells.length }">
-        <spell-card-cell
-          v-for="(item, index) in gameData.spells"
-          :key="index"
-          :name="item.name"
-          @click="selectSpellCard"
-        ></spell-card-cell>
+      <div class="bingo-items">
+        <div class="spell-card" v-for="(item, index) in gameData.spells" :key="index">
+          <spell-card-cell
+            :name="item.name"
+            @click="selectSpellCard(index)"
+            :selected="selectedSpellIndex === index"
+            :status="gameData.status[index]"
+          ></spell-card-cell>
+        </div>
       </div>
       <bingo-effect class="bingo-effect" />
     </div>
@@ -21,6 +24,12 @@
     </div>
     <div v-if="isHost">
       <el-button type="primary" @click="start">{{ inGame ? "结 束" : "开 始" }}</el-button>
+    </div>
+    <div v-if="inGame && !isHost">
+      <el-button type="primary" @click="confirmSelect" :disabled="selectedSpellIndex < 0" v-if="!spellCardSelected"
+        >选择符卡</el-button
+      >
+      <el-button type="primary" @click="confirmAttained" v-if="spellCardSelected">确认收取</el-button>
     </div>
   </div>
 </template>
@@ -40,6 +49,7 @@ export default defineComponent({
       paused: true,
       countDownSeconds: 0,
       standbyPhase: false,
+      selectedSpellIndex: -1,
     };
   },
 
@@ -58,12 +68,26 @@ export default defineComponent({
       inRoom: computed(() => store.getters.inRoom),
       isHost: computed(() => store.getters.isHost),
       inGame: computed(() => store.getters.inGame),
+      isPlayerA: computed(() => store.getters.isPlayerA),
+      isPlayerB: computed(() => store.getters.isPlayerB),
+      plyaerASelectedIndex: computed(() => store.getters.plyaerASelectedIndex),
+      plyaerBSelectedIndex: computed(() => store.getters.plyaerBSelectedIndex),
+      spellCardSelected: computed(() => {
+        if (store.getters.isPlayerA) {
+          return store.getters.plyaerASelectedIndex !== -1;
+        }
+        if (store.getters.isPlayerB) {
+          return store.getters.plyaerBSelectedIndex !== -1;
+        }
+        return false;
+      }),
       countDown,
     };
   },
   mounted() {
     this.countDownSeconds = this.roomSettings.countDownTime;
   },
+
   watch: {
     gameData(value) {
       if (value.countdown && value.countdown !== this.countDownSeconds) {
@@ -107,8 +131,31 @@ export default defineComponent({
     onCountDownComplete() {
       this.standbyPhase = false;
     },
-    selectSpellCard() {},
-    confirmSelect() {},
+    selectSpellCard(index: number) {
+      if (!this.spellCardSelected && this.gameData.status[index] === 0) {
+        this.selectedSpellIndex = index;
+      }
+    },
+    confirmSelect() {
+      if (this.isPlayerA) {
+        this.$store.dispatch("update_spell", { idx: this.selectedSpellIndex, status: 1 }).then(() => {
+          this.selectedSpellIndex = -1;
+        });
+      }
+      if (this.isPlayerB) {
+        this.$store.dispatch("update_spell", { idx: this.selectedSpellIndex, status: 4 }).then(() => {
+          this.selectedSpellIndex = -1;
+        });
+      }
+    },
+    confirmAttained() {
+      if (this.isPlayerA) {
+        this.$store.dispatch("update_spell", { idx: this.plyaerASelectedIndex, status: 2 });
+      }
+      if (this.isPlayerB) {
+        this.$store.dispatch("update_spell", { idx: this.plyaerBSelectedIndex, status: 8 });
+      }
+    },
   },
 });
 </script>
@@ -131,26 +178,19 @@ export default defineComponent({
     height: 100%;
     display: flex;
     flex-wrap: wrap;
-    border-bottom: 1px solid #000;
-    border-right: 1px solid #000;
+    justify-content: space-between;
+    align-content: space-between;
+    border: 1px solid #000;
+    border-radius: 4px;
+    padding: 2px;
+    box-sizing: border-box;
 
-    &.empty {
-      border-top: 1px solid #000;
-      border-left: 1px solid #000;
+    .spell-card {
+      border: 1px solid #000;
+      border-radius: 4px;
+      width: 19.4%;
+      height: 19.4%;
     }
-
-    & > * {
-      border-left: 1px solid #000;
-      border-top: 1px solid #000;
-    }
-
-    // &:nth-child(5n) {
-    //   border-left: 1px solid #000;
-    // }
-
-    // &:nth-child(n<5) {
-    //   border-top: 1px solid #000;
-    // }
   }
 }
 

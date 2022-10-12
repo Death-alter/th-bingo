@@ -14,7 +14,6 @@
         <info-window></info-window>
       </div>
     </div>
-    <div class="layout-background"></div>
   </div>
 </template>
 
@@ -58,7 +57,7 @@ export default defineComponent({
       height: $minHeight;
       box-shadow: #00000044 0 0 5px 5px;
       border-radius: 5px;
-      padding: 10px 15px;
+      padding: 10px;
       box-sizing: border-box;
       position: relative;
       overflow: hidden;
@@ -77,17 +76,6 @@ export default defineComponent({
     }
   }
 
-  .layout-background {
-    position: absolute;
-    z-index: -99;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background: url("~@/assets/image/background.png") no-repeat center center;
-    background-size: cover;
-    opacity: 0.5;
-  }
 }
 
 @media (min-width: $minWidth) and (min-height: $minHeight) {
