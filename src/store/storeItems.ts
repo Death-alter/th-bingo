@@ -5,6 +5,30 @@ import router from "@/router";
 import { ElMessage } from "element-plus";
 import store from ".";
 
+function logSpellCard(status: number, oldStatus: number, index: number) {
+  switch (status) {
+    case 1:
+      store.commit("add_log", [{ tag: "playerA" }, { text: "选择了符卡" }, { tag: "spellCard", index }]);
+      break;
+    case 2:
+      if (oldStatus === 1) {
+        store.commit("add_log", [{ tag: "playerB" }, { text: "选择了符卡" }, { tag: "spellCard", index }]);
+      } else {
+        store.commit("add_log", [{ tag: "playerA" }, { text: "选择了符卡" }, { tag: "spellCard", index }]);
+      }
+      break;
+    case 3:
+      store.commit("add_log", [{ tag: "playerB" }, { text: "选择了符卡" }, { tag: "spellCard", index }]);
+      break;
+    case 5:
+      store.commit("add_log", [{ tag: "playerA" }, { text: "收取了符卡" }, { tag: "spellCard", index }]);
+      break;
+    case 7:
+      store.commit("add_log", [{ tag: "playerB" }, { text: "收取了符卡" }, { tag: "spellCard", index }]);
+      break;
+  }
+}
+
 const list: Array<StoreAction | StoreMutation> = [
   {
     name: "userData",
@@ -84,12 +108,15 @@ const list: Array<StoreAction | StoreMutation> = [
     mutationName: "room_info_received",
     wsName: "room_info",
     default: {},
-    dataHandler(newVal: RequestParams, oldVal: DefaultData) {
+    dataHandler(newVal: DefaultData, oldVal: DefaultData) {
       if (!newVal) {
         router.push("/");
         ElMessage({
           message: "由于房主退出，房间已关闭",
         });
+      }
+      if (newVal.started === false) {
+        store.commit("clear_game_data");
       }
       return newVal;
     },
@@ -154,10 +181,8 @@ const list: Array<StoreAction | StoreMutation> = [
     name: "logList",
     mutationName: "add_log",
     default: [],
-    dataHandler: ((newVal: Array<any>, oldVal: DefaultData): DefaultData => {
-      for (const item of newVal) {
-        oldVal.push(item);
-      }
+    dataHandler: ((newVal: Array<any>, oldVal: Array<any>): DefaultData => {
+      oldVal.push(newVal);
       return oldVal;
     }) as MutationHandler,
   },
@@ -167,6 +192,7 @@ const list: Array<StoreAction | StoreMutation> = [
     wsName: "start_game",
     default: {},
     dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
+      store.commit("add_log", [{ text: "比赛开始，倒计时" }, { text: `${res.countdown}秒`, color: "red" }]);
       if (!res.status) {
         res.status = new Array(25).fill(0);
       }
@@ -181,15 +207,15 @@ const list: Array<StoreAction | StoreMutation> = [
     dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
       if (store.getters.isPlayerA) {
         res.status.forEach((item: number, index: number) => {
-          if (item === 4 || item === 5) {
-            res.status[index] = item - 4;
+          if (item === 3 || item === 2) {
+            res.status[index] = item * 2 - 3;
           }
         });
       }
       if (store.getters.isPlayerB) {
         res.status.forEach((item: number, index: number) => {
-          if (item === 1 || item === 5) {
-            res.status[index] = item - 1;
+          if (item === 1 || item === 2) {
+            res.status[index] = item * 2 - 1;
           }
         });
       }
@@ -197,10 +223,25 @@ const list: Array<StoreAction | StoreMutation> = [
     },
   },
   {
-    name: "gameData",
+    name: "roomData",
     actionName: "stop_game",
     wsName: "stop_game",
     default: {},
+    dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
+      if (res.started === false) {
+        store.commit("clear_game_data");
+      }
+      console.log(res, data);
+      return res;
+    },
+  },
+  {
+    name: "gameData",
+    mutationName: "clear_game_data",
+    default: {},
+    dataHandler: ((newVal: null, oldVal: DefaultData): DefaultData => {
+      return {};
+    }) as MutationHandler,
   },
   {
     name: "gameData",
@@ -209,6 +250,7 @@ const list: Array<StoreAction | StoreMutation> = [
     default: {},
     dataHandler: ((newVal: null, oldVal: DefaultData): DefaultData => {
       store.commit("change_game_state", false);
+      store.commit("add_log", [{ text: "比赛已结束" }]);
       return oldVal;
     }) as MutationHandler,
   },
@@ -219,6 +261,11 @@ const list: Array<StoreAction | StoreMutation> = [
     default: {},
     dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
       store.commit("change_game_state", true);
+      store.commit("add_log", [
+        { text: "比赛开始，你有" },
+        { text: `${newVal.countdown}秒`, color: "red" },
+        { text: "的时间来进行规划" },
+      ]);
       if (!newVal.status) {
         newVal.status = new Array(25).fill(0);
       }
@@ -231,6 +278,7 @@ const list: Array<StoreAction | StoreMutation> = [
     wsName: "update_spell",
     default: {},
     dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
+      logSpellCard(params.status, data.status[params.idx], params.idx);
       data.status[params.idx] = params.status;
       return data;
     },
@@ -241,18 +289,15 @@ const list: Array<StoreAction | StoreMutation> = [
     wsName: "update_spell",
     default: {},
     dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
-      if (store.getters.isPlayerA) {
-        if (newVal.status === 4 || newVal.status === 5) {
-          oldVal.status[newVal.idx] = newVal.status - 4;
-        }
-      } else if (store.getters.isPlayerB) {
-        if (newVal.status === 1 || newVal.status === 5) {
-          oldVal.status[newVal.idx] = newVal.status - 1;
-        }
+      const oldStatus = oldVal.status[newVal.idx];
+      if (store.getters.isPlayerA && (newVal.status === 3 || newVal.status === 2)) {
+        oldVal.status[newVal.idx] = newVal.status * 2 - 3;
+      } else if (store.getters.isPlayerB && (newVal.status === 1 || newVal.status === 2)) {
+        oldVal.status[newVal.idx] = newVal.status * 2 - 1;
       } else {
         oldVal.status[newVal.idx] = newVal.status;
       }
-
+      logSpellCard(oldVal.status[newVal.idx], oldStatus, newVal.idx);
       return oldVal;
     }) as MutationHandler,
   },

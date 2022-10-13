@@ -53,11 +53,11 @@ export const createSyncMutation = (name: string, wsName: string | undefined, cal
       if (resName === "error_sc") {
         ElMessage({
           message: data.msg,
-          type: "error"
+          type: "error",
         });
       } else {
         store.commit(wsName + "_received", data);
-            console.log(wsName + "_received");
+        console.log(wsName + "_received");
       }
     });
   }
@@ -89,11 +89,12 @@ export const createAction = (
       }
       ElMessage({
         message: data.msg,
-        type: "error"
+        type: "error",
       });
       store.commit(actionName + "_error", data);
       promisePool[token].reject(data);
     } else {
+      console.log(data);
       if (callback instanceof Function) {
         data = callback(data, store.state[name].data, requestParams);
       } else if ("replied" in callback && callback.replied) {
@@ -109,7 +110,7 @@ export const createAction = (
       if (ws.state !== 1) {
         ElMessage({
           message: "网络连接异常，请刷新页面重试",
-          type: "error"
+          type: "error",
         });
         reject();
       }
@@ -117,7 +118,7 @@ export const createAction = (
       if (state[name].status !== "pending") {
         promisePool[token] = {
           resolve,
-          reject
+          reject,
         };
         requestParams = data;
         if (noParams) {

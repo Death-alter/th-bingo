@@ -148,7 +148,15 @@
             </el-form-item>
           </el-form>
         </el-tab-pane>
-        <el-tab-pane label="操作记录" :name="2" class="tab-content"> </el-tab-pane>
+        <el-tab-pane label="操作记录" :name="2" class="tab-content">
+          <el-scrollbar>
+            <div class="log-list">
+              <div class="log-list-item" v-for="(log, index) in logList" :key="index">
+                <span v-for="(v, i) in log" :key="i" :style="getLogStyle(v)">{{ getLogText(v) }}</span>
+              </div>
+            </div>
+          </el-scrollbar>
+        </el-tab-pane>
       </el-tabs>
     </div>
   </div>
@@ -156,6 +164,7 @@
 
 <script lang="ts">
 import { defineComponent, computed } from "vue";
+import { DefaultData } from "@/types";
 import { useStore } from "vuex";
 import {
   ElTabs,
@@ -172,6 +181,7 @@ import {
   ElCheckbox,
   ElInputNumber,
   ElColorPicker,
+  ElScrollbar,
 } from "element-plus";
 import ws from "@/utils/webSocket";
 import config from "@/config";
@@ -193,11 +203,11 @@ export default defineComponent({
         countDownTime: 300,
         checkList: ["6", "7", "8", "10", "11", "12", "13", "14", "15", "16", "17", "18"],
         playerA: {
-          color: "#ff4500",
+          color: "hsl(16, 100%, 50%)",
           delay: 5,
         },
         playerB: {
-          color: "#1e90ff",
+          color: "hsl(210, 100%, 56%)",
           delay: 5,
         },
       },
@@ -217,6 +227,7 @@ export default defineComponent({
     ElCheckbox,
     ElInputNumber,
     ElColorPicker,
+    ElScrollbar,
   },
   computed: {},
   setup() {
@@ -224,9 +235,11 @@ export default defineComponent({
     return {
       userData: computed(() => store.getters.userData),
       roomData: computed(() => store.getters.roomData),
+      gameData: computed(() => store.getters.gameData),
       inRoom: computed(() => store.getters.inRoom),
       isHost: computed(() => store.getters.isHost),
       inGame: computed(() => store.getters.inGame),
+      logList: computed(() => store.getters.logList),
     };
   },
   mounted() {
@@ -343,6 +356,42 @@ export default defineComponent({
     synchroRoomSettings() {
       this.$store.commit("modify_room_settings", this.roomSettings);
     },
+    getLogStyle(v: DefaultData) {
+      const style: DefaultData = {};
+      if (v.tag) {
+        style.padding = "0 2px";
+        switch (v.tag) {
+          case "playerA":
+            style.color = "var(--A-color)";
+            break;
+          case "playerB":
+            style.color = "var(--B-color)";
+            break;
+          case "spellCard":
+            style.fontWeight = 600;
+            break;
+          default:
+        }
+      } else if (v.color) {
+        style.color = v.color;
+      }
+      return style;
+    },
+    getLogText(v: DefaultData) {
+      if (v.tag) {
+        switch (v.tag) {
+          case "playerA":
+            return this.roomData.names[0];
+          case "playerB":
+            return this.roomData.names[1];
+          case "spellCard":
+            return this.gameData.spells[v.index].name;
+          default:
+        }
+      } else {
+        return v.text;
+      }
+    },
   },
 });
 </script>
@@ -428,5 +477,14 @@ export default defineComponent({
 
 .input-number-text {
   margin-left: 5px;
+}
+
+.log-list {
+  text-align: left;
+  margin-right: 6px;
+}
+
+.log-list-item {
+  margin-bottom: 4px;
 }
 </style>

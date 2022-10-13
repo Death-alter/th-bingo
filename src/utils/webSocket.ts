@@ -95,6 +95,7 @@ export class WS {
 
         this.ws.onmessage = (event) => {
           const res = JSON.parse(event.data);
+          console.log(event.data)
           if (res.reply && this.eventList[res.reply]) {
             for (const callback of this.eventList[res.reply]) {
               callback(res.name, res.data, this);

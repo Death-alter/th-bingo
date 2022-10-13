@@ -4,6 +4,8 @@
     :style="{
       '--A-color': roomSettings.playerA && roomSettings.playerA.color,
       '--B-color': roomSettings.playerB && roomSettings.playerB.color,
+      '--A-color-dark': roomSettings.playerA && getDarkColor(roomSettings.playerA.color),
+      '--B-color-dark': roomSettings.playerB && getDarkColor(roomSettings.playerB.color),
     }"
   >
     <div class="layout-inner">
@@ -35,6 +37,19 @@ export default defineComponent({
     return {
       roomSettings: computed(() => store.getters.roomSettings),
     };
+  },
+  methods: {
+    getDarkColor(color: string) {
+      const arr = color.match(/\((.*),(.*)%,(.*)%(,(.*))?\)/);
+      if (arr === null) {
+        return "";
+      }
+      if (arr[5]) {
+        return `hsla(${arr[1]},${arr[2]}%,${parseInt(arr[3]) - 20}%,${arr[5]})`;
+      } else {
+        return `hsl(${arr[1]},${arr[2]}%,${parseInt(arr[3]) - 20}%)`;
+      }
+    },
   },
 });
 </script>
@@ -75,7 +90,6 @@ export default defineComponent({
       background-color: #ffffffdd;
     }
   }
-
 }
 
 @media (min-width: $minWidth) and (min-height: $minHeight) {

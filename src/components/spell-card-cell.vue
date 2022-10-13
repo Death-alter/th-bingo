@@ -2,10 +2,10 @@
   <div
     :class="{
       'spell-card-cell': true,
-      'A-selected': status === 1 || status === 5,
-      'A-attained': status === 2,
-      'B-selected': status === 4 || status === 5,
-      'B-attained': status === 8,
+      'A-selected': status === 1 || status === 2,
+      'A-attained': status === 5,
+      'B-selected': status === 3 || status === 2,
+      'B-attained': status === 7,
       'A-local-selected': isPlayerA && selected,
       'B-local-selected': isPlayerB && selected,
     }"
@@ -143,7 +143,7 @@ export default defineComponent({
 
   &.A-selected {
     &::before {
-      background-color: var(--A-color);
+      background-image: linear-gradient(var(--A-color) 60%, var(--A-color-dark));
       -webkit-animation: breath 5s infinite linear;
       animation: breath 5s infinite linear;
     }
@@ -151,7 +151,7 @@ export default defineComponent({
 
   &.B-selected {
     &::after {
-      background-color: var(--B-color);
+      background-image: linear-gradient(var(--B-color) 60%, var(--B-color-dark));
       -webkit-animation: breath 5s infinite linear;
       animation: breath 5s infinite linear;
     }
@@ -170,27 +170,27 @@ export default defineComponent({
 
   &.A-local-selected {
     &::before {
-      background-color: var(--A-color);
+      background-image: linear-gradient(var(--A-color) 60%, var(--A-color-dark));
       opacity: 0.2;
     }
   }
 
   &.B-local-selected {
     &::after {
-      background-color: var(--B-color);
+      background-image: linear-gradient(var(--B-color) 60%, var(--B-color-dark));
       opacity: 0.2;
     }
   }
 
   &.A-attained {
     &::before {
-      background-color: var(--A-color);
+      background-image: linear-gradient(var(--A-color) 60%, var(--A-color-dark));
     }
   }
 
   &.B-attained {
     &::before {
-      background-color: var(--B-color);
+      background-image: linear-gradient(var(--B-color) 60%, var(--B-color-dark));
     }
   }
 }

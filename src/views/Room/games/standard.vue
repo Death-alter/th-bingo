@@ -35,12 +35,12 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ref } from "vue";
+import { defineComponent, computed, ref, h } from "vue";
 import { useStore } from "vuex";
 import SpellCardCell from "@/components/spell-card-cell.vue";
 import BingoEffect from "@/components/bingo-effect/index.vue";
 import CountDown from "@/components/count-down.vue";
-import { ElButton } from "element-plus";
+import { ElButton, ElMessageBox, ElRadio, ElRadioGroup } from "element-plus";
 
 export default defineComponent({
   name: "Room",
@@ -50,6 +50,7 @@ export default defineComponent({
       countDownSeconds: 0,
       standbyPhase: false,
       selectedSpellIndex: -1,
+      winFlag: 0,
     };
   },
 
@@ -64,6 +65,7 @@ export default defineComponent({
     const countDown = ref();
     return {
       gameData: computed(() => store.getters.gameData),
+      roomData: computed(() => store.getters.roomData),
       roomSettings: computed(() => store.getters.roomSettings),
       inRoom: computed(() => store.getters.inRoom),
       isHost: computed(() => store.getters.isHost),
@@ -105,15 +107,120 @@ export default defineComponent({
           this.countDown.start();
         });
       }
+
+      const status = value.status;
+      if (status && status.length) {
+        if (status.indexOf(0) === -1) {
+        }
+
+        for (let i = 0; i < 5; i++) {
+          let sumR = 0;
+          let sumC = 0;
+          for (let j = 0; j < 5; j++) {
+            sumR += status[i * 5 + j];
+            sumC += status[j * 5 + i];
+          }
+          if (sumR === 10) {
+            this.winFlag = -i;
+            return;
+          } else if (sumR === 40) {
+            this.winFlag = i;
+            return;
+          }
+          if (sumC === 10) {
+            this.winFlag = -(i + 5);
+            return;
+          } else if (sumC === 40) {
+            this.winFlag = i + 5;
+            return;
+          }
+        }
+        const mainDiagonalSum = status[0] + status[6] + status[12] + status[18] + status[24];
+        if (mainDiagonalSum === 10) {
+          this.winFlag = -11;
+          return;
+        } else if (mainDiagonalSum === 40) {
+          this.winFlag = 11;
+          return;
+        }
+        const subDiagonalSum = status[4] + status[8] + status[12] + status[16] + status[20];
+        if (subDiagonalSum === 10) {
+          this.winFlag = -11;
+          return;
+        } else if (subDiagonalSum === 40) {
+          this.winFlag = 11;
+          return;
+        }
+      }
+    },
+    roomData(value) {
+      console.log(value);
+      if (!value.started) {
+        this.standbyPhase = false;
+      }
     },
   },
   methods: {
     start() {
       if (this.inGame) {
-        this.$store.dispatch("stop_game").then(() => {
-          this.$store.commit("change_game_state");
-          this.countDown.reset();
-        });
+        if (this.winFlag === 0) {
+          const checked = ref<boolean | string | number>(-1);
+          ElMessageBox({
+            title: "还没有人获胜，现在结束比赛请选择一个选项",
+            message: () =>
+              h(
+                ElRadioGroup,
+                {
+                  modelValue: checked.value,
+                  "onUpdate:modelValue": (val: boolean | string | number) => {
+                    checked.value = val;
+                  },
+                },
+                () => [
+                  h(
+                    ElRadio,
+                    {
+                      label: -1,
+                    },
+                    {
+                      default: () => "结果作废",
+                    }
+                  ),
+                  h(
+                    ElRadio,
+                    {
+                      label: 0,
+                    },
+                    {
+                      default: () => this.roomData.names[0] + "获胜",
+                    }
+                  ),
+                  h(
+                    ElRadio,
+                    {
+                      label: 1,
+                    },
+                    {
+                      default: () => this.roomData.names[1] + "获胜",
+                    }
+                  ),
+                ]
+              ),
+          }).then(() => {
+            //winner
+            if (checked.value < 0) {
+              this.$store.dispatch("stop_game").then(() => {
+                this.$store.commit("change_game_state");
+                this.countDown.reset();
+              });
+            } else {
+              this.$store.dispatch("stop_game", { winner: checked.value }).then(() => {
+                this.$store.commit("change_game_state");
+                this.countDown.reset();
+              });
+            }
+          });
+        }
       } else {
         this.$store
           .dispatch("start_game", {
@@ -143,17 +250,17 @@ export default defineComponent({
         });
       }
       if (this.isPlayerB) {
-        this.$store.dispatch("update_spell", { idx: this.selectedSpellIndex, status: 4 }).then(() => {
+        this.$store.dispatch("update_spell", { idx: this.selectedSpellIndex, status: 3 }).then(() => {
           this.selectedSpellIndex = -1;
         });
       }
     },
     confirmAttained() {
       if (this.isPlayerA) {
-        this.$store.dispatch("update_spell", { idx: this.plyaerASelectedIndex, status: 2 });
+        this.$store.dispatch("update_spell", { idx: this.plyaerASelectedIndex, status: 5 });
       }
       if (this.isPlayerB) {
-        this.$store.dispatch("update_spell", { idx: this.plyaerBSelectedIndex, status: 8 });
+        this.$store.dispatch("update_spell", { idx: this.plyaerBSelectedIndex, status: 7 });
       }
     },
   },

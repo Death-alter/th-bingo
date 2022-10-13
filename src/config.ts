@@ -56,7 +56,15 @@ const gameOptionList = [
   },
 ];
 
-const predefineColors = ["#ff4500", "#ff8c00", "#ffd700", "#90ee90", "#00ced1", "#1e90ff", "#c71585"];
+const predefineColors = [
+  "hsl(16, 100%, 50%)",
+  "hsl(33, 100%, 50%)",
+  "hsl(51, 100%, 50%)",
+  "hsl(120, 72%, 75%)",
+  "hsl(181, 100%, 41%)",
+  "hsl(210, 100%, 56%)",
+  "hsl(322, 80%, 43%)",
+];
 
 const gameTypeList = [
   {
