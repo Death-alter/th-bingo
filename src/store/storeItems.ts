@@ -29,7 +29,7 @@ function logSpellCard(status: number, oldStatus: number, index: number) {
       break;
     case 7:
       if (oldStatus === 1) {
-        store.commit("add_log", [{ tag: "playerB" }, { text: "抢了你选择的符卡"  }, { tag: "spellCard", index }]);
+        store.commit("add_log", [{ tag: "playerB" }, { text: "抢了你选择的符卡" }, { tag: "spellCard", index }]);
       } else {
         store.commit("add_log", [{ tag: "playerB" }, { text: "收取了符卡" }, { tag: "spellCard", index }]);
       }
@@ -218,9 +218,8 @@ const list: Array<StoreAction | StoreMutation> = [
         }
         return item;
       });
-      console.log(log);
       oldVal.push(log);
-      return oldVal;
+      return [...oldVal];
     }) as MutationHandler,
   },
   {
@@ -229,7 +228,11 @@ const list: Array<StoreAction | StoreMutation> = [
     wsName: "start_game",
     default: {},
     dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
-      store.commit("add_log", [{ text: "比赛开始，倒计时" }, { text: `${res.countdown}秒`, color: "red" }]);
+      store.commit("add_log", [
+        { text: "符卡抽取完成，" },
+        { text: `${res.countdown}秒`, color: "red" },
+        { text: "后比赛开始" },
+      ]);
       if (!res.status) {
         res.status = new Array(25).fill(0);
       }
@@ -303,7 +306,7 @@ const list: Array<StoreAction | StoreMutation> = [
     dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
       store.commit("change_game_state", true);
       store.commit("add_log", [
-        { text: "比赛开始，你有" },
+        { text: "符卡抽取完成，你有" },
         { text: `${newVal.countdown}秒`, color: "red" },
         { text: "的时间来进行规划" },
       ]);

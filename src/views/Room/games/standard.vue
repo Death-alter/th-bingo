@@ -2,7 +2,7 @@
 <template>
   <div class="rule-standard">
     <div class="bingo-wrap">
-      <right-click-menu style="width: 100%; height: 100%;" :menuData="menuData">
+      <right-click-menu style="width: 100%; height: 100%" :menuData="menuData" :disabled="!isHost" @click="onMenuClick">
         <div class="bingo-items">
           <template v-if="gameData.spells">
             <div class="spell-card" v-for="(item, index) in gameData.spells" :key="index">
@@ -11,6 +11,7 @@
                 @click="selectSpellCard(index)"
                 :selected="selectedSpellIndex === index"
                 :status="gameData.status[index]"
+                :index="index"
               ></spell-card-cell>
             </div>
           </template>
@@ -30,7 +31,7 @@
       ></count-down>
     </div>
     <div v-if="isHost">
-      <el-button type="primary" @click="start" v-if="winFlag === 0">{{ inGame ? "结 束" : "开 始" }}</el-button>
+      <el-button type="primary" @click="start" v-if="winFlag === 0">{{ inGame ? "结束比赛" : "抽取符卡" }}</el-button>
       <el-button type="primary" @click="confirmWinner" v-else
         >确认：{{ winFlag < 0 ? roomData.names[0] : roomData.names[1] }}获胜</el-button
       >
@@ -72,18 +73,18 @@ export default defineComponent({
           label: "置空",
           value: 0,
         },
-        {
-          label: "左侧玩家选择",
-          value: 1,
-        },
-        {
-          label: "右侧玩家选择",
-          value: 3,
-        },
-        {
-          label: "两侧玩家选择",
-          value: 2,
-        },
+        // {
+        //   label: "左侧玩家选择",
+        //   value: 1,
+        // },
+        // {
+        //   label: "右侧玩家选择",
+        //   value: 3,
+        // },
+        // {
+        //   label: "两侧玩家选择",
+        //   value: 2,
+        // },
         {
           label: "左侧玩家收取",
           value: 5,
@@ -155,6 +156,7 @@ export default defineComponent({
       if (status && status.length) {
         const available: number[] = new Array(12).fill(2);
         const sumArr: number[] = new Array(12).fill(0);
+        this.winFlag = 0;
         let countA = 0;
         let countB = 0;
         status.forEach((item: number, index: number) => {
@@ -205,16 +207,16 @@ export default defineComponent({
         if (countB >= 13) {
           this.winFlag = 13;
         }
-
         if (this.winFlag !== 0) {
           this.alertInfo = "已满足胜利条件，等待房主判断";
           this.alertInfoColor = "red";
         }
-        console.log(available, sumArr);
       }
     },
     roomData(value) {
       if (!value.started) {
+        this.alertInfo = "等待房主抽取符卡";
+        this.alertInfoColor = "#000";
         this.standbyPhase = false;
       }
       if (value.winner !== undefined) {
@@ -303,7 +305,9 @@ export default defineComponent({
       this.countDownCompleted = true;
     },
     selectSpellCard(index: number) {
-      if (!this.spellCardSelected && this.gameData.status[index] === 0) {
+      if (this.selectedSpellIndex === index) {
+        this.selectedSpellIndex = -1;
+      } else if (!this.spellCardSelected && this.gameData.status[index] === 0) {
         this.selectedSpellIndex = index;
       }
     },
@@ -332,6 +336,9 @@ export default defineComponent({
         this.winFlag = 0;
         this.countDown.reset();
       });
+    },
+    onMenuClick({ event, target, item }: any) {
+      this.$store.dispatch("update_spell", { idx: target.getAttribute("index"), status: item.value });
     },
   },
 });

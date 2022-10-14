@@ -20,7 +20,7 @@
                 <el-button type="primary" @click="logout" :disabled="inGame">退出登录</el-button>
               </div>
             </div>
-            <el-divider style="margin: 10px 0;"></el-divider>
+            <el-divider style="margin: 10px 0"></el-divider>
             <div class="room-info" v-if="inRoom">
               <el-form label-width="90px">
                 <el-form-item label="房间密码：">
@@ -58,7 +58,9 @@
                     </el-select>
                     <span v-else> {{ getRoomTypeText(roomData.type) }}</span>
                   </div>
-                  <el-button link type="primary" @click="editType" v-if="!inGame">{{ showTypeInput ? "确认" : "修改" }}</el-button>
+                  <el-button link type="primary" @click="editType" v-if="!inGame">{{
+                    showTypeInput ? "确认" : "修改"
+                  }}</el-button>
                 </div>
               </el-form-item>
               <el-form-item label="比赛时长：">
@@ -87,7 +89,7 @@
               <el-form-item label="题目：">
                 <el-checkbox-group
                   v-model="roomSettings.checkList"
-                  style="text-align: left;"
+                  style="text-align: left"
                   @change="synchroRoomSettings"
                 >
                   <el-checkbox v-for="(item, index) in gameList" :label="item.code" :key="index">{{
@@ -96,7 +98,7 @@
                 </el-checkbox-group>
               </el-form-item>
             </el-form>
-            <el-divider style="margin: 10px 0;"></el-divider>
+            <el-divider style="margin: 10px 0"></el-divider>
           </template>
           <div class="setting-title">左侧玩家设置</div>
           <el-form label-width="90px">
@@ -122,7 +124,7 @@
               <span class="input-number-text">秒</span>
             </el-form-item>
           </el-form>
-          <el-divider style="margin: 10px 0;"></el-divider>
+          <el-divider style="margin: 10px 0"></el-divider>
           <div class="setting-title">右侧玩家设置</div>
           <el-form label-width="90px">
             <el-form-item label="颜色：">
@@ -149,7 +151,7 @@
           </el-form>
         </el-tab-pane>
         <el-tab-pane label="操作记录" :name="2" class="tab-content">
-          <el-scrollbar>
+          <el-scrollbar ref="scrollbar">
             <div class="log-list">
               <div class="log-list-item" v-for="(log, index) in logList" :key="index">
                 <span v-for="(v, i) in log" :key="i" :style="v.style">{{ v.text }}</span>
@@ -163,7 +165,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed } from "vue";
+import { defineComponent, computed, ref } from "vue";
 import { DefaultData } from "@/types";
 import { useStore } from "vuex";
 import {
@@ -232,6 +234,7 @@ export default defineComponent({
   computed: {},
   setup() {
     const store = useStore();
+    const scrollbar = ref<InstanceType<typeof ElScrollbar>>();
     return {
       userData: computed(() => store.getters.userData),
       roomData: computed(() => store.getters.roomData),
@@ -240,6 +243,7 @@ export default defineComponent({
       isHost: computed(() => store.getters.isHost),
       inGame: computed(() => store.getters.inGame),
       logList: computed(() => store.getters.logList),
+      scrollbar,
     };
   },
   mounted() {
@@ -273,6 +277,11 @@ export default defineComponent({
       if (val) {
         this.tabIndex = 2;
       }
+    },
+    logList() {
+      this.$nextTick(() => {
+        this.scrollbar?.setScrollTop(this.scrollbar?.wrap$?.offsetHeight as number);
+      });
     },
   },
   methods: {

@@ -22,7 +22,7 @@
   </div>
 </template>
 <script lang="ts">
-import { defineComponent, ref, onMounted } from "vue";
+import { defineComponent, ref } from "vue";
 
 export default defineComponent({
   name: "RightClickMenu",
@@ -31,6 +31,7 @@ export default defineComponent({
       showMenu: false,
       left: 0,
       top: 0,
+      targetElement: null,
     };
   },
   setup() {
@@ -40,30 +41,42 @@ export default defineComponent({
   props: {
     menuData: {
       type: Array,
+      default: () => [],
+    },
+    disabled: {
+      type: Boolean,
+      default: false,
     },
   },
   mounted() {
-    if (this.innerElement) {
-      this.innerElement.oncontextmenu = (e: any) => {
-        e.preventDefault();
-        return false;
-      };
-      this.innerElement.addEventListener("mouseup", (e: any) => {
-        if (e.button === 2) {
-          this.showMenu = true;
-          this.left = e.offsetX + e.target.offsetLeft + 10;
-          this.top = e.offsetY + e.target.offsetTop;
-        }
-        document.addEventListener("click", (e) => {
-          this.showMenu = false;
-        });
-      });
+    if (!this.disabled) {
+      this.enableRightClick();
     }
   },
   methods: {
     onMenuItemClick(e: any, item: any) {
-      this.$emit("click", item);
+      this.$emit("click", { event: e, target: this.targetElement, item });
+      this.showMenu = false;
       e.stopPropagation();
+    },
+    enableRightClick() {
+      if (this.innerElement) {
+        this.innerElement.oncontextmenu = (e: any) => {
+          e.preventDefault();
+          return false;
+        };
+        this.innerElement.addEventListener("mouseup", (e: any) => {
+          if (e.button === 2) {
+            this.showMenu = true;
+            this.left = e.offsetX + e.target.offsetLeft + 10;
+            this.top = e.offsetY + e.target.offsetTop;
+            this.targetElement = e.target;
+          }
+          document.addEventListener("click", (e) => {
+            this.showMenu = false;
+          });
+        });
+      }
     },
   },
 });
