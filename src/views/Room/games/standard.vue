@@ -2,15 +2,22 @@
 <template>
   <div class="rule-standard">
     <div class="bingo-wrap">
-      <div class="bingo-items">
-        <div class="spell-card" v-for="(item, index) in gameData.spells" :key="index">
-          <spell-card-cell
-            :name="item.name"
-            @click="selectSpellCard(index)"
-            :selected="selectedSpellIndex === index"
-            :status="gameData.status[index]"
-          ></spell-card-cell>
+      <right-click-menu style="width: 100%; height: 100%;" :menuData="menuData">
+        <div class="bingo-items">
+          <template v-if="gameData.spells">
+            <div class="spell-card" v-for="(item, index) in gameData.spells" :key="index">
+              <spell-card-cell
+                :name="item.name"
+                @click="selectSpellCard(index)"
+                :selected="selectedSpellIndex === index"
+                :status="gameData.status[index]"
+              ></spell-card-cell>
+            </div>
+          </template>
         </div>
+      </right-click-menu>
+      <div v-if="!inGame || (winFlag !== 0 && !isHost)" class="game-alert">
+        <div :style="{ color: alertInfoColor }">{{ alertInfo }}</div>
       </div>
       <bingo-effect class="bingo-effect" />
     </div>
@@ -23,13 +30,18 @@
       ></count-down>
     </div>
     <div v-if="isHost">
-      <el-button type="primary" @click="start">{{ inGame ? "结 束" : "开 始" }}</el-button>
+      <el-button type="primary" @click="start" v-if="winFlag === 0">{{ inGame ? "结 束" : "开 始" }}</el-button>
+      <el-button type="primary" @click="confirmWinner" v-else
+        >确认：{{ winFlag < 0 ? roomData.names[0] : roomData.names[1] }}获胜</el-button
+      >
     </div>
     <div v-if="inGame && !isHost">
       <el-button type="primary" @click="confirmSelect" :disabled="selectedSpellIndex < 0" v-if="!spellCardSelected"
         >选择符卡</el-button
       >
-      <el-button type="primary" @click="confirmAttained" v-if="spellCardSelected">确认收取</el-button>
+      <el-button type="primary" @click="confirmAttained" v-if="spellCardSelected" :disabled="standbyPhase"
+        >确认收取</el-button
+      >
     </div>
   </div>
 </template>
@@ -38,6 +50,7 @@
 import { defineComponent, computed, ref, h } from "vue";
 import { useStore } from "vuex";
 import SpellCardCell from "@/components/spell-card-cell.vue";
+import RightClickMenu from "@/components/right-click-menu.vue";
 import BingoEffect from "@/components/bingo-effect/index.vue";
 import CountDown from "@/components/count-down.vue";
 import { ElButton, ElMessageBox, ElRadio, ElRadioGroup } from "element-plus";
@@ -50,7 +63,36 @@ export default defineComponent({
       countDownSeconds: 0,
       standbyPhase: false,
       selectedSpellIndex: -1,
+      countDownCompleted: false,
       winFlag: 0,
+      alertInfo: "等待房主抽取符卡",
+      alertInfoColor: "#000",
+      menuData: [
+        {
+          label: "置空",
+          value: 0,
+        },
+        {
+          label: "左侧玩家选择",
+          value: 1,
+        },
+        {
+          label: "右侧玩家选择",
+          value: 3,
+        },
+        {
+          label: "两侧玩家选择",
+          value: 2,
+        },
+        {
+          label: "左侧玩家收取",
+          value: 5,
+        },
+        {
+          label: "右侧玩家收取",
+          value: 7,
+        },
+      ],
     };
   },
 
@@ -59,10 +101,12 @@ export default defineComponent({
     BingoEffect,
     CountDown,
     ElButton,
+    RightClickMenu,
   },
   setup() {
     const store = useStore();
     const countDown = ref();
+
     return {
       gameData: computed(() => store.getters.gameData),
       roomData: computed(() => store.getters.roomData),
@@ -89,13 +133,12 @@ export default defineComponent({
   mounted() {
     this.countDownSeconds = this.roomSettings.countDownTime;
   },
-
   watch: {
     gameData(value) {
       if (value.countdown && value.countdown !== this.countDownSeconds) {
         this.countDownSeconds = value.countdown;
       }
-      if (value.start_time) {
+      if (value.start_time && !this.countDownCompleted) {
         const seconds = this.countDownSeconds - (value.time - value.start_time) / 1000;
         if (seconds > 0) {
           this.standbyPhase = true;
@@ -110,53 +153,75 @@ export default defineComponent({
 
       const status = value.status;
       if (status && status.length) {
-        if (status.indexOf(0) === -1) {
+        const available: number[] = new Array(12).fill(2);
+        const sumArr: number[] = new Array(12).fill(0);
+        let countA = 0;
+        let countB = 0;
+        status.forEach((item: number, index: number) => {
+          const rowIndex = Math.floor(index / 5);
+          const columnIndex = index % 5;
+          if (item === 5) {
+            countA++;
+            if (available[rowIndex] > 0) available[rowIndex] -= 2;
+            if (available[columnIndex + 5] > 0) available[columnIndex + 5] -= 2;
+            sumArr[rowIndex] -= 1;
+            sumArr[columnIndex + 5] -= 1;
+            if (index % 6 === 0) {
+              sumArr[10] -= 1;
+              if (available[10] > 0) available[10] -= 2;
+            }
+            if (index && index % 4 === 0) {
+              sumArr[11] -= 1;
+              if (available[11] > 0) available[11] -= 2;
+            }
+          } else if (item === 7) {
+            countB++;
+            if (available[rowIndex] % 2 === 0) available[rowIndex] -= 1;
+            if (available[columnIndex + 5] % 2 === 0) available[columnIndex + 5] -= 1;
+            sumArr[rowIndex] += 1;
+            sumArr[columnIndex + 5] += 1;
+            if (index % 6 === 0) {
+              sumArr[10] += 1;
+              if (available[10] % 2 === 0) available[10] -= 1;
+            }
+            if (index && index % 4 === 0) {
+              sumArr[11] += 1;
+              if (available[11] % 2 === 0) available[11] -= 1;
+            }
+          }
+        });
+
+        for (let i = 0; i < 12; i++) {
+          if (sumArr[i] === -5) {
+            this.winFlag = -(i + 1);
+          } else if (sumArr[i] === 5) {
+            this.winFlag = i + 1;
+          }
         }
 
-        for (let i = 0; i < 5; i++) {
-          let sumR = 0;
-          let sumC = 0;
-          for (let j = 0; j < 5; j++) {
-            sumR += status[i * 5 + j];
-            sumC += status[j * 5 + i];
-          }
-          if (sumR === 10) {
-            this.winFlag = -i;
-            return;
-          } else if (sumR === 40) {
-            this.winFlag = i;
-            return;
-          }
-          if (sumC === 10) {
-            this.winFlag = -(i + 5);
-            return;
-          } else if (sumC === 40) {
-            this.winFlag = i + 5;
-            return;
-          }
+        if (countA >= 13) {
+          this.winFlag = -13;
         }
-        const mainDiagonalSum = status[0] + status[6] + status[12] + status[18] + status[24];
-        if (mainDiagonalSum === 10) {
-          this.winFlag = -11;
-          return;
-        } else if (mainDiagonalSum === 40) {
-          this.winFlag = 11;
-          return;
+        if (countB >= 13) {
+          this.winFlag = 13;
         }
-        const subDiagonalSum = status[4] + status[8] + status[12] + status[16] + status[20];
-        if (subDiagonalSum === 10) {
-          this.winFlag = -11;
-          return;
-        } else if (subDiagonalSum === 40) {
-          this.winFlag = 11;
-          return;
+
+        if (this.winFlag !== 0) {
+          this.alertInfo = "已满足胜利条件，等待房主判断";
+          this.alertInfoColor = "red";
         }
+        console.log(available, sumArr);
       }
     },
     roomData(value) {
-      console.log(value);
       if (!value.started) {
         this.standbyPhase = false;
+      }
+      if (value.winner !== undefined) {
+        ElMessageBox.alert(`${this.roomData.names[value.winner]}获胜`, "比赛结束", {
+          confirmButtonText: "确定",
+        });
+        delete value.winner;
       }
     },
   },
@@ -210,12 +275,10 @@ export default defineComponent({
             //winner
             if (checked.value < 0) {
               this.$store.dispatch("stop_game").then(() => {
-                this.$store.commit("change_game_state");
                 this.countDown.reset();
               });
             } else {
               this.$store.dispatch("stop_game", { winner: checked.value }).then(() => {
-                this.$store.commit("change_game_state");
                 this.countDown.reset();
               });
             }
@@ -229,7 +292,7 @@ export default defineComponent({
             games: this.roomSettings.checkList,
           })
           .then(() => {
-            this.$store.commit("change_game_state");
+            this.$store.commit("change_game_state", true);
             this.standbyPhase = true;
             this.countDown.start();
           });
@@ -237,6 +300,7 @@ export default defineComponent({
     },
     onCountDownComplete() {
       this.standbyPhase = false;
+      this.countDownCompleted = true;
     },
     selectSpellCard(index: number) {
       if (!this.spellCardSelected && this.gameData.status[index] === 0) {
@@ -263,6 +327,12 @@ export default defineComponent({
         this.$store.dispatch("update_spell", { idx: this.plyaerBSelectedIndex, status: 7 });
       }
     },
+    confirmWinner() {
+      this.$store.dispatch("stop_game", { winner: this.winFlag < 0 ? 0 : 1 }).then(() => {
+        this.winFlag = 0;
+        this.countDown.reset();
+      });
+    },
   },
 });
 </script>
@@ -277,7 +347,6 @@ export default defineComponent({
   width: 100%;
   height: 500px;
   box-sizing: border-box;
-
   position: relative;
 
   .bingo-items {
@@ -298,6 +367,19 @@ export default defineComponent({
       width: 19.4%;
       height: 19.4%;
     }
+  }
+
+  .game-alert {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    left: 0;
+    top: 0;
+    background-color: #ffffffcc;
+    z-index: 100;
   }
 }
 

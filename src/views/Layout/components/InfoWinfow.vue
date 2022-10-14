@@ -58,7 +58,7 @@
                     </el-select>
                     <span v-else> {{ getRoomTypeText(roomData.type) }}</span>
                   </div>
-                  <el-button link type="primary" @click="editType">{{ showTypeInput ? "确认" : "修改" }}</el-button>
+                  <el-button link type="primary" @click="editType" v-if="!inGame">{{ showTypeInput ? "确认" : "修改" }}</el-button>
                 </div>
               </el-form-item>
               <el-form-item label="比赛时长：">
@@ -152,7 +152,7 @@
           <el-scrollbar>
             <div class="log-list">
               <div class="log-list-item" v-for="(log, index) in logList" :key="index">
-                <span v-for="(v, i) in log" :key="i" :style="getLogStyle(v)">{{ getLogText(v) }}</span>
+                <span v-for="(v, i) in log" :key="i" :style="v.style">{{ v.text }}</span>
               </div>
             </div>
           </el-scrollbar>

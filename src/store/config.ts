@@ -13,7 +13,7 @@ const config = {
     isPlayerB: (state: VuexState) =>
       state.roomData.data?.names && state.roomData.data?.names[1] === state.userData.data?.userName,
     plyaerASelectedIndex: (state: VuexState) => state.gameData.data?.status && state.gameData.data?.status.indexOf(1),
-    plyaerBSelectedIndex: (state: VuexState) => state.gameData.data?.status && state.gameData.data?.status.indexOf(4),
+    plyaerBSelectedIndex: (state: VuexState) => state.gameData.data?.status && state.gameData.data?.status.indexOf(3),
     inGame: (state: VuexState) => !!state.roomData.data?.started,
   },
   mutations: {},

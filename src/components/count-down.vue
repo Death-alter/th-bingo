@@ -4,10 +4,8 @@
       <div class="hour">{{ format(hour) }}</div>
       <div class="colon">:</div>
     </template>
-    <template v-if="seconds >= 60">
-      <div class="minute">{{ format(minute) }}</div>
-      <div class="colon">:</div>
-    </template>
+    <div class="minute">{{ format(minute) }}</div>
+    <div class="colon">:</div>
     <div class="second">{{ format(second) }}</div>
   </div>
 </template>
@@ -49,10 +47,10 @@ export default defineComponent({
 
         this.second = value % 60;
 
-        if (value >= 3600) {
+        if (this.seconds >= 3600) {
           this.hour = Math.floor(value / 3600);
           this.minute = Math.floor(value / 60) % 60;
-        } else if (value >= 60) {
+        } else {
           this.minute = Math.floor(value / 60);
         }
       },

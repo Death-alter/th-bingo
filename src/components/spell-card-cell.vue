@@ -95,6 +95,7 @@ export default defineComponent({
     display: flex;
     justify-content: center;
     align-items: center;
+    pointer-events: none;
 
     .level {
       position: absolute;
@@ -144,16 +145,16 @@ export default defineComponent({
   &.A-selected {
     &::before {
       background-image: linear-gradient(var(--A-color) 60%, var(--A-color-dark));
-      -webkit-animation: breath 5s infinite linear;
-      animation: breath 5s infinite linear;
+      -webkit-animation: breath 3s infinite linear;
+      animation: breath 3s infinite linear;
     }
   }
 
   &.B-selected {
     &::after {
       background-image: linear-gradient(var(--B-color) 60%, var(--B-color-dark));
-      -webkit-animation: breath 5s infinite linear;
-      animation: breath 5s infinite linear;
+      -webkit-animation: breath 3s infinite linear;
+      animation: breath 3s infinite linear;
     }
   }
 

@@ -21,10 +21,19 @@ function logSpellCard(status: number, oldStatus: number, index: number) {
       store.commit("add_log", [{ tag: "playerB" }, { text: "选择了符卡" }, { tag: "spellCard", index }]);
       break;
     case 5:
-      store.commit("add_log", [{ tag: "playerA" }, { text: "收取了符卡" }, { tag: "spellCard", index }]);
+      if (oldStatus === 3) {
+        store.commit("add_log", [{ tag: "playerA" }, { text: "抢了你选择的符卡" }, { tag: "spellCard", index }]);
+      } else {
+        store.commit("add_log", [{ tag: "playerA" }, { text: "收取了符卡" }, { tag: "spellCard", index }]);
+      }
       break;
     case 7:
-      store.commit("add_log", [{ tag: "playerB" }, { text: "收取了符卡" }, { tag: "spellCard", index }]);
+      if (oldStatus === 1) {
+        store.commit("add_log", [{ tag: "playerB" }, { text: "抢了你选择的符卡"  }, { tag: "spellCard", index }]);
+      } else {
+        store.commit("add_log", [{ tag: "playerB" }, { text: "收取了符卡" }, { tag: "spellCard", index }]);
+      }
+
       break;
   }
 }
@@ -182,7 +191,35 @@ const list: Array<StoreAction | StoreMutation> = [
     mutationName: "add_log",
     default: [],
     dataHandler: ((newVal: Array<any>, oldVal: Array<any>): DefaultData => {
-      oldVal.push(newVal);
+      const log = newVal.map((v, i) => {
+        const item: DefaultData = {
+          style: {},
+          text: v.text || "",
+        };
+        if (v.tag) {
+          item.style.padding = "0 2px";
+          switch (v.tag) {
+            case "playerA":
+              item.style.color = "var(--A-color)";
+              item.text = store.getters.roomData.names[0];
+              break;
+            case "playerB":
+              item.style.color = "var(--B-color)";
+              item.text = store.getters.roomData.names[1];
+              break;
+            case "spellCard":
+              item.style.fontWeight = 600;
+              item.text = store.getters.gameData.spells[v.index].name;
+              break;
+            default:
+          }
+        } else if (v.color) {
+          item.style.color = v.color;
+        }
+        return item;
+      });
+      console.log(log);
+      oldVal.push(log);
       return oldVal;
     }) as MutationHandler,
   },
@@ -207,15 +244,19 @@ const list: Array<StoreAction | StoreMutation> = [
     dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
       if (store.getters.isPlayerA) {
         res.status.forEach((item: number, index: number) => {
-          if (item === 3 || item === 2) {
-            res.status[index] = item * 2 - 3;
+          if (item === 2) {
+            res.status[index] = item - 1;
+          } else if (item === 3) {
+            res.status[index] = 0;
           }
         });
       }
       if (store.getters.isPlayerB) {
         res.status.forEach((item: number, index: number) => {
-          if (item === 1 || item === 2) {
-            res.status[index] = item * 2 - 1;
+          if (item === 2) {
+            res.status[index] = item + 1;
+          } else if (item === 1) {
+            res.status[index] = 0;
           }
         });
       }
@@ -280,7 +321,7 @@ const list: Array<StoreAction | StoreMutation> = [
     dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
       logSpellCard(params.status, data.status[params.idx], params.idx);
       data.status[params.idx] = params.status;
-      return data;
+      return { ...data };
     },
   },
   {
@@ -290,15 +331,27 @@ const list: Array<StoreAction | StoreMutation> = [
     default: {},
     dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
       const oldStatus = oldVal.status[newVal.idx];
-      if (store.getters.isPlayerA && (newVal.status === 3 || newVal.status === 2)) {
-        oldVal.status[newVal.idx] = newVal.status * 2 - 3;
-      } else if (store.getters.isPlayerB && (newVal.status === 1 || newVal.status === 2)) {
-        oldVal.status[newVal.idx] = newVal.status * 2 - 1;
+      if (store.getters.isPlayerA) {
+        if (newVal.status === 1) {
+          oldVal.status[newVal.idx] = newVal.status - 1;
+        } else if (newVal.status === 3) {
+          oldVal.status[newVal.idx] = 0;
+        } else {
+          oldVal.status[newVal.idx] = newVal.status;
+        }
+      } else if (store.getters.isPlayerB) {
+        if (newVal.status === 2) {
+          oldVal.status[newVal.idx] = newVal.status + 1;
+        } else if (newVal.status === 1) {
+          oldVal.status[newVal.idx] = 0;
+        } else {
+          oldVal.status[newVal.idx] = newVal.status;
+        }
       } else {
         oldVal.status[newVal.idx] = newVal.status;
       }
       logSpellCard(oldVal.status[newVal.idx], oldStatus, newVal.idx);
-      return oldVal;
+      return { ...oldVal };
     }) as MutationHandler,
   },
   {

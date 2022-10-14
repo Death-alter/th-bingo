@@ -94,7 +94,6 @@ export const createAction = (
       store.commit(actionName + "_error", data);
       promisePool[token].reject(data);
     } else {
-      console.log(data);
       if (callback instanceof Function) {
         data = callback(data, store.state[name].data, requestParams);
       } else if ("replied" in callback && callback.replied) {
