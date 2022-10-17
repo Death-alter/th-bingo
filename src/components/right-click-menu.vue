@@ -7,7 +7,7 @@
       <div
         v-for="(item, index) in menuData"
         :key="index"
-        @click="onMenuItemClick($event, item)"
+        @mouseup="onMenuItemClick($event, item)"
         @contextmenu="
           (e) => {
             e.preventDefault();
@@ -34,6 +34,7 @@ export default defineComponent({
       targetElement: null,
     };
   },
+  emits: ["click"],
   setup() {
     const innerElement = ref();
     return { innerElement };
