@@ -20,7 +20,7 @@
                 <el-button type="primary" @click="logout" :disabled="inGame">退出登录</el-button>
               </div>
             </div>
-            <el-divider style="margin: 10px 0"></el-divider>
+            <el-divider style="margin: 10px 0;"></el-divider>
             <div class="room-info" v-if="inRoom">
               <el-form label-width="90px">
                 <el-form-item label="房间密码：">
@@ -89,7 +89,7 @@
               <el-form-item label="题目：">
                 <el-checkbox-group
                   v-model="roomSettings.checkList"
-                  style="text-align: left"
+                  style="text-align: left;"
                   @change="synchroRoomSettings"
                 >
                   <el-checkbox v-for="(item, index) in gameList" :label="item.code" :key="index">{{
@@ -98,7 +98,7 @@
                 </el-checkbox-group>
               </el-form-item>
             </el-form>
-            <el-divider style="margin: 10px 0"></el-divider>
+            <el-divider style="margin: 10px 0;"></el-divider>
           </template>
           <div class="setting-title">左侧玩家设置</div>
           <el-form label-width="90px">
@@ -118,13 +118,14 @@
                 v-model="roomSettings.playerA.delay"
                 :min="0"
                 size="small"
+                :step="0.1"
                 controls-position="right"
                 @change="synchroRoomSettings"
               />
               <span class="input-number-text">秒</span>
             </el-form-item>
           </el-form>
-          <el-divider style="margin: 10px 0"></el-divider>
+          <el-divider style="margin: 10px 0;"></el-divider>
           <div class="setting-title">右侧玩家设置</div>
           <el-form label-width="90px">
             <el-form-item label="颜色：">
@@ -143,6 +144,7 @@
                 v-model="roomSettings.playerB.delay"
                 :min="0"
                 size="small"
+                :step="0.1"
                 controls-position="right"
                 @change="synchroRoomSettings"
               />

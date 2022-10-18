@@ -2,7 +2,12 @@
 <template>
   <div class="rule-standard">
     <div class="bingo-wrap">
-      <right-click-menu style="width: 100%; height: 100%" :menuData="menuData" :disabled="!isHost" @click="onMenuClick">
+      <right-click-menu
+        style="width: 100%; height: 100%;"
+        :menuData="menuData"
+        :disabled="!isHost"
+        @click="onMenuClick"
+      >
         <div class="bingo-items">
           <template v-if="gameData.spells">
             <div class="spell-card" v-for="(item, index) in gameData.spells" :key="index">
@@ -338,7 +343,10 @@ export default defineComponent({
       });
     },
     onMenuClick({ event, target, item }: any) {
-      this.$store.dispatch("update_spell", { idx: target.getAttribute("index"), status: item.value });
+      const index = target.getAttribute("index");
+      if (index) {
+        this.$store.dispatch("update_spell", { idx: target.getAttribute("index"), status: item.value });
+      }
     },
   },
 });

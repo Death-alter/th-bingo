@@ -80,15 +80,10 @@ const list: Array<StoreAction | StoreMutation> = [
       ping: 0, //ping值
     },
     dataHandler: {
-      pending(res: DefaultData, data: DefaultData, params: RequestParams) {
-        const newData = { ...data };
-        newData.time = params.time;
-        return newData;
-      },
       replied(res: DefaultData, data: DefaultData, params: RequestParams): DefaultData {
         const newData = { ...data };
         if (params) {
-          newData.ping = newData.time - params.time;
+          newData.ping = new Date().getTime() - params.time;
           newData.time = params.time;
         }
         console.log("ping:", newData.ping);
@@ -332,29 +327,44 @@ const list: Array<StoreAction | StoreMutation> = [
     mutationName: "update_spell_received",
     wsName: "update_spell",
     default: {},
-    dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
-      const oldStatus = oldVal.status[newVal.idx];
-      if (store.getters.isPlayerA) {
-        if (newVal.status === 1) {
-          oldVal.status[newVal.idx] = newVal.status - 1;
-        } else if (newVal.status === 3) {
-          oldVal.status[newVal.idx] = 0;
+    dataHandler: ((newVal: DefaultData, oldVal: DefaultData): Promise<DefaultData> => {
+      return new Promise((reslove, reject) => {
+        const oldStatus = oldVal.status[newVal.idx];
+        if (store.getters.isPlayerA) {
+          if (newVal.status === 1) {
+            oldVal.status[newVal.idx] = newVal.status - 1;
+          } else if (newVal.status === 3) {
+            oldVal.status[newVal.idx] = 0;
+          } else {
+            oldVal.status[newVal.idx] = newVal.status;
+          }
+        } else if (store.getters.isPlayerB) {
+          if (newVal.status === 2) {
+            oldVal.status[newVal.idx] = newVal.status + 1;
+          } else if (newVal.status === 1) {
+            oldVal.status[newVal.idx] = 0;
+          } else {
+            oldVal.status[newVal.idx] = newVal.status;
+          }
         } else {
           oldVal.status[newVal.idx] = newVal.status;
         }
-      } else if (store.getters.isPlayerB) {
-        if (newVal.status === 2) {
-          oldVal.status[newVal.idx] = newVal.status + 1;
-        } else if (newVal.status === 1) {
-          oldVal.status[newVal.idx] = 0;
+        logSpellCard(oldVal.status[newVal.idx], oldStatus, newVal.idx);
+        if (store.getters.isHost) {
+          if (newVal.status === 1 || (newVal.status === 2 && oldVal.status[newVal.idx] === 3) || newVal.status === 5) {
+            window.setTimeout(() => {
+              reslove({ ...oldVal });
+            }, store.getters.roomSettings.playerA.delay);
+          }
+          if (newVal.status === 3 || (newVal.status === 2 && oldVal.status[newVal.idx] === 1) || newVal.status === 7) {
+            window.setTimeout(() => {
+              reslove({ ...oldVal });
+            }, store.getters.roomSettings.playerB.delay);
+          }
         } else {
-          oldVal.status[newVal.idx] = newVal.status;
+          reslove({ ...oldVal });
         }
-      } else {
-        oldVal.status[newVal.idx] = newVal.status;
-      }
-      logSpellCard(oldVal.status[newVal.idx], oldStatus, newVal.idx);
-      return { ...oldVal };
+      });
     }) as MutationHandler,
   },
   {

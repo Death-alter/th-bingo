@@ -82,7 +82,7 @@ export const createAction = (
 ) => {
   const token = Md5.hashStr(wsName + "_cs");
   let requestParams: RequestParams;
-  ws.on(wsName + "_cs", (resName, data) => {
+  ws.on(wsName + "_cs", async (resName, data) => {
     if (resName === "error_sc") {
       if (!(callback instanceof Function) && "error" in callback && callback.error) {
         data = callback.error(data, store.state[name].data, requestParams);
@@ -95,9 +95,10 @@ export const createAction = (
       promisePool[token].reject(data);
     } else {
       if (callback instanceof Function) {
-        data = callback(data, store.state[name].data, requestParams);
+        data = await callback(data, store.state[name].data, requestParams);
       } else if ("replied" in callback && callback.replied) {
-        data = callback.replied(data, store.state[name].data, requestParams);
+        data = await callback.replied(data, store.state[name].data, requestParams);
+        console.log(data);
       }
       store.commit(actionName + "_replied", data);
       promisePool[token].resolve(data);
