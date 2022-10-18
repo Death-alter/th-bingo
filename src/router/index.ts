@@ -47,8 +47,6 @@ router.beforeEach((to, from, next) => {
       ws.setHeartBeatFunction(() => {
         store.dispatch("heart_beat", { time: new Date().getTime() });
         setTimeout(() => {
-          console.log(store.getters.heartBeat_status);
-          console.log("bufferedAmount:", ws.bufferedAmount);
           if (store.getters.heartBeat_status === "pending") {
             ws.reconnect();
           }

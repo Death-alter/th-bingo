@@ -23,6 +23,9 @@
           <el-icon v-for="(item, index) in new Array(level)" :key="index"><StarFilled /></el-icon>
         </div>
       </div>
+      <div class="desc">
+        {{ desc }}
+      </div>
       <div class="name">{{ name }}</div>
       <div class="game-name"></div>
     </div>
@@ -62,6 +65,10 @@ export default defineComponent({
     selected: {
       type: Boolean,
       default: false,
+    },
+    desc: {
+      type: String,
+      default: "",
     },
   },
   setup() {
@@ -113,6 +120,13 @@ export default defineComponent({
       .level3 {
         color: red;
       }
+    }
+
+    .desc {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      font-size: 12px;
     }
 
     .name {

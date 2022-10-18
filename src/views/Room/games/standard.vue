@@ -2,17 +2,13 @@
 <template>
   <div class="rule-standard">
     <div class="bingo-wrap">
-      <right-click-menu
-        style="width: 100%; height: 100%;"
-        :menuData="menuData"
-        :disabled="!isHost"
-        @click="onMenuClick"
-      >
+      <right-click-menu style="width: 100%; height: 100%" :menuData="menuData" :disabled="!isHost" @click="onMenuClick">
         <div class="bingo-items">
           <template v-if="gameData.spells">
             <div class="spell-card" v-for="(item, index) in gameData.spells" :key="index">
               <spell-card-cell
                 :name="item.name"
+                :desc="item.desc"
                 @click="selectSpellCard(index)"
                 :selected="selectedSpellIndex === index"
                 :status="gameData.status[index]"
@@ -32,7 +28,7 @@
         ref="countDown"
         :seconds="countDownSeconds || roomSettings.countDownTime"
         @complete="onCountDownComplete"
-        v-show="standbyPhase"
+        v-show="inGame"
       ></count-down>
     </div>
     <div v-if="isHost">
@@ -145,10 +141,15 @@ export default defineComponent({
         this.countDownSeconds = value.countdown;
       }
       if (value.start_time && !this.countDownCompleted) {
-        const seconds = this.countDownSeconds - (value.time - value.start_time) / 1000;
-        if (seconds > 0) {
+        const standbyCountDown = this.countDownSeconds - (value.time - value.start_time) / 1000;
+        const gameCountDown = value.game_time * 60 - (value.time - value.start_time) / 1000;
+        if (standbyCountDown > 0) {
           this.standbyPhase = true;
-          this.countDownSeconds = Math.ceil(seconds);
+          this.countDownSeconds = Math.ceil(standbyCountDown);
+        } else if (gameCountDown > 0) {
+          this.countDownSeconds = Math.ceil(gameCountDown);
+        } else {
+          this.$store.commit("change_game_state", false);
         }
       }
       if (value.spells) {
@@ -231,6 +232,12 @@ export default defineComponent({
         delete value.winner;
       }
     },
+    inGame(value) {
+      if (!value) {
+        this.countDownCompleted = false;
+        this.countDownSeconds = 0;
+      }
+    },
   },
   methods: {
     start() {
@@ -308,6 +315,10 @@ export default defineComponent({
     onCountDownComplete() {
       this.standbyPhase = false;
       this.countDownCompleted = true;
+      this.countDownSeconds = this.gameData.game_time * 60 - this.gameData.countdown;
+      this.$nextTick(() => {
+        this.countDown.start();
+      });
     },
     selectSpellCard(index: number) {
       if (this.selectedSpellIndex === index) {

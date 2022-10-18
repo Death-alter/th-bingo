@@ -330,39 +330,48 @@ const list: Array<StoreAction | StoreMutation> = [
     dataHandler: ((newVal: DefaultData, oldVal: DefaultData): Promise<DefaultData> => {
       return new Promise((reslove, reject) => {
         const oldStatus = oldVal.status[newVal.idx];
+        const status = [...oldVal.status];
         if (store.getters.isPlayerA) {
           if (newVal.status === 1) {
-            oldVal.status[newVal.idx] = newVal.status - 1;
+            status[newVal.idx] = newVal.status - 1;
           } else if (newVal.status === 3) {
-            oldVal.status[newVal.idx] = 0;
+            status[newVal.idx] = 0;
           } else {
-            oldVal.status[newVal.idx] = newVal.status;
+            status[newVal.idx] = newVal.status;
           }
         } else if (store.getters.isPlayerB) {
           if (newVal.status === 2) {
-            oldVal.status[newVal.idx] = newVal.status + 1;
+            status[newVal.idx] = newVal.status + 1;
           } else if (newVal.status === 1) {
-            oldVal.status[newVal.idx] = 0;
+            status[newVal.idx] = 0;
           } else {
-            oldVal.status[newVal.idx] = newVal.status;
+            status[newVal.idx] = newVal.status;
           }
         } else {
-          oldVal.status[newVal.idx] = newVal.status;
+          status[newVal.idx] = newVal.status;
         }
-        logSpellCard(oldVal.status[newVal.idx], oldStatus, newVal.idx);
         if (store.getters.isHost) {
-          if (newVal.status === 1 || (newVal.status === 2 && oldVal.status[newVal.idx] === 3) || newVal.status === 5) {
+          if (newVal.status === 1 || (newVal.status === 2 && oldStatus === 3) || newVal.status === 5) {
             window.setTimeout(() => {
-              reslove({ ...oldVal });
-            }, store.getters.roomSettings.playerA.delay);
+              logSpellCard(status[newVal.idx], oldStatus, newVal.idx);
+              const data = { ...oldVal };
+              data.status = status;
+              reslove(data);
+            }, store.getters.roomSettings.playerA.delay * 1000);
           }
-          if (newVal.status === 3 || (newVal.status === 2 && oldVal.status[newVal.idx] === 1) || newVal.status === 7) {
+          if (newVal.status === 3 || (newVal.status === 2 && oldStatus === 1) || newVal.status === 7) {
             window.setTimeout(() => {
-              reslove({ ...oldVal });
-            }, store.getters.roomSettings.playerB.delay);
+              logSpellCard(status[newVal.idx], oldStatus, newVal.idx);
+              const data = { ...oldVal };
+              data.status = status;
+              reslove(data);
+            }, store.getters.roomSettings.playerB.delay * 1000);
           }
         } else {
-          reslove({ ...oldVal });
+          logSpellCard(status[newVal.idx], oldStatus, newVal.idx);
+          const data = { ...oldVal };
+          data.status = status;
+          reslove(data);
         }
       });
     }) as MutationHandler,
@@ -371,6 +380,27 @@ const list: Array<StoreAction | StoreMutation> = [
     name: "roomSettings",
     mutationName: "modify_room_settings",
     default: {},
+    dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
+      if (store.getters.isHost) {
+        const savedSettings = Storage.local.get("roomSettings");
+        const settings = { ...newVal };
+        if (savedSettings) {
+          settings.gameTimeLimit = savedSettings.gameTimeLimit;
+          settings.countDownTime = savedSettings.countDownTime;
+          settings.gameTimeLimit[store.getters.roomData.type] = newVal.gameTimeLimit;
+          settings.countDownTime[store.getters.roomData.type] = newVal.countDownTime;
+        } else {
+          const gameTimeLimit = {};
+          const countDownTime = {};
+          gameTimeLimit[store.getters.roomData.type] = newVal.gameTimeLimit;
+          countDownTime[store.getters.roomData.type] = newVal.countDownTime;
+          settings.gameTimeLimit = gameTimeLimit;
+          settings.countDownTime = countDownTime;
+        }
+        Storage.local.set("roomSettings", settings);
+      }
+      return newVal;
+    }) as MutationHandler,
   },
 ];
 

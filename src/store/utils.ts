@@ -62,9 +62,9 @@ export const createSyncMutation = (name: string, wsName: string | undefined, cal
     });
   }
 
-  return (state: VuexState, data: RequestParams) => {
+  return async (state: VuexState, data: RequestParams) => {
     if (callback) {
-      state[name].data = callback(data, state[name].data || {});
+      state[name].data = await callback(data, state[name].data || {});
     } else {
       state[name].data = data;
     }
@@ -98,7 +98,6 @@ export const createAction = (
         data = await callback(data, store.state[name].data, requestParams);
       } else if ("replied" in callback && callback.replied) {
         data = await callback.replied(data, store.state[name].data, requestParams);
-        console.log(data);
       }
       store.commit(actionName + "_replied", data);
       promisePool[token].resolve(data);
