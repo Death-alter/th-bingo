@@ -20,7 +20,7 @@
                 <el-button type="primary" @click="logout" :disabled="inGame">退出登录</el-button>
               </div>
             </div>
-            <el-divider style="margin: 10px 0"></el-divider>
+            <el-divider style="margin: 10px 0;"></el-divider>
             <div class="room-info" v-if="inRoom">
               <el-form label-width="90px">
                 <el-form-item label="房间密码：">
@@ -89,7 +89,7 @@
               <el-form-item label="题目：">
                 <el-checkbox-group
                   v-model="roomSettings.checkList"
-                  style="text-align: left"
+                  style="text-align: left;"
                   @change="synchroRoomSettings"
                 >
                   <el-checkbox v-for="(item, index) in gameList" :label="item.code" :key="index">{{
@@ -98,7 +98,7 @@
                 </el-checkbox-group>
               </el-form-item>
             </el-form>
-            <el-divider style="margin: 10px 0"></el-divider>
+            <el-divider style="margin: 10px 0;"></el-divider>
           </template>
           <div class="setting-title">左侧玩家设置</div>
           <el-form label-width="90px">
@@ -125,7 +125,7 @@
               <span class="input-number-text">秒</span>
             </el-form-item>
           </el-form>
-          <el-divider style="margin: 10px 0"></el-divider>
+          <el-divider style="margin: 10px 0;"></el-divider>
           <div class="setting-title">右侧玩家设置</div>
           <el-form label-width="90px">
             <el-form-item label="颜色：">
@@ -205,7 +205,7 @@ export default defineComponent({
       gameTypeList: config.gameTypeList,
       roomSettings: {
         gameTimeLimit: 60,
-        countDownTime: 300,
+        countDownTime: 180,
         checkList: ["6", "7", "8", "10", "11", "12", "13", "14", "15", "16", "17", "18"],
         playerA: {
           color: "hsl(16, 100%, 50%)",
@@ -274,6 +274,13 @@ export default defineComponent({
     roomData(val) {
       if (this.roomType !== val.type) {
         this.roomType = val.type;
+        const savedSettings = Storage.local.get("roomSettings");
+        this.roomSettings.gameTimeLimit =
+          (savedSettings && savedSettings.gameTimeLimit[this.roomType]) ||
+          this.gameTypeList[this.roomType - 1].timeLimit;
+        this.roomSettings.countDownTime =
+          (savedSettings && savedSettings.gameTimeLimit[this.roomType]) ||
+          this.gameTypeList[this.roomType - 1].countdown;
       }
       if (this.isHost) {
         const savedSettings = Storage.local.get("roomSettings");
