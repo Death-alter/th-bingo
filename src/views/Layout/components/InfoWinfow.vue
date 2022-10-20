@@ -274,20 +274,15 @@ export default defineComponent({
     roomData(val) {
       if (this.roomType !== val.type) {
         this.roomType = val.type;
+      }
+      if (this.isHost) {
         const savedSettings = Storage.local.get("roomSettings");
         this.roomSettings.gameTimeLimit =
           (savedSettings && savedSettings.gameTimeLimit[this.roomType]) ||
           this.gameTypeList[this.roomType - 1].timeLimit;
         this.roomSettings.countDownTime =
-          (savedSettings && savedSettings.gameTimeLimit[this.roomType]) ||
+          (savedSettings && savedSettings.countDownTime[this.roomType]) ||
           this.gameTypeList[this.roomType - 1].countdown;
-      }
-      if (this.isHost) {
-        const savedSettings = Storage.local.get("roomSettings");
-        this.roomSettings.gameTimeLimit =
-          savedSettings.gameTimeLimit[this.roomType] || this.gameTypeList[this.roomType - 1].timeLimit;
-        this.roomSettings.countDownTime =
-          savedSettings.countDownTime[this.roomType] || this.gameTypeList[this.roomType - 1].countdown;
       }
     },
     inRoom(val) {
