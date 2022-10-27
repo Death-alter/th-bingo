@@ -4,6 +4,7 @@ import ws from "@/utils/webSocket";
 import router from "@/router";
 import { ElMessage } from "element-plus";
 import store from ".";
+import mitt from "@/mitt";
 
 function logSpellCard(status: number, oldStatus: number, index: number) {
   switch (status) {
@@ -23,6 +24,7 @@ function logSpellCard(status: number, oldStatus: number, index: number) {
     case 5:
       if (oldStatus === 3) {
         store.commit("add_log", [{ tag: "playerA" }, { text: "抢了你选择的符卡" }, { tag: "spellCard", index }]);
+        mitt.emit("spell_card_grabbed");
       } else {
         store.commit("add_log", [{ tag: "playerA" }, { text: "收取了符卡" }, { tag: "spellCard", index }]);
       }
@@ -30,6 +32,7 @@ function logSpellCard(status: number, oldStatus: number, index: number) {
     case 7:
       if (oldStatus === 1) {
         store.commit("add_log", [{ tag: "playerB" }, { text: "抢了你选择的符卡" }, { tag: "spellCard", index }]);
+        mitt.emit("spell_card_grabbed");
       } else {
         store.commit("add_log", [{ tag: "playerB" }, { text: "收取了符卡" }, { tag: "spellCard", index }]);
       }
@@ -332,7 +335,7 @@ const list: Array<StoreAction | StoreMutation> = [
         const oldStatus = oldVal.status[newVal.idx];
         const status = [...oldVal.status];
         if (store.getters.isPlayerA) {
-          if (newVal.status === 1) {
+          if (newVal.status === 2) {
             status[newVal.idx] = newVal.status - 1;
           } else if (newVal.status === 3) {
             status[newVal.idx] = 0;

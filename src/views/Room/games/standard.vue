@@ -31,11 +31,13 @@
         v-show="inGame"
       ></count-down>
     </div>
-    <div v-if="isHost">
+    <div v-if="isHost" class="host-buttons">
+      <el-button size="small">重置房间</el-button>
       <el-button type="primary" @click="start" v-if="winFlag === 0">{{ inGame ? "结束比赛" : "抽取符卡" }}</el-button>
       <el-button type="primary" @click="confirmWinner" v-else
         >确认：{{ winFlag < 0 ? roomData.names[0] : roomData.names[1] }}获胜</el-button
       >
+      <el-button size="small">暂停比赛</el-button>
     </div>
     <div v-if="inGame && !isHost">
       <el-button type="primary" @click="confirmSelect" :disabled="selectedSpellIndex < 0" v-if="!spellCardSelected"
@@ -45,11 +47,16 @@
         >确认收取</el-button
       >
     </div>
+    <div class="audio">
+      <audio ref="spellCardGrabbedAudio" :src="require('@/assets/audio/spell_card_grabbed.mp3')"></audio>
+      <audio ref="turn1CountdownAudio" :src="require('@/assets/audio/turn1_countdown.mp3')"></audio>
+      <audio ref="turn3CountdownAudio" :src="require('@/assets/audio/turn3_countdown.mp3')"></audio>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ref, h } from "vue";
+import { defineComponent, computed, ref, h, getCurrentInstance, onMounted, onUnmounted } from "vue";
 import { useStore } from "vuex";
 import SpellCardCell from "@/components/spell-card-cell.vue";
 import RightClickMenu from "@/components/right-click-menu.vue";
@@ -108,6 +115,19 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const countDown = ref();
+    const spellCardGrabbedAudio = ref();
+    const turn1CountdownAudio = ref();
+    const turn3CountdownAudio = ref();
+    const { proxy }: any = getCurrentInstance();
+
+    onMounted(() => {
+      proxy.$bus.on("spell_card_grabbed", () => {
+        spellCardGrabbedAudio.value.play();
+      });
+    });
+    onUnmounted(() => {
+      proxy.$bus.off("spell_card_grabbed");
+    });
 
     return {
       gameData: computed(() => store.getters.gameData),
@@ -130,6 +150,9 @@ export default defineComponent({
         return false;
       }),
       countDown,
+      spellCardGrabbedAudio,
+      turn1CountdownAudio,
+      turn3CountdownAudio,
     };
   },
   mounted() {
@@ -141,11 +164,25 @@ export default defineComponent({
         this.countDownSeconds = value.countdown;
       }
       if (value.start_time && !this.countDownCompleted) {
-        const standbyCountDown = this.countDownSeconds - (value.time - value.start_time) / 1000;
+        const pasedTime = (value.time - value.start_time) / 1000;
+        const standbyCountDown = this.countDownSeconds - pasedTime;
         const gameCountDown = value.game_time * 60 - (value.time - value.start_time) / 1000;
         if (standbyCountDown > 0) {
           this.standbyPhase = true;
           this.countDownSeconds = Math.ceil(standbyCountDown);
+          if (this.gameData.need_win === 2) {
+            const gameIndex = this.roomData.score[0] + this.roomData.score[1] + 1;
+            switch (gameIndex) {
+              case 1:
+                this.turn1CountdownAudio.currentTime = pasedTime;
+                this.turn1CountdownAudio.play();
+                break;
+              case 3:
+                this.turn3CountdownAudio.currentTime = pasedTime + 2;
+                this.turn3CountdownAudio.play();
+                break;
+            }
+          }
         } else if (gameCountDown > 0) {
           this.countDownSeconds = Math.ceil(gameCountDown);
         } else {
@@ -236,6 +273,7 @@ export default defineComponent({
       if (!value) {
         this.countDownCompleted = false;
         this.countDownSeconds = 0;
+        this.stopBGM();
       }
     },
   },
@@ -304,6 +342,7 @@ export default defineComponent({
             game_time: this.roomSettings.gameTimeLimit,
             countdown: this.roomSettings.countDownTime,
             games: this.roomSettings.checkList,
+            need_win: (this.roomSettings.format + 1) / 2,
           })
           .then(() => {
             this.$store.commit("change_game_state", true);
@@ -316,6 +355,7 @@ export default defineComponent({
       this.standbyPhase = false;
       this.countDownCompleted = true;
       this.countDownSeconds = this.gameData.game_time * 60 - this.gameData.countdown;
+      this.stopBGM();
       this.$nextTick(() => {
         this.countDown.start();
       });
@@ -358,6 +398,12 @@ export default defineComponent({
       if (index) {
         this.$store.dispatch("update_spell", { idx: target.getAttribute("index"), status: item.value });
       }
+    },
+    stopBGM() {
+      this.turn1CountdownAudio.pause();
+      this.turn1CountdownAudio.currentTime = 0;
+      this.turn3CountdownAudio.pause();
+      this.turn3CountdownAudio.currentTime = 0;
     },
   },
 });
@@ -421,5 +467,13 @@ export default defineComponent({
   font-size: 30px;
   margin: 10px 0;
   height: 35px;
+}
+
+.audio {
+  display: none;
+}
+
+.host-buttons > * {
+  margin: 0 15px;
 }
 </style>

@@ -5,6 +5,8 @@ class WebSocketConfig {
   public static readonly timeOutSeconds = 2; //发出心跳后多少秒没收到消息判断掉线
 }
 
+const difficultyList = ["L", "EX"];
+
 const gameOptionList = [
   {
     code: "6",
@@ -70,7 +72,7 @@ const gameTypeList = [
   {
     name: "bingo 标准赛",
     type: 1,
-    timeLimit: 60, //分钟
+    timeLimit: 30, //分钟
     countdown: 180, //秒
   },
   {
@@ -89,6 +91,7 @@ const gameTypeList = [
 
 class Config {
   public static readonly webSocket = WebSocketConfig;
+  public static readonly difficultyList = difficultyList;
   public static readonly gameOptionList = gameOptionList;
   public static readonly predefineColors = predefineColors;
   public static readonly gameTypeList = gameTypeList;

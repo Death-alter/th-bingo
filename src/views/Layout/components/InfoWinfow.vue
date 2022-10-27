@@ -1,7 +1,7 @@
 <template>
   <div class="info-window">
     <div class="info">
-      <el-tabs v-model="tabIndex" class="info-tabs" @tab-click="handleClick">
+      <el-tabs v-model="tabIndex" class="info-tabs">
         <el-tab-pane label="用户/房间" :name="0" class="tab-content">
           <div>
             <div class="user-info">
@@ -20,7 +20,7 @@
                 <el-button type="primary" @click="logout" :disabled="inGame">退出登录</el-button>
               </div>
             </div>
-            <el-divider style="margin: 10px 0;"></el-divider>
+            <el-divider style="margin: 10px 0"></el-divider>
             <div class="room-info" v-if="inRoom">
               <el-form label-width="90px">
                 <el-form-item label="房间密码：">
@@ -42,115 +42,141 @@
           </div>
         </el-tab-pane>
         <el-tab-pane label="房间设置" :name="1" class="tab-content">
-          <template v-if="isHost">
-            <div class="setting-title">房间设置</div>
-            <el-form label-width="90px">
-              <el-form-item label="规则：">
-                <div class="label-with-button">
-                  <div>
-                    <el-select v-if="showTypeInput" v-model="roomType">
-                      <el-option
-                        v-for="(item, index) in gameTypeList"
-                        :key="index"
-                        :label="item.name"
-                        :value="item.type"
-                      ></el-option>
-                    </el-select>
-                    <span v-else> {{ getRoomTypeText(roomData.type) }}</span>
+          <el-scrollbar>
+            <template v-if="isHost">
+              <div class="setting-title">房间设置</div>
+              <el-form label-width="90px">
+                <el-form-item label="规则：">
+                  <div class="label-with-button">
+                    <div>
+                      <el-select v-if="showTypeInput" v-model="roomType">
+                        <el-option
+                          v-for="(item, index) in gameTypeList"
+                          :key="index"
+                          :label="item.name"
+                          :value="item.type"
+                        ></el-option>
+                      </el-select>
+                      <span v-else> {{ getRoomTypeText(roomData.type) }}</span>
+                    </div>
+                    <el-button link type="primary" @click="editType" v-if="!inGame">{{
+                      showTypeInput ? "确认" : "修改"
+                    }}</el-button>
                   </div>
-                  <el-button link type="primary" @click="editType" v-if="!inGame">{{
-                    showTypeInput ? "确认" : "修改"
-                  }}</el-button>
-                </div>
-              </el-form-item>
-              <el-form-item label="比赛时长：">
-                <el-input-number
-                  class="input-number"
-                  v-model="roomSettings.gameTimeLimit"
-                  :min="40"
-                  :max="180"
+                </el-form-item>
+                <el-form-item label="比赛时长：">
+                  <el-input-number
+                    class="input-number"
+                    v-model="roomSettings.gameTimeLimit"
+                    :min="10"
+                    :max="180"
+                    size="small"
+                    controls-position="right"
+                    @change="synchroRoomSettings"
+                  />
+                  <span class="input-number-text">分钟</span>
+                </el-form-item>
+                <el-form-item label="倒计时：">
+                  <el-input-number
+                    class="input-number"
+                    v-model="roomSettings.countDownTime"
+                    :min="0"
+                    size="small"
+                    controls-position="right"
+                    @change="synchroRoomSettings"
+                  />
+                  <span class="input-number-text">秒</span>
+                </el-form-item>
+                <el-form-item label="赛制：">
+                  <span style="margin-right: 5px">BO</span>
+                  <el-input-number
+                    class="input-number"
+                    v-model="roomSettings.format"
+                    :min="1"
+                    :max="9"
+                    :step="2"
+                    size="small"
+                    controls-position="right"
+                    @change="onFormatChange"
+                  />
+                </el-form-item>
+                <el-form-item label="题目：">
+                  <el-checkbox-group
+                    v-model="roomSettings.checkList"
+                    style="text-align: left"
+                    @change="synchroRoomSettings"
+                  >
+                    <el-checkbox v-for="(item, index) in gameList" :label="item.code" :key="index">{{
+                      item.name
+                    }}</el-checkbox>
+                  </el-checkbox-group>
+                </el-form-item>
+                <el-form-item label="难度：">
+                  <el-checkbox-group
+                    v-model="roomSettings.difficultyList"
+                    style="text-align: left"
+                    @change="synchroRoomSettings"
+                  >
+                    <el-checkbox v-for="(item, index) in difficultyList" :label="item" :key="index">{{
+                      item
+                    }}</el-checkbox>
+                  </el-checkbox-group>
+                </el-form-item>
+              </el-form>
+              <el-divider style="margin: 10px 0"></el-divider>
+            </template>
+            <div class="setting-title">左侧玩家设置</div>
+            <el-form label-width="90px">
+              <el-form-item label="颜色：">
+                <el-color-picker
+                  v-model="roomSettings.playerA.color"
                   size="small"
-                  controls-position="right"
+                  color-format="hsl"
+                  show-alpha
+                  :predefine="predefineColors"
                   @change="synchroRoomSettings"
                 />
-                <span class="input-number-text">分钟</span>
               </el-form-item>
-              <el-form-item label="倒计时：">
+              <el-form-item label="延迟时间：" v-if="isHost">
                 <el-input-number
                   class="input-number"
-                  v-model="roomSettings.countDownTime"
+                  v-model="roomSettings.playerA.delay"
                   :min="0"
                   size="small"
+                  :step="0.1"
                   controls-position="right"
                   @change="synchroRoomSettings"
                 />
                 <span class="input-number-text">秒</span>
               </el-form-item>
-              <el-form-item label="题目：">
-                <el-checkbox-group
-                  v-model="roomSettings.checkList"
-                  style="text-align: left;"
+            </el-form>
+            <el-divider style="margin: 10px 0"></el-divider>
+            <div class="setting-title">右侧玩家设置</div>
+            <el-form label-width="90px">
+              <el-form-item label="颜色：">
+                <el-color-picker
+                  v-model="roomSettings.playerB.color"
+                  size="small"
+                  color-format="hsl"
+                  show-alpha
+                  :predefine="predefineColors"
                   @change="synchroRoomSettings"
-                >
-                  <el-checkbox v-for="(item, index) in gameList" :label="item.code" :key="index">{{
-                    item.name
-                  }}</el-checkbox>
-                </el-checkbox-group>
+                />
+              </el-form-item>
+              <el-form-item label="延迟时间：" v-if="isHost">
+                <el-input-number
+                  class="input-number"
+                  v-model="roomSettings.playerB.delay"
+                  :min="0"
+                  size="small"
+                  :step="0.1"
+                  controls-position="right"
+                  @change="synchroRoomSettings"
+                />
+                <span class="input-number-text">秒</span>
               </el-form-item>
             </el-form>
-            <el-divider style="margin: 10px 0;"></el-divider>
-          </template>
-          <div class="setting-title">左侧玩家设置</div>
-          <el-form label-width="90px">
-            <el-form-item label="颜色：">
-              <el-color-picker
-                v-model="roomSettings.playerA.color"
-                size="small"
-                color-format="hsl"
-                show-alpha
-                :predefine="predefineColors"
-                @change="synchroRoomSettings"
-              />
-            </el-form-item>
-            <el-form-item label="延迟时间：" v-if="isHost">
-              <el-input-number
-                class="input-number"
-                v-model="roomSettings.playerA.delay"
-                :min="0"
-                size="small"
-                :step="0.1"
-                controls-position="right"
-                @change="synchroRoomSettings"
-              />
-              <span class="input-number-text">秒</span>
-            </el-form-item>
-          </el-form>
-          <el-divider style="margin: 10px 0;"></el-divider>
-          <div class="setting-title">右侧玩家设置</div>
-          <el-form label-width="90px">
-            <el-form-item label="颜色：">
-              <el-color-picker
-                v-model="roomSettings.playerB.color"
-                size="small"
-                color-format="hsl"
-                show-alpha
-                :predefine="predefineColors"
-                @change="synchroRoomSettings"
-              />
-            </el-form-item>
-            <el-form-item label="延迟时间：" v-if="isHost">
-              <el-input-number
-                class="input-number"
-                v-model="roomSettings.playerB.delay"
-                :min="0"
-                size="small"
-                :step="0.1"
-                controls-position="right"
-                @change="synchroRoomSettings"
-              />
-              <span class="input-number-text">秒</span>
-            </el-form-item>
-          </el-form>
+          </el-scrollbar>
         </el-tab-pane>
         <el-tab-pane label="操作记录" :name="2" class="tab-content">
           <el-scrollbar ref="scrollbar">
@@ -201,12 +227,15 @@ export default defineComponent({
       userName: "",
       roomType: 1,
       gameList: config.gameOptionList,
+      difficultyList: config.difficultyList,
       predefineColors: config.predefineColors,
       gameTypeList: config.gameTypeList,
       roomSettings: {
         gameTimeLimit: 60,
         countDownTime: 180,
+        format: 1,
         checkList: ["6", "7", "8", "10", "11", "12", "13", "14", "15", "16", "17", "18"],
+        difficultyList: ["L", "EX"],
         playerA: {
           color: "hsl(16, 100%, 50%)",
           delay: 5,
@@ -257,6 +286,8 @@ export default defineComponent({
       this.roomSettings = {
         gameTimeLimit: this.roomType ? savedSettings.gameTimeLimit[this.roomType] : savedSettings.gameTimeLimit[1],
         countDownTime: this.roomType ? savedSettings.countDownTime[this.roomType] : savedSettings.countDownTime[1],
+        format: savedSettings.format,
+        difficultyList: savedSettings.difficultyList,
         checkList: savedSettings.checkList,
         playerA: savedSettings.playerA,
         playerB: savedSettings.playerB,
@@ -304,7 +335,6 @@ export default defineComponent({
     },
   },
   methods: {
-    handleClick() {},
     logout() {
       this.$store.commit("remove_user_data");
       if (this.inRoom) {
@@ -380,6 +410,12 @@ export default defineComponent({
           this.showTypeInput = false;
         }
       }
+    },
+    onFormatChange(value: number) {
+      if (value % 2 === 0) {
+        this.roomSettings.format++;
+      }
+      this.synchroRoomSettings();
     },
     synchroRoomSettings() {
       this.$store.commit("modify_room_settings", this.roomSettings);
