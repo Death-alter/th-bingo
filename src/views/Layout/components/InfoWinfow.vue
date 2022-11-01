@@ -104,6 +104,7 @@
                   <el-checkbox-group
                     v-model="roomSettings.checkList"
                     style="text-align: left"
+                    :min="1"
                     @change="synchroRoomSettings"
                   >
                     <el-checkbox v-for="(item, index) in gameList" :label="item.code" :key="index">{{
@@ -115,6 +116,7 @@
                   <el-checkbox-group
                     v-model="roomSettings.difficultyList"
                     style="text-align: left"
+                    :min="1"
                     @change="synchroRoomSettings"
                   >
                     <el-checkbox v-for="(item, index) in difficultyList" :label="item" :key="index">{{
@@ -137,18 +139,31 @@
                   @change="synchroRoomSettings"
                 />
               </el-form-item>
-              <el-form-item label="延迟时间：" v-if="isHost">
-                <el-input-number
-                  class="input-number"
-                  v-model="roomSettings.playerA.delay"
-                  :min="0"
-                  size="small"
-                  :step="0.1"
-                  controls-position="right"
-                  @change="synchroRoomSettings"
-                />
-                <span class="input-number-text">秒</span>
-              </el-form-item>
+              <template v-if="isHost">
+                <el-form-item label="延迟时间：">
+                  <el-input-number
+                    class="input-number"
+                    v-model="roomSettings.playerA.delay"
+                    :min="0"
+                    size="small"
+                    :step="0.1"
+                    controls-position="right"
+                    @change="synchroRoomSettings"
+                  />
+                  <span class="input-number-text">秒</span>
+                </el-form-item>
+                <el-form-item label="换卡次数：">
+                  <el-input-number
+                    class="input-number"
+                    v-model="roomSettings.playerA.changeCardCount"
+                    :min="0"
+                    size="small"
+                    controls-position="right"
+                    @change="synchroRoomSettings"
+                  />
+                  <span class="input-number-text">次</span>
+                </el-form-item>
+              </template>
             </el-form>
             <el-divider style="margin: 10px 0"></el-divider>
             <div class="setting-title">右侧玩家设置</div>
@@ -163,18 +178,31 @@
                   @change="synchroRoomSettings"
                 />
               </el-form-item>
-              <el-form-item label="延迟时间：" v-if="isHost">
-                <el-input-number
-                  class="input-number"
-                  v-model="roomSettings.playerB.delay"
-                  :min="0"
-                  size="small"
-                  :step="0.1"
-                  controls-position="right"
-                  @change="synchroRoomSettings"
-                />
-                <span class="input-number-text">秒</span>
-              </el-form-item>
+              <template v-if="isHost">
+                <el-form-item label="延迟时间：">
+                  <el-input-number
+                    class="input-number"
+                    v-model="roomSettings.playerB.delay"
+                    :min="0"
+                    size="small"
+                    :step="0.1"
+                    controls-position="right"
+                    @change="synchroRoomSettings"
+                  />
+                  <span class="input-number-text">秒</span>
+                </el-form-item>
+                <el-form-item label="换卡次数：">
+                  <el-input-number
+                    class="input-number"
+                    v-model="roomSettings.playerB.changeCardCount"
+                    :min="0"
+                    size="small"
+                    controls-position="right"
+                    @change="synchroRoomSettings"
+                  />
+                  <span class="input-number-text">次</span>
+                </el-form-item>
+              </template>
             </el-form>
           </el-scrollbar>
         </el-tab-pane>
@@ -239,10 +267,12 @@ export default defineComponent({
         playerA: {
           color: "hsl(16, 100%, 50%)",
           delay: 5,
+          changeCardCount: 2,
         },
         playerB: {
           color: "hsl(210, 100%, 56%)",
           delay: 5,
+          changeCardCount: 2,
         },
       },
     };

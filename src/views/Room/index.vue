@@ -1,36 +1,35 @@
 <template>
   <div class="room">
-    <el-row>
-      <el-col :span="4"></el-col>
-      <el-col :span="16">
-        <div class="room-title" v-if="roomData.names">
-          <div class="player-A">{{ roomData.names[0] }}</div>
-          <div class="scoreboard">
-            <div class="A-scoreboard" v-if="roomData.names[0]">
-              <div :class="{ 'score-circle': true, scored: roomData.score[0] >= 2 }"></div>
-              <div :class="{ 'score-circle': true, scored: roomData.score[0] >= 1 }"></div>
-            </div>
-            <div class="vs-text">VS</div>
-            <div class="B-scoreboard" v-if="roomData.names[1]">
-              <div :class="{ 'score-circle': true, scored: roomData.score[1] >= 1 }"></div>
-              <div :class="{ 'score-circle': true, scored: roomData.score[1] >= 2 }"></div>
-            </div>
-          </div>
-          <div class="player-B">{{ roomData.names[1] }}</div>
+    <div class="room-title" v-if="roomData.names">
+      <div class="player-A">{{ roomData.names[0] }}</div>
+      <div class="scoreboard">
+        <div class="A-scoreboard" v-if="roomData.names[0]">
+          <div
+            :class="{ 'score-circle': true, scored: roomData.score[0] >= needWin - index }"
+            v-for="(item, index) in needWinArr"
+            :key="index"
+          ></div>
         </div>
-        <div class="game">
-          <standard v-if="gameRule === 'standard'" />
+        <div class="vs-text">VS</div>
+        <div class="B-scoreboard" v-if="roomData.names[1]">
+          <div
+            :class="{ 'score-circle': true, scored: roomData.score[1] >= index + 1 }"
+            v-for="(item, index) in needWinArr"
+            :key="index"
+          ></div>
         </div>
-      </el-col>
-      <el-col :span="4"></el-col>
-    </el-row>
+      </div>
+      <div class="player-B">{{ roomData.names[1] }}</div>
+    </div>
+    <div class="game">
+      <standard v-if="gameRule === 'standard'" />
+    </div>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, computed } from "vue";
 import { useStore } from "vuex";
-import { ElRow, ElCol } from "element-plus";
 import standard from "./games/standard.vue";
 
 export default defineComponent({
@@ -38,12 +37,11 @@ export default defineComponent({
   data() {
     return {
       gameRule: "standard",
+      needWin: 1,
     };
   },
   components: {
     standard,
-    ElRow,
-    ElCol,
   },
   setup() {
     const store = useStore();
@@ -52,7 +50,20 @@ export default defineComponent({
     }
     return {
       roomData: computed(() => store.getters.roomData),
+      gameData: computed(() => store.getters.gameData),
     };
+  },
+  watch: {
+    gameData(value) {
+      if (value.need_win) {
+        this.needWin = value.need_win;
+      }
+    },
+  },
+  computed: {
+    needWinArr() {
+      return new Array(this.needWin);
+    },
   },
   methods: {},
 });
@@ -89,7 +100,7 @@ export default defineComponent({
 
     .A-scoreboard,
     .B-scoreboard {
-      width: 40px;
+      width: 80px;
       display: flex;
       justify-content: center;
       align-items: center;

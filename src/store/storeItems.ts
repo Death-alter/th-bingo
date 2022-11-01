@@ -121,8 +121,7 @@ const list: Array<StoreAction | StoreMutation> = [
         ElMessage({
           message: "由于房主退出，房间已关闭",
         });
-      }
-      if (newVal.started === false) {
+      } else if (newVal.started === false) {
         store.commit("clear_game_data");
       }
       return newVal;
@@ -169,6 +168,12 @@ const list: Array<StoreAction | StoreMutation> = [
   },
   {
     name: "roomData",
+    actionName: "reset_room",
+    wsName: "reset_room",
+    default: {},
+  },
+  {
+    name: "roomData",
     mutationName: "change_game_state",
     default: {},
     dataHandler: ((newVal: boolean, oldVal: DefaultData): DefaultData => {
@@ -183,6 +188,12 @@ const list: Array<StoreAction | StoreMutation> = [
       }
       return oldVal;
     }) as MutationHandler,
+  },
+  {
+    name: "roomData",
+    actionName: "change_card_count",
+    wsName: "change_card_count",
+    default: {},
   },
   {
     name: "logList",
@@ -276,6 +287,32 @@ const list: Array<StoreAction | StoreMutation> = [
       console.log(res, data);
       return res;
     },
+  },
+  {
+    name: "gameData",
+    actionName: "pause",
+    wsName: "pause",
+    default: {},
+    dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
+      const obj = { ...data };
+      obj.pause_begin_ms = res.pause_begin_ms;
+      obj.total_pause_ms = res.total_pause_ms || 0;
+      obj.time = res.time;
+      return obj;
+    },
+  },
+  {
+    name: "gameData",
+    mutationName: "pause_received",
+    wsName: "pause",
+    default: {},
+    dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
+      const obj = { ...oldVal };
+      obj.pause_begin_ms = newVal.pause_begin_ms;
+      obj.total_pause_ms = newVal.total_pause_ms || 0;
+      obj.time = newVal.time;
+      return obj;
+    }) as MutationHandler,
   },
   {
     name: "gameData",

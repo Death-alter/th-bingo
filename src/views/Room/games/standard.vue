@@ -1,57 +1,124 @@
 <!-- eslint-disable vue/no-parsing-error -->
 <template>
   <div class="rule-standard">
-    <div class="bingo-wrap">
-      <right-click-menu style="width: 100%; height: 100%" :menuData="menuData" :disabled="!isHost" @click="onMenuClick">
-        <div class="bingo-items">
-          <template v-if="gameData.spells">
-            <div class="spell-card" v-for="(item, index) in gameData.spells" :key="index">
-              <spell-card-cell
-                :name="item.name"
-                :desc="item.desc"
-                @click="selectSpellCard(index)"
-                :selected="selectedSpellIndex === index"
-                :status="gameData.status[index]"
-                :index="index"
-              ></spell-card-cell>
+    <el-row>
+      <el-col :span="4">
+        <div class="player-extra-info" v-if="roomData.started">
+          <div class="change-card">
+            <div class="change-card-number">
+              <div class="change-card-number-btn">
+                <el-button
+                  :disabled="roomData.change_card_count[0] <= 0"
+                  type="primary"
+                  link
+                  :icon="Minus"
+                  @click="removeChangeCardCount(0)"
+                  v-if="isHost"
+                />
+              </div>
+              <div class="change-card-number-info">{{ roomData.change_card_count[0] }}</div>
+              <div class="change-card-number-btn">
+                <el-button type="primary" link :icon="Plus" @click="addChangeCardCount(0)" v-if="isHost" />
+              </div>
             </div>
-          </template>
+            <div class="change-card-text">换卡次数</div>
+          </div>
         </div>
-      </right-click-menu>
-      <div v-if="!inGame || (winFlag !== 0 && !isHost)" class="game-alert">
-        <div :style="{ color: alertInfoColor }">{{ alertInfo }}</div>
-      </div>
-      <bingo-effect class="bingo-effect" />
-    </div>
-    <div class="count-down-wrap">
-      <count-down
-        ref="countDown"
-        :seconds="countDownSeconds || roomSettings.countDownTime"
-        @complete="onCountDownComplete"
-        v-show="inGame"
-      ></count-down>
-    </div>
-    <div v-if="isHost" class="host-buttons">
-      <el-button size="small">重置房间</el-button>
-      <el-button type="primary" @click="start" v-if="winFlag === 0">{{ inGame ? "结束比赛" : "抽取符卡" }}</el-button>
-      <el-button type="primary" @click="confirmWinner" v-else
-        >确认：{{ winFlag < 0 ? roomData.names[0] : roomData.names[1] }}获胜</el-button
-      >
-      <el-button size="small">暂停比赛</el-button>
-    </div>
-    <div v-if="inGame && !isHost">
-      <el-button type="primary" @click="confirmSelect" :disabled="selectedSpellIndex < 0" v-if="!spellCardSelected"
-        >选择符卡</el-button
-      >
-      <el-button type="primary" @click="confirmAttained" v-if="spellCardSelected" :disabled="standbyPhase"
-        >确认收取</el-button
-      >
-    </div>
-    <div class="audio">
-      <audio ref="spellCardGrabbedAudio" :src="require('@/assets/audio/spell_card_grabbed.mp3')"></audio>
-      <audio ref="turn1CountdownAudio" :src="require('@/assets/audio/turn1_countdown.mp3')"></audio>
-      <audio ref="turn3CountdownAudio" :src="require('@/assets/audio/turn3_countdown.mp3')"></audio>
-    </div>
+      </el-col>
+      <el-col :span="16">
+        <div class="bingo-wrap">
+          <right-click-menu
+            style="width: 100%; height: 100%"
+            :menuData="menuData"
+            :disabled="!isHost"
+            @click="onMenuClick"
+          >
+            <div class="bingo-items">
+              <template v-if="gameData.spells">
+                <div class="spell-card" v-for="(item, index) in gameData.spells" :key="index">
+                  <spell-card-cell
+                    :name="item.name"
+                    :desc="item.desc"
+                    @click="selectSpellCard(index)"
+                    :selected="selectedSpellIndex === index"
+                    :status="gameData.status[index]"
+                    :index="index"
+                  ></spell-card-cell>
+                </div>
+              </template>
+            </div>
+          </right-click-menu>
+          <div v-if="!inGame || ((winFlag !== 0 || gamePaused) && !isHost)" class="game-alert">
+            <div :style="{ color: alertInfoColor }">{{ alertInfo }}</div>
+          </div>
+          <bingo-effect class="bingo-effect" />
+        </div>
+        <div class="count-down-wrap">
+          <count-down
+            ref="countDown"
+            :seconds="countDownSeconds || roomSettings.countDownTime"
+            @complete="onCountDownComplete"
+            v-show="inGame"
+          ></count-down>
+        </div>
+        <div v-if="isHost" class="host-buttons">
+          <el-button size="small" @click="resetRoom" :disabled="inGame">重置房间</el-button>
+          <el-button type="primary" @click="start" v-if="winFlag === 0">{{
+            inGame ? "结束比赛" : "抽取符卡"
+          }}</el-button>
+          <el-button type="primary" @click="confirmWinner" v-else
+            >确认：{{ winFlag < 0 ? roomData.names[0] : roomData.names[1] }}获胜</el-button
+          >
+          <el-button size="small" @click="pause" :disabled="gamePhase !== 2">{{
+            gamePaused ? "继续比赛" : "暂停比赛"
+          }}</el-button>
+        </div>
+        <div v-if="inGame && !isHost">
+          <el-button
+            type="primary"
+            @click="confirmSelect"
+            :disabled="selectedSpellIndex < 0 || gamePaused"
+            v-if="!spellCardSelected"
+            >选择符卡</el-button
+          >
+          <el-button
+            type="primary"
+            @click="confirmAttained"
+            v-if="spellCardSelected"
+            :disabled="gamePhase < 2 || gamePaused"
+            >确认收取</el-button
+          >
+        </div>
+        <div class="audio">
+          <audio ref="spellCardGrabbedAudio" :src="require('@/assets/audio/spell_card_grabbed.mp3')"></audio>
+          <audio ref="turn1CountdownAudio" :src="require('@/assets/audio/turn1_countdown.mp3')"></audio>
+          <audio ref="turn3CountdownAudio" :src="require('@/assets/audio/turn3_countdown.mp3')"></audio>
+        </div>
+      </el-col>
+      <el-col :span="4">
+        <div class="player-extra-info" v-if="roomData.started">
+          <div class="change-card">
+            <div class="change-card-number">
+              <div class="change-card-number-btn">
+                <el-button
+                  :disabled="roomData.change_card_count[1] <= 0"
+                  type="primary"
+                  link
+                  :icon="Minus"
+                  @click="removeChangeCardCount(1)"
+                  v-if="isHost"
+                />
+              </div>
+              <div class="change-card-number-info">{{ roomData.change_card_count[1] }}</div>
+              <div class="change-card-number-btn">
+                <el-button type="primary" link :icon="Plus" @click="addChangeCardCount(0)" v-if="isHost" />
+              </div>
+            </div>
+            <div class="change-card-text">换卡次数</div>
+          </div>
+        </div>
+      </el-col>
+    </el-row>
   </div>
 </template>
 
@@ -62,33 +129,33 @@ import SpellCardCell from "@/components/spell-card-cell.vue";
 import RightClickMenu from "@/components/right-click-menu.vue";
 import BingoEffect from "@/components/bingo-effect/index.vue";
 import CountDown from "@/components/count-down.vue";
-import { ElButton, ElMessageBox, ElRadio, ElRadioGroup } from "element-plus";
+import { ElButton, ElMessageBox, ElRadio, ElRadioGroup, ElRow, ElCol } from "element-plus";
+import { Minus, Plus } from "@element-plus/icons-vue";
 
 export default defineComponent({
   name: "Room",
   data() {
     return {
-      paused: true,
       countDownSeconds: 0,
-      standbyPhase: false,
+      gamePhase: 0,
       selectedSpellIndex: -1,
-      countDownCompleted: false,
       winFlag: 0,
       alertInfo: "等待房主抽取符卡",
       alertInfoColor: "#000",
+      cardCount: [2, 2],
       menuData: [
         {
           label: "置空",
           value: 0,
         },
-        // {
-        //   label: "左侧玩家选择",
-        //   value: 1,
-        // },
-        // {
-        //   label: "右侧玩家选择",
-        //   value: 3,
-        // },
+        {
+          label: "左侧玩家选择",
+          value: 1,
+        },
+        {
+          label: "右侧玩家选择",
+          value: 3,
+        },
         // {
         //   label: "两侧玩家选择",
         //   value: 2,
@@ -111,6 +178,8 @@ export default defineComponent({
     CountDown,
     ElButton,
     RightClickMenu,
+    ElRow,
+    ElCol,
   },
   setup() {
     const store = useStore();
@@ -136,6 +205,7 @@ export default defineComponent({
       inRoom: computed(() => store.getters.inRoom),
       isHost: computed(() => store.getters.isHost),
       inGame: computed(() => store.getters.inGame),
+      gamePaused: computed(() => store.getters.gamePaused),
       isPlayerA: computed(() => store.getters.isPlayerA),
       isPlayerB: computed(() => store.getters.isPlayerB),
       plyaerASelectedIndex: computed(() => store.getters.plyaerASelectedIndex),
@@ -153,6 +223,8 @@ export default defineComponent({
       spellCardGrabbedAudio,
       turn1CountdownAudio,
       turn3CountdownAudio,
+      Minus,
+      Plus,
     };
   },
   mounted() {
@@ -160,15 +232,22 @@ export default defineComponent({
   },
   watch: {
     gameData(value) {
-      if (value.countdown && value.countdown !== this.countDownSeconds) {
-        this.countDownSeconds = value.countdown;
-      }
-      if (value.start_time && !this.countDownCompleted) {
-        const pasedTime = (value.time - value.start_time) / 1000;
-        const standbyCountDown = this.countDownSeconds - pasedTime;
-        const gameCountDown = value.game_time * 60 - (value.time - value.start_time) / 1000;
+      if (value.start_time) {
+        const currentTime = value.time || new Date().getTime();
+        const pauseBeginTime = value.pause_begin_ms || null;
+        const startTime = value.start_time;
+        const totalPauseTime = value.total_pause_ms || 0;
+
+        let pasedTime;
+        if (pauseBeginTime) {
+          pasedTime = (pauseBeginTime - startTime - totalPauseTime) / 1000;
+        } else {
+          pasedTime = (currentTime - startTime - totalPauseTime) / 1000;
+        }
+        const standbyCountDown = value.countdown - pasedTime;
+        const gameCountDown = value.game_time * 60 - pasedTime;
         if (standbyCountDown > 0) {
-          this.standbyPhase = true;
+          this.gamePhase = 1;
           this.countDownSeconds = Math.ceil(standbyCountDown);
           if (this.gameData.need_win === 2) {
             const gameIndex = this.roomData.score[0] + this.roomData.score[1] + 1;
@@ -183,16 +262,20 @@ export default defineComponent({
                 break;
             }
           }
+          this.$nextTick(() => {
+            this.countDown.start();
+          });
         } else if (gameCountDown > 0) {
+          this.gamePhase = 2;
           this.countDownSeconds = Math.ceil(gameCountDown);
-        } else {
-          this.$store.commit("change_game_state", false);
+          if (!value.pause_begin_ms) {
+            this.$nextTick(() => {
+              this.countDown.start();
+            });
+          }
         }
-      }
-      if (value.spells) {
-        this.$nextTick(() => {
-          this.countDown.start();
-        });
+      } else {
+        this.$store.commit("change_game_state", false);
       }
 
       const status = value.status;
@@ -260,7 +343,7 @@ export default defineComponent({
       if (!value.started) {
         this.alertInfo = "等待房主抽取符卡";
         this.alertInfoColor = "#000";
-        this.standbyPhase = false;
+        this.gamePhase = 0;
       }
       if (value.winner !== undefined) {
         ElMessageBox.alert(`${this.roomData.names[value.winner]}获胜`, "比赛结束", {
@@ -268,12 +351,22 @@ export default defineComponent({
         });
         delete value.winner;
       }
+      this.cardCount = value.change_card_count;
     },
     inGame(value) {
       if (!value) {
-        this.countDownCompleted = false;
+        this.gamePhase = 0;
         this.countDownSeconds = 0;
         this.stopBGM();
+      }
+    },
+    gamePaused(value) {
+      if (value) {
+        this.alertInfo = "游戏已暂停";
+        this.alertInfoColor = "#000";
+        this.countDown.pause();
+      } else {
+        this.countDown.start();
       }
     },
   },
@@ -342,23 +435,37 @@ export default defineComponent({
             game_time: this.roomSettings.gameTimeLimit,
             countdown: this.roomSettings.countDownTime,
             games: this.roomSettings.checkList,
+            ranks: this.roomSettings.difficultyList,
             need_win: (this.roomSettings.format + 1) / 2,
           })
           .then(() => {
+            this.$store.dispatch("change_card_count", {
+              cnt: [this.roomSettings.playerA.changeCardCount, this.roomSettings.playerB.changeCardCount],
+            });
             this.$store.commit("change_game_state", true);
-            this.standbyPhase = true;
+            this.gamePhase = 1;
             this.countDown.start();
           });
       }
     },
+    pause() {
+      if (this.gamePaused) {
+        this.$store.dispatch("pause", { pause: false });
+      } else {
+        this.$store.dispatch("pause", { pause: true });
+      }
+    },
     onCountDownComplete() {
-      this.standbyPhase = false;
-      this.countDownCompleted = true;
-      this.countDownSeconds = this.gameData.game_time * 60 - this.gameData.countdown;
-      this.stopBGM();
-      this.$nextTick(() => {
-        this.countDown.start();
-      });
+      if (this.gamePhase === 1) {
+        this.gamePhase = 2;
+        this.countDownSeconds = this.gameData.game_time * 60 - this.gameData.countdown;
+        this.stopBGM();
+        this.$nextTick(() => {
+          this.countDown.start();
+        });
+      } else if (this.gamePhase === 2) {
+        this.gamePhase = 0;
+      }
     },
     selectSpellCard(index: number) {
       if (this.selectedSpellIndex === index) {
@@ -404,6 +511,31 @@ export default defineComponent({
       this.turn1CountdownAudio.currentTime = 0;
       this.turn3CountdownAudio.pause();
       this.turn3CountdownAudio.currentTime = 0;
+    },
+    resetRoom() {
+      ElMessageBox.confirm("该操作会把房间回复到初始状态，是否确认？", "警告", {
+        confirmButtonText: "确认",
+        cancelButtonText: "取消",
+        type: "warning",
+      })
+        .then(() => {
+          this.$store.dispatch("reset_room");
+        })
+        .catch(() => {});
+    },
+    addChangeCardCount(index: number) {
+      const arr = [...this.roomData.change_card_count];
+      arr[index]++;
+      this.$store.dispatch("change_card_count", {
+        cnt: arr,
+      });
+    },
+    removeChangeCardCount(index: number) {
+      const arr = [...this.roomData.change_card_count];
+      arr[index]--;
+      this.$store.dispatch("change_card_count", {
+        cnt: arr,
+      });
     },
   },
 });
@@ -475,5 +607,35 @@ export default defineComponent({
 
 .host-buttons > * {
   margin: 0 15px;
+}
+
+.player-extra-info {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.change-card {
+  padding-bottom: 64px;
+
+  .change-card-number {
+    display: flex;
+    align-items: center;
+
+    .change-card-number-btn {
+      font-size: 24px;
+    }
+
+    .change-card-number-info {
+      font-size: 48px;
+      margin: 0 15px;
+    }
+  }
+
+  .change-card-text {
+    font-size: 12px;
+  }
 }
 </style>

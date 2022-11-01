@@ -5,7 +5,7 @@ class WebSocketConfig {
   public static readonly timeOutSeconds = 2; //发出心跳后多少秒没收到消息判断掉线
 }
 
-const difficultyList = ["L", "EX"];
+const difficultyList = ["L", "EX", "PH"];
 
 const gameOptionList = [
   {
