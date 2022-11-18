@@ -322,8 +322,10 @@ export default defineComponent({
         for (let i = 0; i < 12; i++) {
           if (sumArr[i] === -5) {
             this.winFlag = -(i + 1);
+            break;
           } else if (sumArr[i] === 5) {
             this.winFlag = i + 1;
+            break;
           }
         }
 

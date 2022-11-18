@@ -8,6 +8,9 @@ import mitt from "@/mitt";
 
 function logSpellCard(status: number, oldStatus: number, index: number) {
   switch (status) {
+    case -1:
+      store.commit("add_log", [{ text: "符卡" }, { tag: "spellCard", index }, { text: "被禁用了" }]);
+      break;
     case 1:
       store.commit("add_log", [{ tag: "playerA" }, { text: "选择了符卡" }, { tag: "spellCard", index }]);
       break;
@@ -371,6 +374,8 @@ const list: Array<StoreAction | StoreMutation> = [
       return new Promise((reslove, reject) => {
         const oldStatus = oldVal.status[newVal.idx];
         const status = [...oldVal.status];
+        oldVal.ban_pick = newVal.ban_pick || 0;
+        oldVal.whose_turn = newVal.whose_turn || 0;
         if (store.getters.isPlayerA) {
           if (newVal.status === 2) {
             status[newVal.idx] = newVal.status - 1;
@@ -387,8 +392,6 @@ const list: Array<StoreAction | StoreMutation> = [
           } else {
             status[newVal.idx] = newVal.status;
           }
-        } else {
-          status[newVal.idx] = newVal.status;
         }
         if (store.getters.isHost) {
           if (newVal.status === 1 || (newVal.status === 2 && oldStatus === 3) || newVal.status === 5) {
@@ -406,6 +409,14 @@ const list: Array<StoreAction | StoreMutation> = [
               data.status = status;
               reslove(data);
             }, store.getters.roomSettings.playerB.delay * 1000);
+          }
+          if (newVal.status === -1) {
+            window.setTimeout(() => {
+              logSpellCard(status[newVal.idx], oldStatus, newVal.idx);
+              const data = { ...oldVal };
+              data.status = status;
+              reslove(data);
+            }, (store.getters.roomSettings.playerA.delay + store.getters.roomSettings.playerB.delay) * 500);
           }
         } else {
           logSpellCard(status[newVal.idx], oldStatus, newVal.idx);

@@ -22,7 +22,8 @@
       <div class="player-B">{{ roomData.names[1] }}</div>
     </div>
     <div class="game">
-      <standard v-if="gameRule === 'standard'" />
+      <standard v-if="roomData.type === 1" />
+      <bp v-if="roomData.type === 2" />
     </div>
   </div>
 </template>
@@ -31,17 +32,18 @@
 import { defineComponent, computed } from "vue";
 import { useStore } from "vuex";
 import standard from "./games/standard.vue";
+import bp from "./games/bp.vue";
 
 export default defineComponent({
   name: "Room",
   data() {
     return {
-      gameRule: "standard",
       needWin: 1,
     };
   },
   components: {
     standard,
+    bp,
   },
   setup() {
     const store = useStore();

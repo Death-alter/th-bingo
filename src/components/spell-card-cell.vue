@@ -2,6 +2,7 @@
   <div
     :class="{
       'spell-card-cell': true,
+      banned: status === -1,
       'A-selected': status === 1 || status === 2,
       'A-attained': status === 5,
       'B-selected': status === 3 || status === 2,
@@ -204,8 +205,20 @@ export default defineComponent({
   }
 
   &.B-attained {
-    &::before {
+    &::after {
       background-image: linear-gradient(var(--B-color) 60%, var(--B-color-dark));
+    }
+  }
+
+  &.banned {
+    text-decoration: line-through;
+
+    &::before {
+      background-image: linear-gradient(#ccc 60%, #666);
+    }
+
+    .level-icons {
+      color: #666 !important;
     }
   }
 }
