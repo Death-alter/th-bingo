@@ -75,7 +75,6 @@ export default defineComponent({
       padding: 10px;
       box-sizing: border-box;
       position: relative;
-      overflow: hidden;
       background-color: #ffffffdd;
     }
 

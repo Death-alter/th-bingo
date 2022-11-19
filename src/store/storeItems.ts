@@ -360,6 +360,12 @@ const list: Array<StoreAction | StoreMutation> = [
     wsName: "update_spell",
     default: {},
     dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
+      if (res.ban_pick !== undefined) {
+        data.ban_pick = res.ban_pick;
+      }
+      if (res.whose_turn !== undefined) {
+        data.whose_turn = res.whose_turn;
+      }
       logSpellCard(params.status, data.status[params.idx], params.idx);
       data.status[params.idx] = params.status;
       return { ...data };
@@ -374,55 +380,59 @@ const list: Array<StoreAction | StoreMutation> = [
       return new Promise((reslove, reject) => {
         const oldStatus = oldVal.status[newVal.idx];
         const status = [...oldVal.status];
-        oldVal.ban_pick = newVal.ban_pick || 0;
-        oldVal.whose_turn = newVal.whose_turn || 0;
-        if (store.getters.isPlayerA) {
-          if (newVal.status === 2) {
-            status[newVal.idx] = newVal.status - 1;
-          } else if (newVal.status === 3) {
-            status[newVal.idx] = 0;
-          } else {
-            status[newVal.idx] = newVal.status;
-          }
-        } else if (store.getters.isPlayerB) {
-          if (newVal.status === 2) {
-            status[newVal.idx] = newVal.status + 1;
-          } else if (newVal.status === 1) {
-            status[newVal.idx] = 0;
-          } else {
-            status[newVal.idx] = newVal.status;
-          }
-        }
-        if (store.getters.isHost) {
-          if (newVal.status === 1 || (newVal.status === 2 && oldStatus === 3) || newVal.status === 5) {
-            window.setTimeout(() => {
-              logSpellCard(status[newVal.idx], oldStatus, newVal.idx);
-              const data = { ...oldVal };
-              data.status = status;
-              reslove(data);
-            }, store.getters.roomSettings.playerA.delay * 1000);
-          }
-          if (newVal.status === 3 || (newVal.status === 2 && oldStatus === 1) || newVal.status === 7) {
-            window.setTimeout(() => {
-              logSpellCard(status[newVal.idx], oldStatus, newVal.idx);
-              const data = { ...oldVal };
-              data.status = status;
-              reslove(data);
-            }, store.getters.roomSettings.playerB.delay * 1000);
-          }
-          if (newVal.status === -1) {
-            window.setTimeout(() => {
-              logSpellCard(status[newVal.idx], oldStatus, newVal.idx);
-              const data = { ...oldVal };
-              data.status = status;
-              reslove(data);
-            }, (store.getters.roomSettings.playerA.delay + store.getters.roomSettings.playerB.delay) * 500);
-          }
-        } else {
+        function setData() {
           logSpellCard(status[newVal.idx], oldStatus, newVal.idx);
           const data = { ...oldVal };
           data.status = status;
           reslove(data);
+        }
+
+        switch (store.getters.roomData.type) {
+          case 1:
+            if (store.getters.isPlayerA) {
+              if (newVal.status === 2) {
+                status[newVal.idx] = newVal.status - 1;
+              } else if (newVal.status === 3) {
+                status[newVal.idx] = 0;
+              } else {
+                status[newVal.idx] = newVal.status;
+              }
+            } else if (store.getters.isPlayerB) {
+              if (newVal.status === 2) {
+                status[newVal.idx] = newVal.status + 1;
+              } else if (newVal.status === 1) {
+                status[newVal.idx] = 0;
+              } else {
+                status[newVal.idx] = newVal.status;
+              }
+            } else {
+              status[newVal.idx] = newVal.status;
+            }
+            if (store.getters.isHost) {
+              if (newVal.status === 1 || (newVal.status === 2 && oldStatus === 3) || newVal.status === 5) {
+                window.setTimeout(() => {
+                  setData();
+                }, store.getters.roomSettings.playerA.delay * 1000);
+              }
+              if (newVal.status === 3 || (newVal.status === 2 && oldStatus === 1) || newVal.status === 7) {
+                window.setTimeout(() => {
+                  setData();
+                }, store.getters.roomSettings.playerB.delay * 1000);
+              }
+            } else {
+              setData();
+            }
+            break;
+          case 2:
+            if (newVal.ban_pick !== undefined) {
+              oldVal.ban_pick = newVal.ban_pick;
+            }
+            if (newVal.whose_turn !== undefined) {
+              oldVal.whose_turn = newVal.whose_turn;
+            }
+            status[newVal.idx] = newVal.status;
+            setData();
+            break;
         }
       });
     }) as MutationHandler,

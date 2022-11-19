@@ -151,10 +151,12 @@ export default defineComponent({
         {
           label: "左侧玩家选择",
           value: 1,
+          tag: "playerA",
         },
         {
           label: "右侧玩家选择",
           value: 3,
+          tag: "playerB",
         },
         // {
         //   label: "两侧玩家选择",
@@ -163,10 +165,12 @@ export default defineComponent({
         {
           label: "左侧玩家收取",
           value: 5,
+          tag: "playerA",
         },
         {
           label: "右侧玩家收取",
           value: 7,
+          tag: "playerB",
         },
       ],
     };
@@ -233,8 +237,8 @@ export default defineComponent({
   watch: {
     gameData(value) {
       if (value.start_time) {
-        const currentTime = value.time || new Date().getTime();
         const pauseBeginTime = value.pause_begin_ms || null;
+        const currentTime = pauseBeginTime ? value.time : new Date().getTime();
         const startTime = value.start_time;
         const totalPauseTime = value.total_pause_ms || 0;
 

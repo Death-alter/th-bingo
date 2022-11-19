@@ -14,7 +14,7 @@
             return false;
           }
         "
-        class="menu-item"
+        :class="{ 'menu-item': true, playerA: item.tag === 'playerA', playerB: item.tag === 'playerB' }"
       >
         {{ item.label }}
       </div>
@@ -114,6 +114,14 @@ export default defineComponent({
 
   &:hover {
     background-color: rgb(218, 238, 255);
+  }
+
+  &.playerA {
+    color: var(--A-color);
+  }
+
+  &.playerB {
+    color: var(--B-color);
   }
 }
 </style>

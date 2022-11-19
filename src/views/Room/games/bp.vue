@@ -66,14 +66,14 @@
             @click="confirmSelect"
             :disabled="selectedSpellIndex < 0 || gamePaused || !isMyTurn"
             v-if="!gameData.ban_pick"
-            >选择符卡</el-button
+            >{{ isMyTurn ? "选择符卡" : "等待对手选择符卡" }}</el-button
           >
           <el-button
             type="primary"
             @click="confirmBan"
             v-if="gameData.ban_pick"
             :disabled="selectedSpellIndex < 0 || gamePaused || !isMyTurn"
-            >禁用符卡</el-button
+            >{{ isMyTurn ? "禁用符卡" : "等待对手禁用符卡" }}</el-button
           >
         </div>
         <div class="audio">
@@ -119,21 +119,23 @@ export default defineComponent({
       cardCount: [2, 2],
       menuData: [
         {
-          label: "置空",
+          label: "收取失败",
           value: 0,
         },
         {
           label: "禁用",
           value: -1,
         },
-        {
-          label: "左侧玩家选择",
-          value: 1,
-        },
-        {
-          label: "右侧玩家选择",
-          value: 3,
-        },
+        // {
+        //   label: "左侧玩家选择",
+        //   value: 1,
+        //   tag: "playerA",
+        // },
+        // {
+        //   label: "右侧玩家选择",
+        //   value: 3,
+        //   tag: "playerB",
+        // },
         // {
         //   label: "两侧玩家选择",
         //   value: 2,
@@ -141,10 +143,12 @@ export default defineComponent({
         {
           label: "左侧玩家收取",
           value: 5,
+          tag: "playerA",
         },
         {
           label: "右侧玩家收取",
           value: 7,
+          tag: "playerB",
         },
       ],
     };
@@ -202,17 +206,11 @@ export default defineComponent({
   watch: {
     gameData(value) {
       if (value.start_time) {
-        const currentTime = value.time || new Date().getTime();
-        const pauseBeginTime = value.pause_begin_ms || null;
+        const currentTime = new Date().getTime();
         const startTime = value.start_time;
-        const totalPauseTime = value.total_pause_ms || 0;
 
         let pasedTime;
-        if (pauseBeginTime) {
-          pasedTime = (pauseBeginTime - startTime - totalPauseTime) / 1000;
-        } else {
-          pasedTime = (currentTime - startTime - totalPauseTime) / 1000;
-        }
+        pasedTime = (currentTime - startTime) / 1000;
         const standbyCountDown = value.countdown - pasedTime;
         const gameCountDown = value.game_time * 60 - pasedTime;
         if (standbyCountDown > 0) {
@@ -252,15 +250,17 @@ export default defineComponent({
         const available: number[] = new Array(12).fill(2);
         const sumArr: number[] = new Array(12).fill(0);
         this.winFlag = 0;
-        let countA = 0;
-        let countB = 0;
+        let count = 0;
         let scoreA = 0;
         let scoreB = 0;
         status.forEach((item: number, index: number) => {
           const rowIndex = Math.floor(index / 5);
           const columnIndex = index % 5;
+          if (item == -1) {
+            count++;
+          }
           if (item === 5) {
-            countA++;
+            count++;
             scoreA += this.gameData.spells[index].star;
             if (available[rowIndex] > 0) available[rowIndex] -= 2;
             if (available[columnIndex + 5] > 0) available[columnIndex + 5] -= 2;
@@ -275,7 +275,7 @@ export default defineComponent({
               if (available[11] > 0) available[11] -= 2;
             }
           } else if (item === 7) {
-            countB++;
+            count++;
             scoreB += this.gameData.spells[index].star;
             if (available[rowIndex] % 2 === 0) available[rowIndex] -= 1;
             if (available[columnIndex + 5] % 2 === 0) available[columnIndex + 5] -= 1;
@@ -305,11 +305,12 @@ export default defineComponent({
         this.playerAScore = scoreA;
         this.playerBScore = scoreB;
 
-        if (countA >= 13) {
-          this.winFlag = -13;
-        }
-        if (countB >= 13) {
-          this.winFlag = 13;
+        if (count == 25) {
+          if (scoreB - scoreA < 0) {
+            this.winFlag = -25;
+          } else {
+            this.winFlag = 25;
+          }
         }
         if (this.winFlag !== 0) {
           this.alertInfo = "已满足胜利条件，等待房主判断";
