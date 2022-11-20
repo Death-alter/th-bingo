@@ -35,7 +35,7 @@
               </template>
             </div>
           </right-click-menu>
-          <div v-if="!inGame || ((winFlag !== 0 || gamePaused) && !isHost)" class="game-alert">
+          <div v-if="!inGame || (winFlag !== 0 && !isHost)" class="game-alert">
             <div :style="{ color: alertInfoColor }">{{ alertInfo }}</div>
           </div>
           <bingo-effect class="bingo-effect" />
@@ -56,23 +56,17 @@
           <el-button type="primary" @click="confirmWinner" v-else
             >确认：{{ winFlag < 0 ? roomData.names[0] : roomData.names[1] }}获胜</el-button
           >
-          <el-button size="small" @click="undo" :disabled="gamePhase !== 2 || undoDisabled">撤销操作</el-button>
+          <el-button size="small" @click="nextRound" :disabled="gamePhase !== 2 || gameData.whose_turn === 2"
+            >进入下轮</el-button
+          >
         </div>
         <div v-if="inGame && !isHost">
-          <el-button
-            type="primary"
-            @click="confirmSelect"
-            :disabled="selectedSpellIndex < 0 || gamePaused || !isMyTurn"
-            v-if="!gameData.ban_pick"
-            >{{ isMyTurn ? "选择符卡" : "等待对手选择符卡" }}</el-button
-          >
-          <el-button
-            type="primary"
-            @click="confirmBan"
-            v-if="gameData.ban_pick"
-            :disabled="selectedSpellIndex < 0 || gamePaused || !isMyTurn"
-            >{{ isMyTurn ? "禁用符卡" : "等待对手禁用符卡" }}</el-button
-          >
+          <el-button type="primary" @click="confirmSelect" :disabled="!isMyTurn" v-if="!gameData.ban_pick">{{
+            isMyTurn ? "选择符卡" : "等待对手选择符卡"
+          }}</el-button>
+          <el-button type="primary" @click="confirmBan" v-if="gameData.ban_pick" :disabled="!isMyTurn">{{
+            isMyTurn ? "禁用符卡" : "等待对手禁用符卡"
+          }}</el-button>
         </div>
         <div class="audio">
           <audio ref="turn1CountdownAudio" :src="require('@/assets/audio/turn1_countdown.mp3')"></audio>
@@ -112,7 +106,6 @@ export default defineComponent({
       playerBScore: 0,
       selectedSpellIndex: -1,
       winFlag: 0,
-      undoDisabled: false,
       audioPlaying: false,
       alertInfo: "等待房主抽取符卡",
       alertInfoColor: "#000",
@@ -176,25 +169,13 @@ export default defineComponent({
       inRoom: computed(() => store.getters.inRoom),
       isHost: computed(() => store.getters.isHost),
       inGame: computed(() => store.getters.inGame),
-      gamePaused: computed(() => store.getters.gamePaused),
       isPlayerA: computed(() => store.getters.isPlayerA),
       isPlayerB: computed(() => store.getters.isPlayerB),
       isMyTurn: computed(
         () =>
-          (store.getters.isPlayerA && !store.getters.gameData.whose_turn) ||
-          (store.getters.isPlayerB && store.getters.gameData.whose_turn)
+          (store.getters.isPlayerA && store.getters.gameData.whose_turn === 0) ||
+          (store.getters.isPlayerB && store.getters.gameData.whose_turn === 1)
       ),
-      plyaerASelectedIndex: computed(() => store.getters.plyaerASelectedIndex),
-      plyaerBSelectedIndex: computed(() => store.getters.plyaerBSelectedIndex),
-      spellCardSelected: computed(() => {
-        if (store.getters.isPlayerA) {
-          return store.getters.plyaerASelectedIndex !== -1;
-        }
-        if (store.getters.isPlayerB) {
-          return store.getters.plyaerBSelectedIndex !== -1;
-        }
-        return false;
-      }),
       countDown,
       turn1CountdownAudio,
       turn3CountdownAudio,
@@ -341,15 +322,6 @@ export default defineComponent({
         this.stopBGM();
       }
     },
-    gamePaused(value) {
-      if (value) {
-        this.alertInfo = "游戏已暂停";
-        this.alertInfoColor = "#000";
-        this.countDown.pause();
-      } else {
-        this.countDown.start();
-      }
-    },
   },
   methods: {
     start() {
@@ -429,16 +401,8 @@ export default defineComponent({
           });
       }
     },
-    undo() {
-      this.undoDisabled = true;
-      this.$store
-        .dispatch("undo")
-        .then(() => {
-          this.undoDisabled = false;
-        })
-        .catch((e) => {
-          this.undoDisabled = false;
-        });
+    nextRound() {
+      this.$store.dispatch("next_round");
     },
     onCountDownComplete() {
       if (this.gamePhase === 1) {
@@ -455,7 +419,7 @@ export default defineComponent({
     selectSpellCard(index: number) {
       if (this.selectedSpellIndex === index) {
         this.selectedSpellIndex = -1;
-      } else if (!this.spellCardSelected && this.gameData.status[index] === 0) {
+      } else if (this.gameData.status[index] === 0) {
         this.selectedSpellIndex = index;
       }
     },
