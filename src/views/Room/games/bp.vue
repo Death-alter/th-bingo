@@ -56,9 +56,7 @@
           <el-button type="primary" @click="confirmWinner" v-else
             >确认：{{ winFlag < 0 ? roomData.names[0] : roomData.names[1] }}获胜</el-button
           >
-          <el-button size="small" @click="pause" :disabled="gamePhase !== 2">{{
-            gamePaused ? "继续比赛" : "暂停比赛"
-          }}</el-button>
+          <el-button size="small" @click="undo" :disabled="gamePhase !== 2 || undoDisabled">撤销操作</el-button>
         </div>
         <div v-if="inGame && !isHost">
           <el-button
@@ -114,6 +112,8 @@ export default defineComponent({
       playerBScore: 0,
       selectedSpellIndex: -1,
       winFlag: 0,
+      undoDisabled: false,
+      audioPlaying: false,
       alertInfo: "等待房主抽取符卡",
       alertInfoColor: "#000",
       cardCount: [2, 2],
@@ -216,16 +216,18 @@ export default defineComponent({
         if (standbyCountDown > 0) {
           this.gamePhase = 1;
           this.countDownSeconds = Math.ceil(standbyCountDown);
-          if (this.gameData.need_win === 2) {
+          if (this.gameData.need_win === 2 && !this.audioPlaying) {
             const gameIndex = this.roomData.score[0] + this.roomData.score[1] + 1;
             switch (gameIndex) {
               case 1:
                 this.turn1CountdownAudio.currentTime = pasedTime;
                 this.turn1CountdownAudio.play();
+                this.audioPlaying = true;
                 break;
               case 3:
                 this.turn3CountdownAudio.currentTime = pasedTime + 2;
                 this.turn3CountdownAudio.play();
+                this.audioPlaying = true;
                 break;
             }
           }
@@ -427,12 +429,16 @@ export default defineComponent({
           });
       }
     },
-    pause() {
-      if (this.gamePaused) {
-        this.$store.dispatch("pause", { pause: false });
-      } else {
-        this.$store.dispatch("pause", { pause: true });
-      }
+    undo() {
+      this.undoDisabled = true;
+      this.$store
+        .dispatch("undo")
+        .then(() => {
+          this.undoDisabled = false;
+        })
+        .catch((e) => {
+          this.undoDisabled = false;
+        });
     },
     onCountDownComplete() {
       if (this.gamePhase === 1) {

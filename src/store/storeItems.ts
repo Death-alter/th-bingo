@@ -306,6 +306,23 @@ const list: Array<StoreAction | StoreMutation> = [
   },
   {
     name: "gameData",
+    actionName: "undo",
+    wsName: "undo",
+    default: {},
+    dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
+      if (res.ban_pick !== undefined) {
+        data.ban_pick = res.ban_pick;
+      }
+      if (res.whose_turn !== undefined) {
+        data.whose_turn = res.whose_turn;
+      }
+      store.commit("add_log", [{ text: "房主撤销了一步操作" }]);
+      data.status[res.idx] = res.status;
+      return { ...data };
+    },
+  },
+  {
+    name: "gameData",
     mutationName: "pause_received",
     wsName: "pause",
     default: {},

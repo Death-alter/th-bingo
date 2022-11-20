@@ -140,6 +140,7 @@ export default defineComponent({
       gamePhase: 0,
       selectedSpellIndex: -1,
       winFlag: 0,
+      audioPlaying: false,
       alertInfo: "等待房主抽取符卡",
       alertInfoColor: "#000",
       cardCount: [2, 2],
@@ -253,16 +254,18 @@ export default defineComponent({
         if (standbyCountDown > 0) {
           this.gamePhase = 1;
           this.countDownSeconds = Math.ceil(standbyCountDown);
-          if (this.gameData.need_win === 2) {
+          if (this.gameData.need_win === 2 && !this.audioPlaying) {
             const gameIndex = this.roomData.score[0] + this.roomData.score[1] + 1;
             switch (gameIndex) {
               case 1:
                 this.turn1CountdownAudio.currentTime = pasedTime;
                 this.turn1CountdownAudio.play();
+                this.audioPlaying = true;
                 break;
               case 3:
                 this.turn3CountdownAudio.currentTime = pasedTime + 2;
                 this.turn3CountdownAudio.play();
+                this.audioPlaying = true;
                 break;
             }
           }
