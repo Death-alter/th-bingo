@@ -56,16 +56,20 @@
           <el-button type="primary" @click="confirmWinner" v-else
             >确认：{{ winFlag < 0 ? roomData.names[0] : roomData.names[1] }}获胜</el-button
           >
-          <el-button size="small" @click="nextRound" :disabled="gamePhase !== 2 || gameData.whose_turn === 2"
+          <el-button size="small" @click="nextRound" :disabled="gamePhase !== 2 || gameData.ban_pick !== 2"
             >进入下轮</el-button
           >
         </div>
         <div v-if="inGame && !isHost">
-          <el-button type="primary" @click="confirmSelect" :disabled="!isMyTurn" v-if="!gameData.ban_pick">{{
-            isMyTurn ? "选择符卡" : "等待对手选择符卡"
-          }}</el-button>
-          <el-button type="primary" @click="confirmBan" v-if="gameData.ban_pick" :disabled="!isMyTurn">{{
-            isMyTurn ? "禁用符卡" : "等待对手禁用符卡"
+          <el-button
+            type="primary"
+            @click="confirmSelect"
+            :disabled="!isMyTurn || !bpPhase"
+            v-if="!gameData.ban_pick"
+            >{{ bpPhase ? (isMyTurn ? "选择符卡" : "等待对手选择符卡") : "等待房主操作" }}</el-button
+          >
+          <el-button type="primary" @click="confirmBan" v-if="gameData.ban_pick" :disabled="!isMyTurn || !bpPhase">{{
+            bpPhase ? (isMyTurn ? "禁用符卡" : "等待对手禁用符卡") : "等待房主操作"
           }}</el-button>
         </div>
         <div class="audio">
@@ -176,6 +180,7 @@ export default defineComponent({
           (store.getters.isPlayerA && store.getters.gameData.whose_turn === 0) ||
           (store.getters.isPlayerB && store.getters.gameData.whose_turn === 1)
       ),
+      bpPhase: computed(() => store.getters.gameData.ban_pick !== 2),
       countDown,
       turn1CountdownAudio,
       turn3CountdownAudio,

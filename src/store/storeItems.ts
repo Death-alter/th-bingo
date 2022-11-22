@@ -319,6 +319,21 @@ const list: Array<StoreAction | StoreMutation> = [
   },
   {
     name: "gameData",
+    mutationName: "next_round_received",
+    wsName: "next_round",
+    default: {},
+    dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
+      if (newVal.ban_pick !== undefined) {
+        oldVal.ban_pick = newVal.ban_pick;
+      }
+      if (newVal.whose_turn !== undefined) {
+        oldVal.whose_turn = newVal.whose_turn;
+      }
+      return { ...oldVal };
+    }) as MutationHandler,
+  },
+  {
+    name: "gameData",
     mutationName: "pause_received",
     wsName: "pause",
     default: {},
