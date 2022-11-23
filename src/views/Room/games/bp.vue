@@ -377,7 +377,7 @@ export default defineComponent({
           }).then(() => {
             //winner
             if (checked.value < 0) {
-              this.$store.dispatch("stop_game").then(() => {
+              this.$store.dispatch("stop_game", { winner: -1 }).then(() => {
                 this.countDown.reset();
               });
             } else {
