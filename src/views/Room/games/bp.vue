@@ -451,9 +451,9 @@ export default defineComponent({
       });
     },
     onMenuClick({ event, target, item }: any) {
-      const index = target.getAttribute("index");
+      const index: number = parseInt(target.getAttribute("index"));
       if (index) {
-        this.$store.dispatch("update_spell", { idx: target.getAttribute("index"), status: item.value });
+        this.$store.dispatch("update_spell", { idx: index, status: item.value });
       }
     },
     stopBGM() {
