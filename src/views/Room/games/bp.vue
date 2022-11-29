@@ -123,16 +123,16 @@ export default defineComponent({
           label: "禁用",
           value: -1,
         },
-        // {
-        //   label: "左侧玩家选择",
-        //   value: 1,
-        //   tag: "playerA",
-        // },
-        // {
-        //   label: "右侧玩家选择",
-        //   value: 3,
-        //   tag: "playerB",
-        // },
+        {
+          label: "左侧玩家选择",
+          value: 1,
+          tag: "playerA",
+        },
+        {
+          label: "右侧玩家选择",
+          value: 3,
+          tag: "playerB",
+        },
         // {
         //   label: "两侧玩家选择",
         //   value: 2,
