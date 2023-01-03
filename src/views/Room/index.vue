@@ -24,6 +24,7 @@
     <div class="game">
       <standard v-if="roomData.type === 1" />
       <bp v-if="roomData.type === 2" />
+      <bingo-link v-if="roomData.type === 3" />
     </div>
   </div>
 </template>
@@ -33,6 +34,7 @@ import { defineComponent, computed } from "vue";
 import { useStore } from "vuex";
 import standard from "./games/standard.vue";
 import bp from "./games/bp.vue";
+import bingoLink from "./games/link.vue";
 
 export default defineComponent({
   name: "Room",
@@ -44,6 +46,7 @@ export default defineComponent({
   components: {
     standard,
     bp,
+    bingoLink,
   },
   setup() {
     const store = useStore();

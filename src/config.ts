@@ -82,7 +82,7 @@ const gameTypeList = [
     countdown: 300,
   },
   {
-    name: "bingo 自定义",
+    name: "bingo link赛",
     type: 3,
     timeLimit: 60,
     countdown: 300,

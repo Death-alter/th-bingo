@@ -384,7 +384,7 @@ export default defineComponent({
         case 2:
           return "bingo BP赛";
         case 3:
-          return "bingo 自定义";
+          return "bingo link赛";
         default:
           return "未选择比赛类型";
       }

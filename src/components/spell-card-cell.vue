@@ -10,6 +10,7 @@
       'A-local-selected': isPlayerA && selected,
       'B-local-selected': isPlayerB && selected,
     }"
+    @click="onClick"
   >
     <div class="spell-card-info">
       <div class="level" v-if="level">
@@ -80,7 +81,14 @@ export default defineComponent({
       isPlayerB: computed(() => store.getters.isPlayerB),
     };
   },
-  methods: {},
+  emits: ["click"],
+  methods: {
+    onClick() {
+      if (!this.disabled) {
+        this.$emit("click");
+      }
+    },
+  },
 });
 </script>
 
