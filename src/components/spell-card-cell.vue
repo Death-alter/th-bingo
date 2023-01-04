@@ -4,9 +4,9 @@
       'spell-card-cell': true,
       banned: status === -1,
       'A-selected': status === 1 || status === 2,
-      'A-attained': status === 5,
+      'A-attained': status === 5 || status === 4,
       'B-selected': status === 3 || status === 2,
-      'B-attained': status === 7,
+      'B-attained': status === 7 || status === 4,
       'A-local-selected': isPlayerA && selected,
       'B-local-selected': isPlayerB && selected,
     }"
@@ -215,6 +215,17 @@ export default defineComponent({
   &.B-attained {
     &::after {
       background-image: linear-gradient(var(--B-color) 60%, var(--B-color-dark));
+    }
+  }
+
+  &.A-attained.B-attained {
+    &::before {
+      transform: skew(-0.89rad) translateX(0%);
+      left: -50%;
+    }
+    &::after {
+      transform: skew(-0.89rad) translateX(0%);
+      left: 50%;
     }
   }
 

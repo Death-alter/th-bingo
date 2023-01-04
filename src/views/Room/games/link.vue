@@ -14,28 +14,29 @@
       </el-col>
       <el-col :span="16">
         <div class="bingo-wrap">
-          <!-- <right-click-menu
+          <right-click-menu
             style="width: 100%; height: 100%"
             :menuData="menuData"
             :disabled="!isHost"
             @click="onMenuClick"
-          > -->
-          <div class="bingo-items">
-            <template v-if="gameData.spells">
-              <div class="spell-card" v-for="(item, index) in gameData.spells" :key="index">
-                <spell-card-cell
-                  :name="item.name"
-                  :desc="item.desc"
-                  :level="item.star"
-                  @click="selectSpellCard(index)"
-                  :selected="availableIndexList.indexOf(index) !== -1"
-                  :disabled="availableIndexList.indexOf(index) === -1"
-                  :index="index"
-                ></spell-card-cell>
-              </div>
-            </template>
-          </div>
-          <!-- </right-click-menu> -->
+          >
+            <div class="bingo-items">
+              <template v-if="gameData.spells">
+                <div class="spell-card" v-for="(item, index) in gameData.spells" :key="index">
+                  <spell-card-cell
+                    :name="item.name"
+                    :desc="item.desc"
+                    :level="item.star"
+                    @click="selectSpellCard(index)"
+                    :selected="availableIndexList.indexOf(index) !== -1"
+                    :disabled="availableIndexList.indexOf(index) === -1"
+                    :status="gameData.status[index] < 4 ? 0 : gameData.status[index]"
+                    :index="index"
+                  ></spell-card-cell>
+                </div>
+              </template>
+            </div>
+          </right-click-menu>
           <div v-if="!inGame || ((winFlag !== 0 || gamePaused) && !isHost)" class="game-alert">
             <div :style="{ color: alertInfoColor }">{{ alertInfo }}</div>
           </div>
@@ -62,15 +63,12 @@
           }}</el-button>
         </div>
         <div v-if="inGame && !isHost">
-          <el-button type="primary" @click="confirmSelect" :disabled="gamePaused" v-if="!spellCardSelected"
-            >选择符卡</el-button
-          >
           <el-button
             type="primary"
-            @click="confirmAttained"
-            v-if="spellCardSelected"
-            :disabled="gamePhase < 2 || gamePaused"
-            >确认收取</el-button
+            @click="confirmSelect"
+            :disabled="gamePaused"
+            v-if="gamePhase === 1 || !confirmed"
+            >{{ confirmed ? "取消确认" : "确认路线" }}</el-button
           >
         </div>
         <div class="audio">
@@ -108,6 +106,7 @@ export default defineComponent({
     return {
       countDownSeconds: 0,
       availableIndexList: [] as number[],
+      confirmed: false,
       gamePhase: 0,
       playerAScore: 0,
       playerBScore: 0,
@@ -118,19 +117,13 @@ export default defineComponent({
       cardCount: [2, 2],
       menuData: [
         {
-          label: "左侧玩家选择",
-          value: 1,
-          tag: "playerA",
+          label: "置空",
+          value: 0,
         },
         {
-          label: "右侧玩家选择",
-          value: 3,
-          tag: "playerB",
+          label: "两侧玩家收取",
+          value: 4,
         },
-        // {
-        //   label: "两侧玩家选择",
-        //   value: 2,
-        // },
         {
           label: "左侧玩家收取",
           value: 5,
@@ -199,17 +192,11 @@ export default defineComponent({
   watch: {
     gameData(value) {
       if (value.start_time) {
-        const pauseBeginTime = value.pause_begin_ms || null;
-        const currentTime = pauseBeginTime ? value.time : new Date().getTime();
+        const currentTime = new Date().getTime();
         const startTime = value.start_time;
-        const totalPauseTime = value.total_pause_ms || 0;
 
         let pasedTime;
-        if (pauseBeginTime) {
-          pasedTime = (pauseBeginTime - startTime - totalPauseTime) / 1000;
-        } else {
-          pasedTime = (currentTime - startTime - totalPauseTime) / 1000;
-        }
+        pasedTime = (currentTime - startTime) / 1000;
         const standbyCountDown = value.countdown - pasedTime;
         const gameCountDown = value.game_time * 60 - pasedTime;
         if (standbyCountDown > 0) {
@@ -246,10 +233,16 @@ export default defineComponent({
         this.$store.commit("change_game_state", false);
       }
 
-      if (value.link_data.link_idx_a) {
+      if (value.link_data && value.link_data.link_idx_a) {
+        if (value.link_data.link_idx_a[value.link_data.link_idx_a.length - 1] === 24 && this.gamePhase > 1) {
+          this.confirmed = true;
+        }
         this.linkEffect.setLinkList("A", value.link_data.link_idx_a);
       }
-      if (value.link_data.link_idx_b) {
+      if (value.link_data && value.link_data.link_idx_b) {
+        if (value.link_data.link_idx_b[value.link_data.link_idx_b.length - 1] === 20 && this.gamePhase > 1) {
+          this.confirmed = true;
+        }
         this.linkEffect.setLinkList("B", value.link_data.link_idx_b);
       }
       value.link_data = {};
@@ -373,9 +366,9 @@ export default defineComponent({
     },
     pause() {
       if (this.gamePaused) {
-        this.$store.dispatch("pause", { pause: false });
+        this.$store.dispatch("modify_link_time_data", { whose: this.gamePhase > 2 ? 1 : 0, start: false });
       } else {
-        this.$store.dispatch("pause", { pause: true });
+        this.$store.dispatch("modify_link_time_data", { whose: this.gamePhase > 2 ? 1 : 0, start: true });
       }
     },
     onCountDownComplete() {
@@ -392,20 +385,26 @@ export default defineComponent({
     },
     selectSpellCard(index: number) {
       if (this.isPlayerA) {
-        this.$store.dispatch("update_spell", { idx: index, status: 5 }).then(() => {
+        this.$store.dispatch("update_spell", { idx: index, status: 1 }).then(() => {
           this.linkEffect.link("A", index);
           this.getAvailableIndexList();
         });
       }
       if (this.isPlayerB) {
-        this.$store.dispatch("update_spell", { idx: index, status: 7 }).then(() => {
+        this.$store.dispatch("update_spell", { idx: index, status: 3 }).then(() => {
           this.linkEffect.link("B", index);
           this.getAvailableIndexList();
         });
       }
     },
     confirmSelect() {
-      this.availableIndexList = [];
+      if (!this.confirmed) {
+        this.availableIndexList = [];
+        this.confirmed = true;
+      } else {
+        this.getAvailableIndexList();
+        this.confirmed = false;
+      }
     },
     confirmAttained() {
       if (this.isPlayerA) {

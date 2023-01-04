@@ -461,6 +461,10 @@ const list: Array<StoreAction | StoreMutation> = [
             status[newVal.idx] = newVal.status;
             setData();
             break;
+          case 3:
+            status[newVal.idx] = newVal.status;
+            setData();
+            break;
         }
       });
     }) as MutationHandler,
@@ -490,6 +494,15 @@ const list: Array<StoreAction | StoreMutation> = [
       }
       return newVal;
     }) as MutationHandler,
+  },
+  {
+    name: "gameData",
+    actionName: "modify_link_time_data",
+    wsName: "link_time",
+    default: {},
+    // dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
+    //   return {};
+    // },
   },
 ];
 
