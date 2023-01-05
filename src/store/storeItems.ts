@@ -463,6 +463,27 @@ const list: Array<StoreAction | StoreMutation> = [
             break;
           case 3:
             status[newVal.idx] = newVal.status;
+            if (
+              newVal.status === 1 ||
+              (oldStatus === 1 && newVal.status === 0) ||
+              (oldStatus === 2 && newVal.status === 3)
+            ) {
+              if (store.getters.isHost) {
+                window.setTimeout(() => {
+                  mitt.emit("A_link_change", newVal.idx);
+                }, store.getters.roomSettings.playerA.delay * 1000);
+              } else {
+                mitt.emit("A_link_change", newVal.idx);
+              }
+            } else if (newVal.status === 3 || (oldStatus === 3 && newVal.status === 0)) {
+              if (store.getters.isHost) {
+                window.setTimeout(() => {
+                  mitt.emit("B_link_change", newVal.idx);
+                }, store.getters.roomSettings.playerB.delay * 1000);
+              } else {
+                mitt.emit("B_link_change", newVal.idx);
+              }
+            }
             setData();
             break;
         }

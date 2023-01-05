@@ -56,6 +56,26 @@ export default defineComponent({
       roomSettings: computed(() => store.getters.roomSettings),
     };
   },
+  props: {
+    routeA: {
+      type: Array,
+      required: true,
+    },
+    routeB: {
+      type: Array,
+      required: true,
+    },
+  },
+  watch: {
+    routeA(value) {
+      this.listA = value;
+      this.drawLine("A");
+    },
+    routeB(value) {
+      this.listB = value;
+      this.drawLine("B");
+    },
+  },
   computed: {
     stageConfig(): any {
       return { width: this.width, height: this.height };
@@ -69,55 +89,45 @@ export default defineComponent({
     const AStart = this.getCenterPosition(0);
     const BStart = this.getCenterPosition(4);
     this.lineA = new Konva.Line({
-      points: [AStart.x, AStart.y],
+      points: [AStart.x, AStart.y, AStart.x, AStart.y],
       stroke: this.roomSettings.playerA.color,
       strokeWidth: 8,
       lineCap: "round",
       lineJoin: "round",
-      opacity: 0.8,
+      opacity: 0.6,
       closed: false,
     });
     this.lineB = new Konva.Line({
-      points: [BStart.x, BStart.y],
+      points: [BStart.x, BStart.y, BStart.x, BStart.y],
       stroke: this.roomSettings.playerB.color,
       strokeWidth: 8,
       lineCap: "round",
       lineJoin: "round",
-      opacity: 0.8,
+      opacity: 0.6,
       closed: false,
     });
     this.layerNode.add(this.lineA);
     this.layerNode.add(this.lineB);
-    this.link("A", 0);
-    this.link("B", 4);
   },
   methods: {
-    link(tag: string, index: number) {
-      if (tag !== "A" && tag !== "B") return;
-      const listName = "list" + tag;
-      const length = this[listName].length;
-      if (length > 1) {
-        if (this[listName][length - 1] === index) {
-          this[listName].pop();
-        } else if (this[listName].indexOf(index) === -1) {
-          this[listName].push(index);
-        }
-      } else {
-        this[listName].push(index);
-      }
-      console.log(this[listName]);
-      this.drawLine(tag);
-    },
     drawLine(tag: string) {
       const listName = "list" + tag;
       const lineArr = [];
-      for (let item of this[listName]) {
-        const position = this.getCenterPosition(item);
+      if (this[listName].length === 1) {
+        const position = this.getCenterPosition(this[listName][0]);
         lineArr.push(position.x);
         lineArr.push(position.y);
+        lineArr.push(position.x);
+        lineArr.push(position.y);
+      } else {
+        for (let item of this[listName]) {
+          const position = this.getCenterPosition(item);
+          lineArr.push(position.x);
+          lineArr.push(position.y);
+        }
       }
       this["line" + tag].points(lineArr);
-      this["line" + tag].draw();
+      // this["line" + tag].draw();
     },
     getCenterPosition(index: number) {
       const cellWidth = this.width / 5;
@@ -128,13 +138,6 @@ export default defineComponent({
         x: (r + 0.5) * cellWidth,
         y: (c + 0.5) * cellHeight,
       };
-    },
-    getLinkList(tag: string) {
-      return this["list" + tag];
-    },
-    setLinkList(tag: string, list: number[]) {
-      this["list" + tag] = list;
-      this.drawLine(tag);
     },
   },
 });

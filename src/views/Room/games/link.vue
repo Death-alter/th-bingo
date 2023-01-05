@@ -40,7 +40,7 @@
           <div v-if="!inGame || ((winFlag !== 0 || gamePaused) && !isHost)" class="game-alert">
             <div :style="{ color: alertInfoColor }">{{ alertInfo }}</div>
           </div>
-          <bingo-link-effect class="bingo-effect" ref="linkEffect" />
+          <bingo-link-effect class="bingo-effect" :route-a="routeA" :route-b="routeB" />
         </div>
         <div class="count-down-wrap">
           <count-down
@@ -66,8 +66,8 @@
           <el-button
             type="primary"
             @click="confirmSelect"
-            :disabled="gamePaused"
-            v-if="gamePhase === 1 || !confirmed"
+            :disabled="gamePaused || !routeComplete"
+            v-if="(gamePhase === 1 || !confirmed) && !(gamePhase > 1 && routeComplete)"
             >{{ confirmed ? "取消确认" : "确认路线" }}</el-button
           >
         </div>
@@ -91,7 +91,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ref, h } from "vue";
+import { defineComponent, computed, ref, h, getCurrentInstance, onMounted, onUnmounted } from "vue";
 import { useStore } from "vuex";
 import SpellCardCell from "@/components/spell-card-cell.vue";
 import RightClickMenu from "@/components/right-click-menu.vue";
@@ -110,6 +110,8 @@ export default defineComponent({
       gamePhase: 0,
       playerAScore: 0,
       playerBScore: 0,
+      routeA: [0],
+      routeB: [4],
       winFlag: 0,
       audioPlaying: false,
       alertInfo: "等待房主抽取符卡",
@@ -122,7 +124,7 @@ export default defineComponent({
         },
         {
           label: "两侧玩家收取",
-          value: 4,
+          value: 6,
         },
         {
           label: "左侧玩家收取",
@@ -152,7 +154,25 @@ export default defineComponent({
     const countDown = ref();
     const turn1CountdownAudio = ref();
     const turn3CountdownAudio = ref();
-    const linkEffect = ref();
+    const { proxy }: any = getCurrentInstance();
+
+    onMounted(() => {
+      proxy.$bus.on("A_link_change", (index: number) => {
+        console.log(proxy.isHost, proxy.gamePhase);
+        if (proxy.isHost || proxy.gamePhase > 1) {
+          proxy.link("A", index);
+        }
+      });
+      proxy.$bus.on("B_link_change", (index: number) => {
+        if (proxy.isHost || proxy.gamePhase > 1) {
+          proxy.link("B", index);
+        }
+      });
+    });
+    onUnmounted(() => {
+      proxy.$bus.off("A_link_change");
+      proxy.$bus.off("B_link_change");
+    });
 
     return {
       gameData: computed(() => store.getters.gameData),
@@ -175,10 +195,18 @@ export default defineComponent({
         }
         return false;
       }),
+      routeComplete: computed(() => {
+        if (store.getters.isPlayerA) {
+          return proxy.routeA[proxy.routeA.length - 1] === 24;
+        }
+        if (store.getters.isPlayerB) {
+          return proxy.routeB[proxy.routeB.length - 1] === 20;
+        }
+        return false;
+      }),
       countDown,
       turn1CountdownAudio,
       turn3CountdownAudio,
-      linkEffect,
       Minus,
       Plus,
     };
@@ -231,21 +259,30 @@ export default defineComponent({
         }
       } else {
         this.$store.commit("change_game_state", false);
+        this.routeA = [];
+        this.routeB = [];
+        this.availableIndexList = [];
       }
 
-      if (value.link_data && value.link_data.link_idx_a) {
-        if (value.link_data.link_idx_a[value.link_data.link_idx_a.length - 1] === 24 && this.gamePhase > 1) {
-          this.confirmed = true;
+      if (value.link_data) {
+        if (value.link_data.link_idx_a && !(this.isPlayerB && this.gamePhase === 1)) {
+          this.routeA = value.link_data.link_idx_a;
         }
-        this.linkEffect.setLinkList("A", value.link_data.link_idx_a);
-      }
-      if (value.link_data && value.link_data.link_idx_b) {
-        if (value.link_data.link_idx_b[value.link_data.link_idx_b.length - 1] === 20 && this.gamePhase > 1) {
-          this.confirmed = true;
+        if (value.link_data.link_idx_b && !(this.isPlayerA && this.gamePhase === 1)) {
+          this.routeB = value.link_data.link_idx_b;
         }
-        this.linkEffect.setLinkList("B", value.link_data.link_idx_b);
+        if (this.routeComplete && this.gamePhase > 1) {
+          this.confirmed = true;
+          this.availableIndexList = [];
+        } else {
+          this.getAvailableIndexList();
+        }
+        value.link_data = {};
+      } else {
+        this.routeA = [0];
+        this.routeB = [4];
+        this.getAvailableIndexList();
       }
-      value.link_data = {};
 
       const status = value.status;
       if (status && status.length) {
@@ -260,6 +297,9 @@ export default defineComponent({
         this.alertInfo = "等待房主抽取符卡";
         this.alertInfoColor = "#000";
         this.gamePhase = 0;
+        this.routeA = [];
+        this.routeB = [];
+        this.availableIndexList = [];
       }
       if (value.winner !== undefined) {
         ElMessageBox.alert(`${this.roomData.names[value.winner]}获胜`, "比赛结束", {
@@ -283,6 +323,11 @@ export default defineComponent({
         this.countDown.pause();
       } else {
         this.countDown.start();
+      }
+    },
+    routeComplete(value) {
+      if (value && this.gamePhase > 1) {
+        this.availableIndexList = [];
       }
     },
   },
@@ -376,6 +421,10 @@ export default defineComponent({
         this.gamePhase = 2;
         this.countDownSeconds = this.gameData.game_time * 60 - this.gameData.countdown;
         this.stopBGM();
+        if (this.routeComplete) {
+          this.availableIndexList = [];
+          this.confirmed = true;
+        }
         this.$nextTick(() => {
           this.countDown.start();
         });
@@ -384,18 +433,25 @@ export default defineComponent({
       }
     },
     selectSpellCard(index: number) {
+      let tag: string;
       if (this.isPlayerA) {
-        this.$store.dispatch("update_spell", { idx: index, status: 1 }).then(() => {
-          this.linkEffect.link("A", index);
-          this.getAvailableIndexList();
-        });
+        tag = "A";
+      } else if (this.isPlayerB) {
+        tag = "B";
+      } else {
+        tag = "";
+        return;
       }
-      if (this.isPlayerB) {
-        this.$store.dispatch("update_spell", { idx: index, status: 3 }).then(() => {
-          this.linkEffect.link("B", index);
-          this.getAvailableIndexList();
-        });
+      let status;
+      const linkList = this["route" + tag];
+      if (index === linkList[linkList.length - 1]) {
+        status = 0;
+      } else {
+        status = this.isPlayerA ? 1 : 3;
       }
+      this.$store.dispatch("update_spell", { idx: index, status }).then(() => {
+        this.link(tag, index);
+      });
     },
     confirmSelect() {
       if (!this.confirmed) {
@@ -404,14 +460,6 @@ export default defineComponent({
       } else {
         this.getAvailableIndexList();
         this.confirmed = false;
-      }
-    },
-    confirmAttained() {
-      if (this.isPlayerA) {
-        this.$store.dispatch("update_spell", { idx: this.plyaerASelectedIndex, status: 5 });
-      }
-      if (this.isPlayerB) {
-        this.$store.dispatch("update_spell", { idx: this.plyaerBSelectedIndex, status: 7 });
       }
     },
     confirmWinner() {
@@ -457,16 +505,35 @@ export default defineComponent({
         cnt: arr,
       });
     },
+    link(tag: string, index: number) {
+      if (tag !== "A" && tag !== "B") return;
+      const list = [...this["route" + tag]];
+      const length = list.length;
+      if (length == 1 && index === list[0]) {
+        return;
+      }
+      if (length > 1) {
+        if (list[length - 1] === index) {
+          list.pop();
+        } else if (list.indexOf(index) === -1) {
+          list.push(index);
+        }
+      } else {
+        list.push(index);
+      }
+      this["route" + tag] = list;
+      this.getAvailableIndexList();
+    },
     getAvailableIndexList() {
       let linkList: number[];
       let index: number;
       let endIndex: number;
       if (this.isPlayerA) {
-        linkList = this.linkEffect.getLinkList("A");
+        linkList = this.routeA;
         index = linkList[linkList.length - 1];
         endIndex = 24;
       } else if (this.isPlayerB) {
-        linkList = this.linkEffect.getLinkList("B");
+        linkList = this.routeB;
         index = linkList[linkList.length - 1];
         endIndex = 20;
       } else {
