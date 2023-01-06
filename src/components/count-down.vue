@@ -29,6 +29,10 @@ export default defineComponent({
       type: Number,
       default: 60,
     },
+    mode: {
+      type: String,
+      default: "countdown",
+    },
   },
   watch: {
     seconds: {
@@ -60,13 +64,19 @@ export default defineComponent({
   methods: {
     start() {
       if (!this.timer) {
-        this.timer = window.setInterval(() => {
-          this.value--;
-          if (this.value === 0) {
-            this.stop();
-            this.$emit("complete");
-          }
-        }, 1000);
+        if (this.mode === "countdown") {
+          this.timer = window.setInterval(() => {
+            this.value--;
+            if (this.value === 0) {
+              this.stop();
+              this.$emit("complete");
+            }
+          }, 1000);
+        } else if (this.mode === "stopwatch") {
+          this.timer = window.setInterval(() => {
+            this.value++;
+          }, 1000);
+        }
       }
     },
     pause() {

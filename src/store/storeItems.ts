@@ -11,8 +11,24 @@ function logSpellCard(status: number, oldStatus: number, index: number) {
     case -1:
       store.commit("add_log", [{ text: "符卡" }, { tag: "spellCard", index }, { text: "被禁用了" }]);
       break;
+    case 0:
+      switch (oldStatus) {
+        case 1:
+          store.commit("add_log", [{ tag: "playerA" }, { text: "取消选择符卡" }, { tag: "spellCard", index }]);
+          break;
+        case 3:
+          store.commit("add_log", [{ tag: "playerB" }, { text: "取消选择符卡" }, { tag: "spellCard", index }]);
+          break;
+        default:
+          store.commit("add_log", [{ text: "符卡" }, { tag: "spellCard", index }, { text: "被置空了" }]);
+      }
+      break;
     case 1:
-      store.commit("add_log", [{ tag: "playerA" }, { text: "选择了符卡" }, { tag: "spellCard", index }]);
+      if (oldStatus === 2) {
+        store.commit("add_log", [{ tag: "playerB" }, { text: "取消选择符卡" }, { tag: "spellCard", index }]);
+      } else {
+        store.commit("add_log", [{ tag: "playerA" }, { text: "选择了符卡" }, { tag: "spellCard", index }]);
+      }
       break;
     case 2:
       if (oldStatus === 1) {
@@ -22,7 +38,11 @@ function logSpellCard(status: number, oldStatus: number, index: number) {
       }
       break;
     case 3:
-      store.commit("add_log", [{ tag: "playerB" }, { text: "选择了符卡" }, { tag: "spellCard", index }]);
+      if (oldStatus === 2) {
+        store.commit("add_log", [{ tag: "playerA" }, { text: "取消选择符卡" }, { tag: "spellCard", index }]);
+      } else {
+        store.commit("add_log", [{ tag: "playerB" }, { text: "选择了符卡" }, { tag: "spellCard", index }]);
+      }
       break;
     case 5:
       if (oldStatus === 3) {
@@ -471,6 +491,7 @@ const list: Array<StoreAction | StoreMutation> = [
               if (store.getters.isHost) {
                 window.setTimeout(() => {
                   mitt.emit("A_link_change", newVal.idx);
+                  setData();
                 }, store.getters.roomSettings.playerA.delay * 1000);
               } else {
                 mitt.emit("A_link_change", newVal.idx);
@@ -479,12 +500,12 @@ const list: Array<StoreAction | StoreMutation> = [
               if (store.getters.isHost) {
                 window.setTimeout(() => {
                   mitt.emit("B_link_change", newVal.idx);
+                  setData();
                 }, store.getters.roomSettings.playerB.delay * 1000);
               } else {
                 mitt.emit("B_link_change", newVal.idx);
               }
             }
-            setData();
             break;
         }
       });
@@ -518,12 +539,24 @@ const list: Array<StoreAction | StoreMutation> = [
   },
   {
     name: "gameData",
-    actionName: "modify_link_time_data",
+    actionName: "link_time",
     wsName: "link_time",
     default: {},
-    // dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
-    //   return {};
-    // },
+    dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
+      data.link_data = res;
+      return { ...data };
+    },
+  },
+  {
+    name: "gameData",
+    mutationName: "link_data_received",
+    wsName: "link_data",
+    default: {},
+    dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
+      console.log(newVal);
+      oldVal.link_data = newVal;
+      return { ...oldVal };
+    }) as MutationHandler,
   },
 ];
 

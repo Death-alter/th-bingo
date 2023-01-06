@@ -6,9 +6,12 @@
         <div class="player-extra-info" v-if="roomData.started">
           <div class="spell-card-score">
             <div class="spell-card-score-number">
-              <div class="spell-card-score-number-info">{{ playerAScore }}</div>
+              <div class="spell-card-score-number-info">
+                {{ playerAScore + (spendTimeScore > 0 ? " + " + spendTimeScore : "") }}
+              </div>
             </div>
             <div class="spell-card-score-text">得分</div>
+            <div class="spell-card-score-text">{{ timeFormat(spendTimeA) }}</div>
           </div>
         </div>
       </el-col>
@@ -46,21 +49,23 @@
           <count-down
             ref="countDown"
             :seconds="countDownSeconds || roomSettings.countDownTime"
+            :mode="coundDownMode"
             @complete="onCountDownComplete"
             v-show="inGame"
           ></count-down>
         </div>
         <div v-if="isHost" class="host-buttons">
-          <el-button size="small" @click="resetRoom" :disabled="inGame">重置房间</el-button>
+          <el-button v-if="!inGame" size="small" @click="resetRoom">重置房间</el-button>
+          <el-button v-else size="small" @click="pause" :disabled="gamePhase !== 2">{{
+            gamePaused ? "继续比赛" : "暂停比赛"
+          }}</el-button>
           <el-button type="primary" @click="start" v-if="winFlag === 0">{{
             inGame ? "结束比赛" : "抽取符卡"
           }}</el-button>
           <el-button type="primary" @click="confirmWinner" v-else
             >确认：{{ winFlag < 0 ? roomData.names[0] : roomData.names[1] }}获胜</el-button
           >
-          <el-button size="small" @click="pause" :disabled="gamePhase !== 2">{{
-            gamePaused ? "继续比赛" : "暂停比赛"
-          }}</el-button>
+          <el-button size="small" @click="nextRound" :disabled="gamePhase < 2 || gamePhase > 3">结束计时</el-button>
         </div>
         <div v-if="inGame && !isHost">
           <el-button
@@ -80,9 +85,12 @@
         <div class="player-extra-info" v-if="roomData.started">
           <div class="spell-card-score">
             <div class="spell-card-score-number">
-              <div class="spell-card-score-number-info">{{ playerBScore }}</div>
+              <div class="spell-card-score-number-info">
+                {{ playerBScore + (spendTimeScore < 0 ? "+" + -spendTimeScore : "") }}
+              </div>
             </div>
             <div class="spell-card-score-text">得分</div>
+            <div class="spell-card-score-text">{{ timeFormat(spendTimeB) }}</div>
           </div>
         </div>
       </el-col>
@@ -112,6 +120,8 @@ export default defineComponent({
       playerBScore: 0,
       routeA: [0],
       routeB: [4],
+      spendTimeA: null as number | null,
+      spendTimeB: null as number | null,
       winFlag: 0,
       audioPlaying: false,
       alertInfo: "等待房主抽取符卡",
@@ -158,7 +168,6 @@ export default defineComponent({
 
     onMounted(() => {
       proxy.$bus.on("A_link_change", (index: number) => {
-        console.log(proxy.isHost, proxy.gamePhase);
         if (proxy.isHost || proxy.gamePhase > 1) {
           proxy.link("A", index);
         }
@@ -204,6 +213,19 @@ export default defineComponent({
         }
         return false;
       }),
+      coundDownMode: computed(() => {
+        if (proxy.gamePhase > 1) {
+          return "stopwatch";
+        }
+        return "countdown";
+      }),
+      spendTimeScore: computed(() => {
+        if (proxy.gamePhase !== 4) {
+          return 0;
+        }
+        const delta = (proxy.spendTimeB - proxy.spendTimeA) / 30000;
+        return delta > 0 ? Math.floor(delta) : Math.ceil(delta);
+      }),
       countDown,
       turn1CountdownAudio,
       turn3CountdownAudio,
@@ -219,14 +241,13 @@ export default defineComponent({
   },
   watch: {
     gameData(value) {
+      const currentTime = new Date().getTime();
       if (value.start_time) {
-        const currentTime = new Date().getTime();
         const startTime = value.start_time;
 
         let pasedTime;
         pasedTime = (currentTime - startTime) / 1000;
         const standbyCountDown = value.countdown - pasedTime;
-        const gameCountDown = value.game_time * 60 - pasedTime;
         if (standbyCountDown > 0) {
           this.gamePhase = 1;
           this.countDownSeconds = Math.ceil(standbyCountDown);
@@ -248,23 +269,55 @@ export default defineComponent({
           this.$nextTick(() => {
             this.countDown.start();
           });
-        } else if (gameCountDown > 0) {
-          this.gamePhase = 2;
-          this.countDownSeconds = Math.ceil(gameCountDown);
-          if (!value.pause_begin_ms) {
-            this.$nextTick(() => {
-              this.countDown.start();
-            });
-          }
+        } else if (this.isHost && !value.link_data.start_ms_a) {
+          this.$store.dispatch("link_time", { whose: 0, start: true }).then(() => {
+            this.countDown.start();
+          });
         }
       } else {
         this.$store.commit("change_game_state", false);
-        this.routeA = [];
-        this.routeB = [];
         this.availableIndexList = [];
       }
 
+      console.log(value.link_data);
       if (value.link_data) {
+        if (value.link_data.start_ms_b) {
+          this.spendTimeA = value.link_data.end_ms_a - value.link_data.start_ms_a;
+          let sum = 0;
+          for (let item of this.routeA) {
+            sum += value.spells[item].star;
+          }
+          this.playerAScore = sum;
+          if (!value.link_data.end_ms_b) {
+            this.gamePhase = 3;
+            this.countDownSeconds = Math.ceil((currentTime - value.link_data.start_ms_b) / 1000);
+            this.$nextTick(() => {
+              this.countDown.start();
+            });
+          } else {
+            this.gamePhase = 4;
+            this.spendTimeB = value.link_data.end_ms_b - value.link_data.start_ms_b;
+            this.countDown.stop();
+            this.countDownSeconds = 0;
+            let sum = 0;
+            for (let item of this.routeB) {
+              sum += value.spells[item].star;
+            }
+            this.playerBScore = sum;
+            this.alertInfo = "比赛已结束，等待房主操作";
+            this.alertInfoColor = "red";
+            if (this.playerAScore + this.spendTimeScore < this.playerBScore) {
+              this.winFlag = 1;
+            }
+          }
+        } else if (value.link_data.start_ms_a) {
+          this.gamePhase = 2;
+          this.countDownSeconds = Math.ceil((currentTime - value.link_data.start_ms_a) / 1000);
+          this.$nextTick(() => {
+            this.countDown.start();
+          });
+        }
+
         if (value.link_data.link_idx_a && !(this.isPlayerB && this.gamePhase === 1)) {
           this.routeA = value.link_data.link_idx_a;
         }
@@ -277,19 +330,8 @@ export default defineComponent({
         } else {
           this.getAvailableIndexList();
         }
-        value.link_data = {};
-      } else {
-        this.routeA = [0];
-        this.routeB = [4];
-        this.getAvailableIndexList();
-      }
-
-      const status = value.status;
-      if (status && status.length) {
-        // if (this.winFlag !== 0) {
-        //   this.alertInfo = "已满足胜利条件，等待房主判断";
-        //   this.alertInfoColor = "red";
-        // }
+        delete value.link_data.link_idx_a;
+        delete value.link_data.link_idx_b;
       }
     },
     roomData(value) {
@@ -299,6 +341,10 @@ export default defineComponent({
         this.gamePhase = 0;
         this.routeA = [];
         this.routeB = [];
+        this.playerAScore = 0;
+        this.playerBScore = 0;
+        this.spendTimeA = 0;
+        this.spendTimeB = 0;
         this.availableIndexList = [];
       }
       if (value.winner !== undefined) {
@@ -411,25 +457,42 @@ export default defineComponent({
     },
     pause() {
       if (this.gamePaused) {
-        this.$store.dispatch("modify_link_time_data", { whose: this.gamePhase > 2 ? 1 : 0, start: false });
+        this.$store.dispatch("link_time", { whose: this.gamePhase > 2 ? 1 : 0, start: true });
       } else {
-        this.$store.dispatch("modify_link_time_data", { whose: this.gamePhase > 2 ? 1 : 0, start: true });
+        this.$store.dispatch("link_time", { whose: this.gamePhase > 2 ? 1 : 0, start: false });
+        this.countDown.pause();
+      }
+    },
+    nextRound() {
+      if (this.gamePhase === 2) {
+        this.$store.dispatch("link_time", { whose: 0, start: false }).then(() => {
+          this.gamePhase = 3;
+          this.countDown.stop();
+          this.countDownSeconds = 0;
+          this.$store.dispatch("link_time", { whose: 1, start: true });
+        });
+      } else if (this.gamePhase === 3) {
+        this.$store.dispatch("link_time", { whose: 1, start: false }).then(() => {
+          this.gamePhase = 4;
+          this.countDown.stop();
+          this.countDownSeconds = 0;
+        });
       }
     },
     onCountDownComplete() {
       if (this.gamePhase === 1) {
         this.gamePhase = 2;
-        this.countDownSeconds = this.gameData.game_time * 60 - this.gameData.countdown;
+        this.countDownSeconds = 0;
         this.stopBGM();
         if (this.routeComplete) {
           this.availableIndexList = [];
           this.confirmed = true;
         }
-        this.$nextTick(() => {
-          this.countDown.start();
-        });
-      } else if (this.gamePhase === 2) {
-        this.gamePhase = 0;
+        if (this.isHost) {
+          this.$store.dispatch("link_time", { whose: 0, start: true }).then(() => {
+            this.countDown.start();
+          });
+        }
       }
     },
     selectSpellCard(index: number) {
@@ -491,27 +554,10 @@ export default defineComponent({
         })
         .catch(() => {});
     },
-    addChangeCardCount(index: number) {
-      const arr = [...this.roomData.change_card_count];
-      arr[index]++;
-      this.$store.dispatch("change_card_count", {
-        cnt: arr,
-      });
-    },
-    removeChangeCardCount(index: number) {
-      const arr = [...this.roomData.change_card_count];
-      arr[index]--;
-      this.$store.dispatch("change_card_count", {
-        cnt: arr,
-      });
-    },
     link(tag: string, index: number) {
       if (tag !== "A" && tag !== "B") return;
       const list = [...this["route" + tag]];
       const length = list.length;
-      if (length == 1 && index === list[0]) {
-        return;
-      }
       if (length > 1) {
         if (list[length - 1] === index) {
           list.pop();
@@ -525,6 +571,9 @@ export default defineComponent({
       this.getAvailableIndexList();
     },
     getAvailableIndexList() {
+      if (this.routeComplete) {
+        return;
+      }
       let linkList: number[];
       let index: number;
       let endIndex: number;
@@ -569,6 +618,25 @@ export default defineComponent({
         if (item === linkList[0]) return false;
         return item !== -1 && (linkList.indexOf(item) === -1 || item === index);
       });
+    },
+    timeFormat(time: number | null) {
+      function format(number: number): string {
+        return number < 10 ? `0${number}` : "" + number;
+      }
+
+      if (!time) {
+        return "";
+      }
+      time = Math.floor(time / 1000);
+      let second, hour, minute;
+      second = time % 60;
+      if (time >= 3600) {
+        hour = Math.floor(time / 3600);
+        minute = Math.floor(time / 60) % 60;
+      } else {
+        minute = Math.floor(time / 60);
+      }
+      return (hour ? format(hour) + "h " : "") + (minute ? format(minute) + "m " : "") + format(second) + "s";
     },
   },
 });
@@ -650,47 +718,27 @@ export default defineComponent({
   align-items: center;
 }
 
-.change-card {
-  padding-bottom: 64px;
-
-  .change-card-number {
-    display: flex;
-    align-items: center;
-
-    .change-card-number-btn {
-      font-size: 24px;
-    }
-
-    .change-card-number-info {
-      font-size: 48px;
-      margin: 0 15px;
-    }
-  }
-
-  .change-card-text {
-    font-size: 12px;
-  }
-}
-
 .spell-card-score {
   padding-bottom: 64px;
 
   .spell-card-score-number {
     display: flex;
     align-items: center;
+    justify-content: center;
 
     .spell-card-score-number-btn {
       font-size: 24px;
     }
 
     .spell-card-score-number-info {
-      font-size: 48px;
+      font-size: 40px;
       margin: 0 15px;
     }
   }
 
   .spell-card-score-text {
     font-size: 12px;
+    height: 16px;
   }
 }
 </style>

@@ -4,9 +4,9 @@
       'spell-card-cell': true,
       banned: status === -1,
       'A-selected': status === 1 || status === 2,
-      'A-attained': status === 5 || status === 4,
+      'A-attained': status === 5 || status === 6,
       'B-selected': status === 3 || status === 2,
-      'B-attained': status === 7 || status === 4,
+      'B-attained': status === 7 || status === 6,
       'A-local-selected': isPlayerA && selected,
       'B-local-selected': isPlayerB && selected,
     }"

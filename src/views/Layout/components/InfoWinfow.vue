@@ -64,7 +64,7 @@
                     }}</el-button>
                   </div>
                 </el-form-item>
-                <el-form-item label="比赛时长：">
+                <el-form-item label="比赛时长：" v-if="roomType !== 3">
                   <el-input-number
                     class="input-number"
                     v-model="roomSettings.gameTimeLimit"
