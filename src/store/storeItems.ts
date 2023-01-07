@@ -104,12 +104,15 @@ const list: Array<StoreAction | StoreMutation> = [
     default: {
       time: 0, //本地时间戳
       ping: 0, //ping值
+      timeMistake: 0,
     },
     dataHandler: {
       replied(res: DefaultData, data: DefaultData, params: RequestParams): DefaultData {
         const newData = { ...data };
+        const currentTime = new Date().getTime();
+        newData.timeMistake = res.time - currentTime;
         if (params) {
-          newData.ping = new Date().getTime() - params.time;
+          newData.ping = currentTime - params.time;
           newData.time = params.time;
         }
         console.log("ping:", newData.ping);
@@ -484,9 +487,10 @@ const list: Array<StoreAction | StoreMutation> = [
           case 3:
             status[newVal.idx] = newVal.status;
             if (
-              newVal.status === 1 ||
+              (oldStatus === 0 && newVal.status === 1) ||
               (oldStatus === 1 && newVal.status === 0) ||
-              (oldStatus === 2 && newVal.status === 3)
+              (oldStatus === 2 && newVal.status === 3) ||
+              (oldStatus === 3 && newVal.status === 2)
             ) {
               if (store.getters.isHost) {
                 window.setTimeout(() => {
@@ -496,7 +500,12 @@ const list: Array<StoreAction | StoreMutation> = [
               } else {
                 mitt.emit("A_link_change", newVal.idx);
               }
-            } else if (newVal.status === 3 || (oldStatus === 3 && newVal.status === 0)) {
+            } else if (
+              (oldStatus === 0 && newVal.status === 3) ||
+              (oldStatus === 3 && newVal.status === 0) ||
+              (oldStatus === 2 && newVal.status === 1) ||
+              (oldStatus === 1 && newVal.status === 2)
+            ) {
               if (store.getters.isHost) {
                 window.setTimeout(() => {
                   mitt.emit("B_link_change", newVal.idx);
@@ -557,6 +566,16 @@ const list: Array<StoreAction | StoreMutation> = [
       oldVal.link_data = newVal;
       return { ...oldVal };
     }) as MutationHandler,
+  },
+  {
+    name: "gameData",
+    actionName: "set_phase",
+    wsName: "set_phase",
+    default: {},
+    dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
+      console.log(res);
+      return data;
+    },
   },
 ];
 

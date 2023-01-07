@@ -184,6 +184,7 @@ export default defineComponent({
     });
 
     return {
+      timeMistake: computed(() => store.getters.heartBeat.timeMistake),
       gameData: computed(() => store.getters.gameData),
       roomData: computed(() => store.getters.roomData),
       roomSettings: computed(() => store.getters.roomSettings),
@@ -241,15 +242,14 @@ export default defineComponent({
   },
   watch: {
     gameData(value) {
-      const currentTime = new Date().getTime();
+      this.gamePhase = value.gamePhase;
+      const currentTime = new Date().getTime() + this.timeMistake;
       if (value.start_time) {
         const startTime = value.start_time;
-
-        let pasedTime;
-        pasedTime = (currentTime - startTime) / 1000;
+        const pasedTime = (currentTime - startTime) / 1000;
         const standbyCountDown = value.countdown - pasedTime;
+
         if (standbyCountDown > 0) {
-          this.gamePhase = 1;
           this.countDownSeconds = Math.ceil(standbyCountDown);
           if (this.gameData.need_win === 2 && !this.audioPlaying) {
             const gameIndex = this.roomData.score[0] + this.roomData.score[1] + 1;
@@ -269,9 +269,12 @@ export default defineComponent({
           this.$nextTick(() => {
             this.countDown.start();
           });
-        } else if (this.isHost && !value.link_data.start_ms_a) {
+        } else if (this.isHost && this.gamePhase === 1) {
           this.$store.dispatch("link_time", { whose: 0, start: true }).then(() => {
-            this.countDown.start();
+            this.$store.dispatch("set_phase", 1).then(() => {
+              this.gamePhase = 1;
+              this.countDown.start();
+            });
           });
         }
       } else {
@@ -281,21 +284,23 @@ export default defineComponent({
 
       console.log(value.link_data);
       if (value.link_data) {
-        if (value.link_data.start_ms_b) {
+        if (this.gamePhase === 2) {
+          this.countDownSeconds = Math.ceil((currentTime - value.link_data.start_ms_a) / 1000);
+          this.$nextTick(() => {
+            this.countDown.start();
+          });
+        } else if (this.gamePhase >= 3) {
+          this.countDownSeconds = Math.ceil((currentTime - value.link_data.start_ms_b) / 1000);
+          this.$nextTick(() => {
+            this.countDown.start();
+          });
           this.spendTimeA = value.link_data.end_ms_a - value.link_data.start_ms_a;
           let sum = 0;
           for (let item of this.routeA) {
             sum += value.spells[item].star;
           }
           this.playerAScore = sum;
-          if (!value.link_data.end_ms_b) {
-            this.gamePhase = 3;
-            this.countDownSeconds = Math.ceil((currentTime - value.link_data.start_ms_b) / 1000);
-            this.$nextTick(() => {
-              this.countDown.start();
-            });
-          } else {
-            this.gamePhase = 4;
+          if (this.gamePhase === 4) {
             this.spendTimeB = value.link_data.end_ms_b - value.link_data.start_ms_b;
             this.countDown.stop();
             this.countDownSeconds = 0;
@@ -310,12 +315,6 @@ export default defineComponent({
               this.winFlag = 1;
             }
           }
-        } else if (value.link_data.start_ms_a) {
-          this.gamePhase = 2;
-          this.countDownSeconds = Math.ceil((currentTime - value.link_data.start_ms_a) / 1000);
-          this.$nextTick(() => {
-            this.countDown.start();
-          });
         }
 
         if (value.link_data.link_idx_a && !(this.isPlayerB && this.gamePhase === 1)) {
@@ -446,12 +445,11 @@ export default defineComponent({
             need_win: (this.roomSettings.format + 1) / 2,
           })
           .then(() => {
-            this.$store.dispatch("change_card_count", {
-              cnt: [this.roomSettings.playerA.changeCardCount, this.roomSettings.playerB.changeCardCount],
-            });
             this.$store.commit("change_game_state", true);
-            this.gamePhase = 1;
-            this.countDown.start();
+            this.$store.dispatch("set_phase", 1).then(() => {
+              this.gamePhase = 1;
+              this.countDown.start();
+            });
           });
       }
     },
@@ -466,16 +464,20 @@ export default defineComponent({
     nextRound() {
       if (this.gamePhase === 2) {
         this.$store.dispatch("link_time", { whose: 0, start: false }).then(() => {
-          this.gamePhase = 3;
-          this.countDown.stop();
-          this.countDownSeconds = 0;
-          this.$store.dispatch("link_time", { whose: 1, start: true });
+          this.$store.dispatch("set_phase", 3).then(() => {
+            this.gamePhase = 3;
+            this.countDown.stop();
+            this.countDownSeconds = 0;
+            this.$store.dispatch("link_time", { whose: 1, start: true });
+          });
         });
       } else if (this.gamePhase === 3) {
         this.$store.dispatch("link_time", { whose: 1, start: false }).then(() => {
-          this.gamePhase = 4;
-          this.countDown.stop();
-          this.countDownSeconds = 0;
+          this.$store.dispatch("set_phase", 4).then(() => {
+            this.gamePhase = 4;
+            this.countDown.stop();
+            this.countDownSeconds = 0;
+          });
         });
       }
     },
@@ -490,7 +492,10 @@ export default defineComponent({
         }
         if (this.isHost) {
           this.$store.dispatch("link_time", { whose: 0, start: true }).then(() => {
-            this.countDown.start();
+            this.$store.dispatch("set_phase", 2).then(() => {
+              this.gamePhase = 2;
+              this.countDown.start();
+            });
           });
         }
       }
@@ -571,9 +576,6 @@ export default defineComponent({
       this.getAvailableIndexList();
     },
     getAvailableIndexList() {
-      if (this.routeComplete) {
-        return;
-      }
       let linkList: number[];
       let index: number;
       let endIndex: number;

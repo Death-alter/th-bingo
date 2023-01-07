@@ -204,6 +204,7 @@ export default defineComponent({
     });
 
     return {
+      timeMistake: computed(() => store.getters.heartBeat.timeMistake),
       gameData: computed(() => store.getters.gameData),
       roomData: computed(() => store.getters.roomData),
       roomSettings: computed(() => store.getters.roomSettings),
@@ -239,7 +240,7 @@ export default defineComponent({
     gameData(value) {
       if (value.start_time) {
         const pauseBeginTime = value.pause_begin_ms || null;
-        const currentTime = pauseBeginTime ? value.time : new Date().getTime();
+        const currentTime = new Date().getTime() + this.timeMistake;
         const startTime = value.start_time;
         const totalPauseTime = value.total_pause_ms || 0;
 

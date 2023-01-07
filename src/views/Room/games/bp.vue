@@ -167,6 +167,7 @@ export default defineComponent({
     const turn3CountdownAudio = ref();
 
     return {
+      timeMistake: computed(() => store.getters.heartBeat.timeMistake),
       gameData: computed(() => store.getters.gameData),
       roomData: computed(() => store.getters.roomData),
       roomSettings: computed(() => store.getters.roomSettings),
@@ -192,7 +193,7 @@ export default defineComponent({
   watch: {
     gameData(value) {
       if (value.start_time) {
-        const currentTime = new Date().getTime();
+      const currentTime = new Date().getTime() + this.timeMistake;
         const startTime = value.start_time;
 
         let pasedTime;
