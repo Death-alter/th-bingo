@@ -49,7 +49,7 @@
           <count-down
             ref="countDown"
             :seconds="countDownSeconds || roomSettings.countDownTime"
-            :mode="coundDownMode"
+            :mode="countDownMode"
             @complete="onCountDownComplete"
             v-show="inGame"
           ></count-down>
@@ -115,7 +115,6 @@ export default defineComponent({
       countDownSeconds: 0,
       availableIndexList: [] as number[],
       confirmed: false,
-      gamePhase: 0,
       playerAScore: 0,
       playerBScore: 0,
       routeA: [0],
@@ -191,7 +190,21 @@ export default defineComponent({
       inRoom: computed(() => store.getters.inRoom),
       isHost: computed(() => store.getters.isHost),
       inGame: computed(() => store.getters.inGame),
-      gamePaused: computed(() => store.getters.gamePaused),
+      gamePhase: computed(() => store.getters.gameData.phase || 0),
+      gamePaused: computed(() => {
+        if (store.getters.gameData.link_data) {
+          const link_data = proxy.gameData.link_data;
+          if (proxy.gamePhase === 2 && link_data.start_ms_a && link_data.end_ms_a) {
+            return true;
+          } else if (proxy.gamePhase === 3 && link_data.start_ms_b && link_data.end_ms_b) {
+            return true;
+          } else {
+            return false;
+          }
+        } else {
+          return false;
+        }
+      }),
       isPlayerA: computed(() => store.getters.isPlayerA),
       isPlayerB: computed(() => store.getters.isPlayerB),
       plyaerASelectedIndex: computed(() => store.getters.plyaerASelectedIndex),
@@ -214,7 +227,7 @@ export default defineComponent({
         }
         return false;
       }),
-      coundDownMode: computed(() => {
+      countDownMode: computed(() => {
         if (proxy.gamePhase > 1) {
           return "stopwatch";
         }
@@ -242,7 +255,6 @@ export default defineComponent({
   },
   watch: {
     gameData(value) {
-      this.gamePhase = value.gamePhase;
       const currentTime = new Date().getTime() + this.timeMistake;
       if (value.start_time) {
         const startTime = value.start_time;
@@ -269,38 +281,56 @@ export default defineComponent({
           this.$nextTick(() => {
             this.countDown.start();
           });
-        } else if (this.isHost && this.gamePhase === 1) {
-          this.$store.dispatch("link_time", { whose: 0, start: true }).then(() => {
-            this.$store.dispatch("set_phase", 1).then(() => {
-              this.gamePhase = 1;
-              this.countDown.start();
+        } else if (this.isHost) {
+          if (!value.link_data.start_ms_a) {
+            this.$store.dispatch("link_time", { whose: 0, start: true }).then(() => {
+              this.$store.dispatch("set_phase", { phase: 2 }).then(() => {
+                this.countDown.start();
+              });
             });
-          });
+          }
         }
       } else {
         this.$store.commit("change_game_state", false);
         this.availableIndexList = [];
       }
 
-      console.log(value.link_data);
       if (value.link_data) {
-        if (this.gamePhase === 2) {
-          this.countDownSeconds = Math.ceil((currentTime - value.link_data.start_ms_a) / 1000);
-          this.$nextTick(() => {
-            this.countDown.start();
-          });
-        } else if (this.gamePhase >= 3) {
-          this.countDownSeconds = Math.ceil((currentTime - value.link_data.start_ms_b) / 1000);
-          this.$nextTick(() => {
-            this.countDown.start();
-          });
+        if (value.link_data.link_idx_a) {
+          if (!this.isPlayerB || value.phase !== 1) {
+            this.routeA = value.link_data.link_idx_a;
+          } else {
+            this.routeA = [0];
+          }
+        }
+        if (value.link_data.link_idx_b) {
+          if (!this.isPlayerA || value.phase !== 1) {
+            this.routeB = value.link_data.link_idx_b;
+          } else {
+            this.routeB = [4];
+          }
+        }
+
+        if (value.phase === 2) {
+          this.countDownSeconds = Math.ceil(
+            ((this.gamePaused ? value.link_data.end_ms_a : currentTime) - value.link_data.start_ms_a) / 1000
+          );
+          if (!this.gamePaused) {
+            this.$nextTick(() => {
+              this.countDown.start();
+            });
+          }
+        } else if (value.phase >= 3) {
+          this.countDownSeconds = Math.ceil(
+            ((this.gamePaused ? value.link_data.end_ms_b : currentTime) - value.link_data.start_ms_b) / 1000
+          );
           this.spendTimeA = value.link_data.end_ms_a - value.link_data.start_ms_a;
           let sum = 0;
           for (let item of this.routeA) {
             sum += value.spells[item].star;
           }
           this.playerAScore = sum;
-          if (this.gamePhase === 4) {
+          if (value.phase === 4) {
             this.spendTimeB = value.link_data.end_ms_b - value.link_data.start_ms_b;
             this.countDown.stop();
             this.countDownSeconds = 0;
@@ -311,19 +341,21 @@ export default defineComponent({
             this.playerBScore = sum;
             this.alertInfo = "比赛已结束，等待房主操作";
             this.alertInfoColor = "red";
-            if (this.playerAScore + this.spendTimeScore < this.playerBScore) {
+            if (this.playerAScore + this.spendTimeScore > this.playerBScore) {
+              this.winFlag = -1;
+            } else {
               this.winFlag = 1;
+            }
+          } else {
+            if (!this.gamePaused) {
+              this.$nextTick(() => {
+                this.countDown.start();
+              });
             }
           }
         }
 
-        if (value.link_data.link_idx_a && !(this.isPlayerB && this.gamePhase === 1)) {
-          this.routeA = value.link_data.link_idx_a;
-        }
-        if (value.link_data.link_idx_b && !(this.isPlayerA && this.gamePhase === 1)) {
-          this.routeB = value.link_data.link_idx_b;
-        }
-        if (this.routeComplete && this.gamePhase > 1) {
+        if (this.routeComplete && value.phase > 1) {
           this.confirmed = true;
           this.availableIndexList = [];
         } else {
@@ -337,7 +369,6 @@ export default defineComponent({
       if (!value.started) {
         this.alertInfo = "等待房主抽取符卡";
         this.alertInfoColor = "#000";
-        this.gamePhase = 0;
         this.routeA = [];
         this.routeB = [];
         this.playerAScore = 0;
@@ -356,8 +387,8 @@ export default defineComponent({
     },
     inGame(value) {
       if (!value) {
-        this.gamePhase = 0;
         this.countDownSeconds = 0;
+        this.countDown.stop();
         this.stopBGM();
       }
     },
@@ -426,11 +457,15 @@ export default defineComponent({
             //winner
             if (checked.value < 0) {
               this.$store.dispatch("stop_game", { winner: -1 }).then(() => {
-                this.countDown.reset();
+                this.$store.dispatch("set_phase", { phase: 0 }).then(() => {
+                  this.countDown.reset();
+                });
               });
             } else {
               this.$store.dispatch("stop_game", { winner: checked.value }).then(() => {
-                this.countDown.reset();
+                this.$store.dispatch("set_phase", { phase: 0 }).then(() => {
+                  this.countDown.reset();
+                });
               });
             }
           });
@@ -446,8 +481,7 @@ export default defineComponent({
           })
           .then(() => {
             this.$store.commit("change_game_state", true);
-            this.$store.dispatch("set_phase", 1).then(() => {
-              this.gamePhase = 1;
+            this.$store.dispatch("set_phase", { phase: 1 }).then(() => {
               this.countDown.start();
             });
           });
@@ -464,17 +498,15 @@ export default defineComponent({
     nextRound() {
       if (this.gamePhase === 2) {
         this.$store.dispatch("link_time", { whose: 0, start: false }).then(() => {
-          this.$store.dispatch("set_phase", 3).then(() => {
-            this.gamePhase = 3;
+          this.$store.dispatch("link_time", { whose: 1, start: true });
+          this.$store.dispatch("set_phase", { phase: 3 }).then(() => {
             this.countDown.stop();
             this.countDownSeconds = 0;
-            this.$store.dispatch("link_time", { whose: 1, start: true });
           });
         });
       } else if (this.gamePhase === 3) {
         this.$store.dispatch("link_time", { whose: 1, start: false }).then(() => {
-          this.$store.dispatch("set_phase", 4).then(() => {
-            this.gamePhase = 4;
+          this.$store.dispatch("set_phase", { phase: 4 }).then(() => {
             this.countDown.stop();
             this.countDownSeconds = 0;
           });
@@ -483,7 +515,6 @@ export default defineComponent({
     },
     onCountDownComplete() {
       if (this.gamePhase === 1) {
-        this.gamePhase = 2;
         this.countDownSeconds = 0;
         this.stopBGM();
         if (this.routeComplete) {
@@ -492,8 +523,7 @@ export default defineComponent({
         }
         if (this.isHost) {
           this.$store.dispatch("link_time", { whose: 0, start: true }).then(() => {
-            this.$store.dispatch("set_phase", 2).then(() => {
-              this.gamePhase = 2;
+            this.$store.dispatch("set_phase", { phase: 2 }).then(() => {
               this.countDown.start();
             });
           });
@@ -532,8 +562,9 @@ export default defineComponent({
     },
     confirmWinner() {
       this.$store.dispatch("stop_game", { winner: this.winFlag < 0 ? 0 : 1 }).then(() => {
-        this.winFlag = 0;
-        this.countDown.reset();
+        this.$store.dispatch("set_phase", { phase: 0 }).then(() => {
+          this.winFlag = 0;
+        });
       });
     },
     onMenuClick({ event, target, item }: any) {
@@ -573,7 +604,9 @@ export default defineComponent({
         list.push(index);
       }
       this["route" + tag] = list;
-      this.getAvailableIndexList();
+      if ((this.isPlayerA && tag === "A") || (this.isPlayerB && tag === "B")) {
+        this.getAvailableIndexList();
+      }
     },
     getAvailableIndexList() {
       let linkList: number[];

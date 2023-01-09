@@ -45,12 +45,11 @@ export default defineComponent({
     },
     value: {
       handler(value) {
-        if (value <= 0) {
+        if (value < 0) {
           return;
         }
-
+        console.log(this.value);
         this.second = value % 60;
-
         if (this.seconds >= 3600) {
           this.hour = Math.floor(value / 3600);
           this.minute = Math.floor(value / 60) % 60;
@@ -63,20 +62,23 @@ export default defineComponent({
   },
   methods: {
     start() {
-      if (!this.timer) {
-        if (this.mode === "countdown") {
-          this.timer = window.setInterval(() => {
-            this.value--;
-            if (this.value === 0) {
-              this.stop();
-              this.$emit("complete");
-            }
-          }, 1000);
-        } else if (this.mode === "stopwatch") {
-          this.timer = window.setInterval(() => {
-            this.value++;
-          }, 1000);
-        }
+      this.$forceUpdate();
+      if (this.timer) {
+        window.clearInterval(this.timer);
+        this.timer = 0;
+      }
+      if (this.mode === "countdown") {
+        this.timer = window.setInterval(() => {
+          this.value--;
+          if (this.value === 0) {
+            this.stop();
+            this.$emit("complete");
+          }
+        }, 1000);
+      } else if (this.mode === "stopwatch") {
+        this.timer = window.setInterval(() => {
+          this.value++;
+        }, 1000);
       }
     },
     pause() {

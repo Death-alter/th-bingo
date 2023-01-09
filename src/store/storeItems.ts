@@ -573,9 +573,19 @@ const list: Array<StoreAction | StoreMutation> = [
     wsName: "set_phase",
     default: {},
     dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
-      console.log(res);
-      return data;
+      data.phase = res.phase;
+      return { ...data };
     },
+  },
+  {
+    name: "gameData",
+    mutationName: "set_phase_received",
+    wsName: "set_phase",
+    default: {},
+    dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
+      oldVal.phase = newVal.phase;
+      return { ...oldVal };
+    }) as MutationHandler,
   },
 ];
 
