@@ -65,7 +65,9 @@
           <el-button type="primary" @click="confirmWinner" v-else
             >确认：{{ winFlag < 0 ? roomData.names[0] : roomData.names[1] }}获胜</el-button
           >
-          <el-button size="small" @click="nextRound" :disabled="gamePhase < 2 || gamePhase > 3">结束计时</el-button>
+          <el-button size="small" @click="nextRound" :disabled="gamePhase < 2 || gamePhase > 3 || gamePaused"
+            >结束计时</el-button
+          >
         </div>
         <div v-if="inGame && !isHost">
           <el-button

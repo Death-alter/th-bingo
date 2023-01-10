@@ -140,7 +140,7 @@
                 />
               </el-form-item>
               <template v-if="isHost">
-                <el-form-item label="延迟时间：" v-if="roomData.type === 1">
+                <el-form-item label="延迟时间：" v-if="roomData.type !== 2">
                   <el-input-number
                     class="input-number"
                     v-model="roomSettings.playerA.delay"
@@ -179,7 +179,7 @@
                 />
               </el-form-item>
               <template v-if="isHost">
-                <el-form-item label="延迟时间：" v-if="roomData.type === 1">
+                <el-form-item label="延迟时间：" v-if="roomData.type !== 2">
                   <el-input-number
                     class="input-number"
                     v-model="roomSettings.playerB.delay"
