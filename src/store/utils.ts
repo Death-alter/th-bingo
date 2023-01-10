@@ -49,7 +49,7 @@ export const createAsyncMutations = (name: string, actionName: string) => {
 
 export const createSyncMutation = (name: string, wsName: string | undefined, callback: MutationHandler) => {
   if (wsName) {
-    ws.on(wsName + "_sc", (resName, data) => {
+    ws.on(wsName + "_sc", (resName, data, trigger) => {
       if (resName === "error_sc") {
         ElMessage({
           message: data.msg,

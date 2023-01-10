@@ -427,8 +427,9 @@ const list: Array<StoreAction | StoreMutation> = [
     mutationName: "update_spell_received",
     wsName: "update_spell",
     default: {},
-    dataHandler: ((newVal: DefaultData, oldVal: DefaultData): Promise<DefaultData> => {
+    dataHandler: ((newVal: DefaultData, oldVal: DefaultData, trigger: string): Promise<DefaultData> => {
       return new Promise((reslove, reject) => {
+        console.log(trigger);
         const oldStatus = oldVal.status[newVal.idx];
         const status = [...oldVal.status];
 

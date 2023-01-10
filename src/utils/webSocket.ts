@@ -7,7 +7,7 @@ interface WebSocketOption {
 }
 
 interface WebSocketCallBack {
-  (name: string, data: { [index: string]: any }, webSocket: WS): void;
+  (name: string, data: { [index: string]: any }, trigger: string, webSocket: WS): void;
 }
 
 export interface WebSocketData {
@@ -84,7 +84,7 @@ export class WS {
           }
           this.initList = [];
           for (const callback of this.eventList.connect) {
-            callback("connect", {}, this);
+            callback("connect", {}, "", this);
           }
           if (this.heartBeat) {
             this.heartBeatTimer = window.setInterval(this.heartBeat, WS.heartBeatInterval * 1000);
@@ -97,12 +97,12 @@ export class WS {
           const res = JSON.parse(event.data);
           if (res.reply && this.eventList[res.reply]) {
             for (const callback of this.eventList[res.reply]) {
-              callback(res.name, res.data, this);
+              callback(res.name, res.data, res.trigger, this);
             }
           }
           if (!res.reply && this.eventList[res.name]) {
             for (const callback of this.eventList[res.name]) {
-              callback(res.name, res.data, this);
+              callback(res.name, res.data, res.trigger, this);
             }
           }
         };
@@ -111,7 +111,7 @@ export class WS {
           window.clearInterval(this.heartBeatTimer);
           this.ws = null;
           for (const callback of this.eventList.disconnect) {
-            callback("disconnect", {}, this);
+            callback("disconnect", {}, "", this);
           }
           if (this.retryTime == 1) {
             ElMessage({
@@ -123,7 +123,7 @@ export class WS {
           if (this.autoReconnect) {
             this.createConnection().then(() => {
               for (const callback of this.eventList.reconnect) {
-                callback("reconnect", {}, this);
+                callback("reconnect", {}, "", this);
               }
             });
           }
@@ -131,7 +131,7 @@ export class WS {
 
         this.ws.onerror = (error) => {
           for (const callback of this.eventList.error) {
-            callback("error", {}, this);
+            callback("error", {}, "", this);
           }
           this.reconnect();
           console.log(error);

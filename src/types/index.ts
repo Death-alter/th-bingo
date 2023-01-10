@@ -26,7 +26,7 @@ export interface ActionHandler {
 }
 
 export interface MutationHandler {
-  (newVal: any, oldVal: DefaultData): DefaultData | Promise<DefaultData>;
+  (newVal: any, oldVal: DefaultData, trigger?: string): DefaultData | Promise<DefaultData>;
 }
 
 export interface HandlerList {
