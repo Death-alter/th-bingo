@@ -45,10 +45,10 @@ export default defineComponent({
     },
     value: {
       handler(value) {
+        // console.log(this.value);
         if (value < 0) {
           return;
         }
-        console.log(this.value);
         this.second = value % 60;
         if (this.seconds >= 3600) {
           this.hour = Math.floor(value / 3600);
@@ -62,7 +62,6 @@ export default defineComponent({
   },
   methods: {
     start() {
-      this.$forceUpdate();
       if (this.timer) {
         window.clearInterval(this.timer);
         this.timer = 0;

@@ -431,6 +431,7 @@ const list: Array<StoreAction | StoreMutation> = [
       return new Promise((reslove, reject) => {
         const oldStatus = oldVal.status[newVal.idx];
         const status = [...oldVal.status];
+
         function setData() {
           logSpellCard(status[newVal.idx], oldStatus, newVal.idx);
           const data = { ...oldVal };
@@ -493,11 +494,11 @@ const list: Array<StoreAction | StoreMutation> = [
               (oldStatus === 3 && newVal.status === 2)
             ) {
               if (store.getters.isHost) {
-                window.setTimeout(() => {
-                  mitt.emit("A_link_change", newVal.idx);
-                  setData();
-                }, store.getters.roomSettings.playerA.delay * 1000);
+                setData();
+                mitt.emit("A_link_change", newVal.idx);
+                // window.setTimeout(() => {}, store.getters.roomSettings.playerA.delay * 1000);
               } else {
+                setData();
                 mitt.emit("A_link_change", newVal.idx);
               }
             } else if (
@@ -507,11 +508,13 @@ const list: Array<StoreAction | StoreMutation> = [
               (oldStatus === 1 && newVal.status === 2)
             ) {
               if (store.getters.isHost) {
-                window.setTimeout(() => {
-                  mitt.emit("B_link_change", newVal.idx);
-                  setData();
-                }, store.getters.roomSettings.playerB.delay * 1000);
+                setData();
+                mitt.emit("B_link_change", newVal.idx);
+                // window.setTimeout(() => {
+
+                // }, store.getters.roomSettings.playerB.delay * 1000);
               } else {
+                setData();
                 mitt.emit("B_link_change", newVal.idx);
               }
             }

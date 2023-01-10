@@ -43,7 +43,7 @@
         <div class="count-down-wrap">
           <count-down
             ref="countDown"
-            :seconds="countDownSeconds || roomSettings.countDownTime"
+            :seconds="countDownSeconds"
             @complete="onCountDownComplete"
             v-show="inGame"
           ></count-down>

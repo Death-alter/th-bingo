@@ -48,7 +48,7 @@
         <div class="count-down-wrap">
           <count-down
             ref="countDown"
-            :seconds="countDownSeconds || roomSettings.countDownTime"
+            :seconds="countDownSeconds"
             :mode="countDownMode"
             @complete="onCountDownComplete"
             v-show="inGame"
@@ -256,6 +256,7 @@ export default defineComponent({
   watch: {
     gameData(value) {
       const currentTime = new Date().getTime() + this.timeMistake;
+      this.winFlag = 0;
       if (value.start_time) {
         const startTime = value.start_time;
         const pasedTime = (currentTime - startTime) / 1000;
@@ -498,8 +499,8 @@ export default defineComponent({
     nextRound() {
       if (this.gamePhase === 2) {
         this.$store.dispatch("link_time", { whose: 0, start: false }).then(() => {
-          this.$store.dispatch("link_time", { whose: 1, start: true });
           this.$store.dispatch("set_phase", { phase: 3 }).then(() => {
+            this.$store.dispatch("link_time", { whose: 1, start: true });
             this.countDown.stop();
             this.countDownSeconds = 0;
           });
