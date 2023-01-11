@@ -429,9 +429,8 @@ const list: Array<StoreAction | StoreMutation> = [
     default: {},
     dataHandler: ((newVal: DefaultData, oldVal: DefaultData, trigger: string): Promise<DefaultData> => {
       return new Promise((reslove, reject) => {
-        console.log(trigger);
-        const oldStatus = oldVal.status[newVal.idx];
-        const status = [...oldVal.status];
+        let oldStatus = oldVal.status[newVal.idx];
+        let status = [...oldVal.status];
 
         function setData() {
           logSpellCard(status[newVal.idx], oldStatus, newVal.idx);
@@ -462,13 +461,15 @@ const list: Array<StoreAction | StoreMutation> = [
               status[newVal.idx] = newVal.status;
             }
             if (store.getters.isHost) {
-              if (newVal.status === 1 || (newVal.status === 2 && oldStatus === 3) || newVal.status === 5) {
+              if (store.getters.roomData.names && store.getters.roomData.names[0] === trigger) {
                 window.setTimeout(() => {
+                  oldStatus = store.getters.gameData.status[newVal.idx];
                   setData();
                 }, store.getters.roomSettings.playerA.delay * 1000);
               }
-              if (newVal.status === 3 || (newVal.status === 2 && oldStatus === 1) || newVal.status === 7) {
+              if (store.getters.roomData.names && store.getters.roomData.names[1] === trigger) {
                 window.setTimeout(() => {
+                  oldStatus = store.getters.gameData.status[newVal.idx];
                   setData();
                 }, store.getters.roomSettings.playerB.delay * 1000);
               }
@@ -488,32 +489,25 @@ const list: Array<StoreAction | StoreMutation> = [
             break;
           case 3:
             status[newVal.idx] = newVal.status;
-            if (
-              (oldStatus === 0 && newVal.status === 1) ||
-              (oldStatus === 1 && newVal.status === 0) ||
-              (oldStatus === 2 && newVal.status === 3) ||
-              (oldStatus === 3 && newVal.status === 2)
-            ) {
+            if (store.getters.roomData.names && store.getters.roomData.names[0] === trigger) {
               if (store.getters.isHost) {
-                setData();
-                mitt.emit("A_link_change", newVal.idx);
-                // window.setTimeout(() => {}, store.getters.roomSettings.playerA.delay * 1000);
+                window.setTimeout(() => {
+                  oldStatus = store.getters.gameData.status[newVal.idx];
+                  setData();
+                  mitt.emit("A_link_change", newVal.idx);
+                }, store.getters.roomSettings.playerA.delay * 1000);
               } else {
                 setData();
                 mitt.emit("A_link_change", newVal.idx);
               }
-            } else if (
-              (oldStatus === 0 && newVal.status === 3) ||
-              (oldStatus === 3 && newVal.status === 0) ||
-              (oldStatus === 2 && newVal.status === 1) ||
-              (oldStatus === 1 && newVal.status === 2)
-            ) {
+            } else if (store.getters.roomData.names && store.getters.roomData.names[1] === trigger) {
               if (store.getters.isHost) {
-                setData();
-                mitt.emit("B_link_change", newVal.idx);
-                // window.setTimeout(() => {
-
-                // }, store.getters.roomSettings.playerB.delay * 1000);
+                window.setTimeout(() => {
+                  oldStatus = store.getters.gameData.status[newVal.idx];
+                  console.log(status[newVal.idx], oldStatus);
+                  setData();
+                  mitt.emit("B_link_change", newVal.idx);
+                }, store.getters.roomSettings.playerB.delay * 1000);
               } else {
                 setData();
                 mitt.emit("B_link_change", newVal.idx);

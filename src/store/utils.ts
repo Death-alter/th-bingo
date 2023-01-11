@@ -56,19 +56,27 @@ export const createSyncMutation = (name: string, wsName: string | undefined, cal
           type: "error",
         });
       } else {
-        store.commit(wsName + "_received", data);
+        store.commit(wsName + "_received", { data, trigger });
         console.log(wsName + "_received");
       }
     });
-  }
 
-  return async (state: VuexState, data: RequestParams) => {
-    if (callback) {
-      state[name].data = await callback(data, state[name].data || {});
-    } else {
-      state[name].data = data;
-    }
-  };
+    return async (state: VuexState, data: RequestParams) => {
+      if (callback) {
+        state[name].data = await callback(data.data, state[name].data || {}, data.trigger);
+      } else {
+        state[name].data = data.data;
+      }
+    };
+  } else {
+    return async (state: VuexState, data: RequestParams) => {
+      if (callback) {
+        state[name].data = await callback(data, state[name].data || {});
+      } else {
+        state[name].data = data;
+      }
+    };
+  }
 };
 
 export const createAction = (
@@ -81,6 +89,7 @@ export const createAction = (
   }
 ) => {
   const token = Md5.hashStr(wsName + "_cs");
+
   let requestParams: RequestParams;
   ws.on(wsName + "_cs", async (resName, data) => {
     if (resName === "error_sc") {
@@ -93,6 +102,7 @@ export const createAction = (
       });
       store.commit(actionName + "_error", data);
       promisePool[token].reject(data);
+      delete promisePool[token];
     } else {
       if (callback instanceof Function) {
         data = await callback(data, store.state[name].data, requestParams);
@@ -101,6 +111,7 @@ export const createAction = (
       }
       store.commit(actionName + "_replied", data);
       promisePool[token].resolve(data);
+      delete promisePool[token];
     }
   });
 

@@ -65,9 +65,9 @@
           <el-button type="primary" @click="confirmWinner" v-else
             >确认：{{ winFlag < 0 ? roomData.names[0] : roomData.names[1] }}获胜</el-button
           >
-          <el-button size="small" @click="nextRound" :disabled="gamePhase < 2 || gamePhase > 3 || gamePaused"
-            >结束计时</el-button
-          >
+          <el-button size="small" @click="nextRound" :disabled="gamePhase < 2 || gamePhase > 3 || gamePaused">{{
+            gamePhase === 3 && !this.gameData.link_data.start_ms_b ? "开始计时" : "结束计时"
+          }}</el-button>
         </div>
         <div v-if="inGame && !isHost">
           <el-button
@@ -285,9 +285,9 @@ export default defineComponent({
             this.countDown.start();
           });
         } else if (this.isHost) {
-          if (!value.link_data.start_ms_a) {
-            this.$store.dispatch("link_time", { whose: 0, start: true }).then(() => {
-              this.$store.dispatch("set_phase", { phase: 2 }).then(() => {
+          if (!value.link_data.start_ms_a && value.phase !== 2) {
+            this.$store.dispatch("set_phase", { phase: 2 }).then(() => {
+              this.$store.dispatch("link_time", { whose: 0, start: true }).then(() => {
                 this.countDown.start();
               });
             });
@@ -301,21 +301,30 @@ export default defineComponent({
       if (value.link_data) {
         if (value.link_data.link_idx_a) {
           if (!this.isPlayerB || value.phase !== 1) {
-            this.routeA = value.link_data.link_idx_a;
+            console.log(this.isHost, this.routeA.length > 1);
+            if (!(this.isHost && this.routeA.length > 1)) {
+              console.log(1);
+              this.routeA = value.link_data.link_idx_a;
+            }
           } else {
             this.routeA = [0];
           }
         }
         if (value.link_data.link_idx_b) {
           if (!this.isPlayerA || value.phase !== 1) {
-            this.routeB = value.link_data.link_idx_b;
+            console.log(this.isHost, this.routeB.length > 1);
+            console.log(!(this.isHost && this.routeB.length > 1));
+            if (!(this.isHost && this.routeB.length > 1)) {
+              console.log(2);
+              this.routeB = value.link_data.link_idx_b;
+            }
           } else {
             this.routeB = [4];
           }
         }
 
         if (value.phase === 2) {
-          this.countDownSeconds = Math.ceil(
+          this.countDownSeconds = Math.floor(
             ((this.gamePaused ? value.link_data.end_ms_a : currentTime) - value.link_data.start_ms_a) / 1000
           );
           if (!this.gamePaused) {
@@ -324,9 +333,6 @@ export default defineComponent({
             });
           }
         } else if (value.phase >= 3) {
-          this.countDownSeconds = Math.ceil(
-            ((this.gamePaused ? value.link_data.end_ms_b : currentTime) - value.link_data.start_ms_b) / 1000
-          );
           this.spendTimeA = value.link_data.end_ms_a - value.link_data.start_ms_a;
           let sum = 0;
           for (let item of this.routeA) {
@@ -350,10 +356,15 @@ export default defineComponent({
               this.winFlag = 1;
             }
           } else {
-            if (!this.gamePaused) {
+            if (!this.gamePaused && value.link_data.start_ms_b) {
+              this.countDownSeconds = Math.floor(
+                ((this.gamePaused ? value.link_data.end_ms_b : currentTime) - value.link_data.start_ms_b) / 1000
+              );
               this.$nextTick(() => {
                 this.countDown.start();
               });
+            } else {
+              this.countDownSeconds = 0;
             }
           }
         }
@@ -501,19 +512,21 @@ export default defineComponent({
     nextRound() {
       if (this.gamePhase === 2) {
         this.$store.dispatch("link_time", { whose: 0, start: false }).then(() => {
-          this.$store.dispatch("set_phase", { phase: 3 }).then(() => {
-            this.$store.dispatch("link_time", { whose: 1, start: true });
-            this.countDown.stop();
-            this.countDownSeconds = 0;
-          });
+          this.$store.dispatch("set_phase", { phase: 3 });
         });
       } else if (this.gamePhase === 3) {
-        this.$store.dispatch("link_time", { whose: 1, start: false }).then(() => {
-          this.$store.dispatch("set_phase", { phase: 4 }).then(() => {
-            this.countDown.stop();
-            this.countDownSeconds = 0;
+        if (!this.gameData.link_data.start_ms_b) {
+          this.$store.dispatch("link_time", { whose: 1, start: true });
+          this.countDown.stop();
+          this.countDownSeconds = 0;
+        } else {
+          this.$store.dispatch("link_time", { whose: 1, start: false }).then(() => {
+            this.$store.dispatch("set_phase", { phase: 4 }).then(() => {
+              this.countDown.stop();
+              this.countDownSeconds = 0;
+            });
           });
-        });
+        }
       }
     },
     onCountDownComplete() {
@@ -525,8 +538,8 @@ export default defineComponent({
           this.confirmed = true;
         }
         if (this.isHost) {
-          this.$store.dispatch("link_time", { whose: 0, start: true }).then(() => {
-            this.$store.dispatch("set_phase", { phase: 2 }).then(() => {
+          this.$store.dispatch("set_phase", { phase: 2 }).then(() => {
+            this.$store.dispatch("link_time", { whose: 0, start: true }).then(() => {
               this.countDown.start();
             });
           });

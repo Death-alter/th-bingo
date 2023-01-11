@@ -45,7 +45,6 @@ export default defineComponent({
     },
     value: {
       handler(value) {
-        // console.log(this.value);
         if (value < 0) {
           return;
         }
