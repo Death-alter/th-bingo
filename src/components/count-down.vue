@@ -1,6 +1,6 @@
 <template>
   <div class="count-down">
-    <template v-if="seconds >= 3600">
+    <template v-if="modelValue >= 3600">
       <div class="hour">{{ format(hour) }}</div>
       <div class="colon">:</div>
     </template>
@@ -18,14 +18,13 @@ export default defineComponent({
   data() {
     return {
       timer: 0,
-      value: 0,
       hour: 0,
       minute: 0,
       second: 0,
     };
   },
   props: {
-    seconds: {
+    modelValue: {
       type: Number,
       default: 60,
     },
@@ -34,22 +33,15 @@ export default defineComponent({
       default: "countdown",
     },
   },
+  emits: ["update:modelValue", "complete"],
   watch: {
-    seconds: {
-      handler(value) {
-        this.value = value;
-        this.pause();
-        this.$emit("reset");
-      },
-      immediate: true,
-    },
-    value: {
+    modelValue: {
       handler(value) {
         if (value < 0) {
           return;
         }
         this.second = value % 60;
-        if (this.seconds >= 3600) {
+        if (this.modelValue >= 3600) {
           this.hour = Math.floor(value / 3600);
           this.minute = Math.floor(value / 60) % 60;
         } else {
@@ -67,15 +59,15 @@ export default defineComponent({
       }
       if (this.mode === "countdown") {
         this.timer = window.setInterval(() => {
-          this.value--;
-          if (this.value === 0) {
+          this.$emit("update:modelValue", this.modelValue - 1);
+          if (this.modelValue === 0) {
             this.stop();
             this.$emit("complete");
           }
         }, 1000);
       } else if (this.mode === "stopwatch") {
         this.timer = window.setInterval(() => {
-          this.value++;
+          this.$emit("update:modelValue", this.modelValue + 1);
         }, 1000);
       }
     },
@@ -90,10 +82,7 @@ export default defineComponent({
       this.hour = 0;
       this.minute = 0;
       this.second = 0;
-    },
-    reset() {
-      this.stop();
-      this.value = this.seconds;
+      this.$emit("update:modelValue", 0);
     },
     format(number: number): string {
       return number < 10 ? `0${number}` : "" + number;

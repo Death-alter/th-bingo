@@ -48,7 +48,7 @@
         <div class="count-down-wrap">
           <count-down
             ref="countDown"
-            :seconds="countDownSeconds"
+            v-model="countDownSeconds"
             :mode="countDownMode"
             @complete="onCountDownComplete"
             v-show="inGame"
@@ -169,13 +169,21 @@ export default defineComponent({
 
     onMounted(() => {
       proxy.$bus.on("A_link_change", (index: number) => {
-        if (proxy.isHost || proxy.gamePhase > 1) {
+        if (proxy.isHost) {
+          if (!(proxy.gamePhase === 2 && proxy.countDownSeconds < 5)) {
+            proxy.link("A", index);
+          }
+        } else if (proxy.gamePhase > 1) {
           proxy.link("A", index);
         }
       });
       proxy.$bus.on("B_link_change", (index: number) => {
-        if (proxy.isHost || proxy.gamePhase > 1) {
-          proxy.link("B", index);
+        if (proxy.isHost) {
+          if (!(proxy.gamePhase === 2 && proxy.countDownSeconds < 5)) {
+            proxy.link("B", index);
+          }
+        } else if (proxy.gamePhase > 1) {
+          proxy.link("A", index);
         }
       });
     });
@@ -301,29 +309,20 @@ export default defineComponent({
       if (value.link_data) {
         if (value.link_data.link_idx_a) {
           if (!this.isPlayerB || value.phase !== 1) {
-            console.log(this.isHost, this.routeA.length > 1);
-            if (!(this.isHost && this.routeA.length > 1)) {
-              console.log(1);
-              this.routeA = value.link_data.link_idx_a;
-            }
+            this.routeA = value.link_data.link_idx_a;
           } else {
             this.routeA = [0];
           }
         }
         if (value.link_data.link_idx_b) {
           if (!this.isPlayerA || value.phase !== 1) {
-            console.log(this.isHost, this.routeB.length > 1);
-            console.log(!(this.isHost && this.routeB.length > 1));
-            if (!(this.isHost && this.routeB.length > 1)) {
-              console.log(2);
-              this.routeB = value.link_data.link_idx_b;
-            }
+            this.routeB = value.link_data.link_idx_b;
           } else {
             this.routeB = [4];
           }
         }
 
-        if (value.phase === 2) {
+        if (value.phase === 2 && value.link_data.start_ms_a) {
           this.countDownSeconds = Math.floor(
             ((this.gamePaused ? value.link_data.end_ms_a : currentTime) - value.link_data.start_ms_a) / 1000
           );
@@ -342,7 +341,6 @@ export default defineComponent({
           if (value.phase === 4) {
             this.spendTimeB = value.link_data.end_ms_b - value.link_data.start_ms_b;
             this.countDown.stop();
-            this.countDownSeconds = 0;
             let sum = 0;
             for (let item of this.routeB) {
               sum += value.spells[item].star;
@@ -364,7 +362,7 @@ export default defineComponent({
                 this.countDown.start();
               });
             } else {
-              this.countDownSeconds = 0;
+              this.countDown.stop();
             }
           }
         }
@@ -467,22 +465,24 @@ export default defineComponent({
                   ),
                 ]
               ),
-          }).then(() => {
-            //winner
-            if (checked.value < 0) {
-              this.$store.dispatch("stop_game", { winner: -1 }).then(() => {
-                this.$store.dispatch("set_phase", { phase: 0 }).then(() => {
-                  this.countDown.reset();
+          })
+            .then(() => {
+              //winner
+              if (checked.value < 0) {
+                this.$store.dispatch("stop_game", { winner: -1 }).then(() => {
+                  this.$store.dispatch("set_phase", { phase: 0 }).then(() => {
+                    this.countDownSeconds = this.roomSettings.countDownTime;
+                  });
                 });
-              });
-            } else {
-              this.$store.dispatch("stop_game", { winner: checked.value }).then(() => {
-                this.$store.dispatch("set_phase", { phase: 0 }).then(() => {
-                  this.countDown.reset();
+              } else {
+                this.$store.dispatch("stop_game", { winner: checked.value }).then(() => {
+                  this.$store.dispatch("set_phase", { phase: 0 }).then(() => {
+                    this.countDownSeconds = this.roomSettings.countDownTime;
+                  });
                 });
-              });
-            }
-          });
+              }
+            })
+            .catch(() => {});
         }
       } else {
         this.$store
@@ -506,24 +506,24 @@ export default defineComponent({
         this.$store.dispatch("link_time", { whose: this.gamePhase > 2 ? 1 : 0, start: true });
       } else {
         this.$store.dispatch("link_time", { whose: this.gamePhase > 2 ? 1 : 0, start: false });
-        this.countDown.pause();
       }
     },
     nextRound() {
       if (this.gamePhase === 2) {
-        this.$store.dispatch("link_time", { whose: 0, start: false }).then(() => {
-          this.$store.dispatch("set_phase", { phase: 3 });
+        this.$store.dispatch("set_phase", { phase: 3 }).then(() => {
+          this.$store.dispatch("link_time", { whose: 0, start: false }).then(() => {
+            this.countDown.stop();
+          });
         });
       } else if (this.gamePhase === 3) {
         if (!this.gameData.link_data.start_ms_b) {
-          this.$store.dispatch("link_time", { whose: 1, start: true });
-          this.countDown.stop();
-          this.countDownSeconds = 0;
+          this.$store.dispatch("link_time", { whose: 1, start: true }).then(() => {
+            this.countDown.start();
+          });
         } else {
           this.$store.dispatch("link_time", { whose: 1, start: false }).then(() => {
             this.$store.dispatch("set_phase", { phase: 4 }).then(() => {
               this.countDown.stop();
-              this.countDownSeconds = 0;
             });
           });
         }

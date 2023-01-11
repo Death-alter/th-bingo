@@ -43,7 +43,7 @@
         <div class="count-down-wrap">
           <count-down
             ref="countDown"
-            :seconds="countDownSeconds"
+            v-model="countDownSeconds"
             @complete="onCountDownComplete"
             v-show="inGame"
           ></count-down>
@@ -193,7 +193,7 @@ export default defineComponent({
   watch: {
     gameData(value) {
       if (value.start_time) {
-      const currentTime = new Date().getTime() + this.timeMistake;
+        const currentTime = new Date().getTime() + this.timeMistake;
         const startTime = value.start_time;
 
         let pasedTime;
@@ -375,18 +375,20 @@ export default defineComponent({
                   ),
                 ]
               ),
-          }).then(() => {
-            //winner
-            if (checked.value < 0) {
-              this.$store.dispatch("stop_game", { winner: -1 }).then(() => {
-                this.countDown.reset();
-              });
-            } else {
-              this.$store.dispatch("stop_game", { winner: checked.value }).then(() => {
-                this.countDown.reset();
-              });
-            }
-          });
+          })
+            .then(() => {
+              //winner
+              if (checked.value < 0) {
+                this.$store.dispatch("stop_game", { winner: -1 }).then(() => {
+                  this.countDownSeconds = this.roomSettings.countDownTime;
+                });
+              } else {
+                this.$store.dispatch("stop_game", { winner: checked.value }).then(() => {
+                  this.countDownSeconds = this.roomSettings.countDownTime;
+                });
+              }
+            })
+            .catch(() => {});
         }
       } else {
         this.$store

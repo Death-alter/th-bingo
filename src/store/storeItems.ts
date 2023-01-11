@@ -6,61 +6,126 @@ import { ElMessage } from "element-plus";
 import store from ".";
 import mitt from "@/mitt";
 
-function logSpellCard(status: number, oldStatus: number, index: number) {
-  switch (status) {
-    case -1:
-      store.commit("add_log", [{ text: "符卡" }, { tag: "spellCard", index }, { text: "被禁用了" }]);
-      break;
-    case 0:
-      switch (oldStatus) {
-        case 1:
-          store.commit("add_log", [{ tag: "playerA" }, { text: "取消选择符卡" }, { tag: "spellCard", index }]);
-          break;
-        case 3:
-          store.commit("add_log", [{ tag: "playerB" }, { text: "取消选择符卡" }, { tag: "spellCard", index }]);
-          break;
-        default:
-          store.commit("add_log", [{ text: "符卡" }, { tag: "spellCard", index }, { text: "被置空了" }]);
-      }
-      break;
-    case 1:
-      if (oldStatus === 2) {
-        store.commit("add_log", [{ tag: "playerB" }, { text: "取消选择符卡" }, { tag: "spellCard", index }]);
-      } else {
-        store.commit("add_log", [{ tag: "playerA" }, { text: "选择了符卡" }, { tag: "spellCard", index }]);
-      }
-      break;
-    case 2:
-      if (oldStatus === 1) {
-        store.commit("add_log", [{ tag: "playerB" }, { text: "选择了符卡" }, { tag: "spellCard", index }]);
-      } else {
-        store.commit("add_log", [{ tag: "playerA" }, { text: "选择了符卡" }, { tag: "spellCard", index }]);
-      }
-      break;
-    case 3:
-      if (oldStatus === 2) {
+function logSpellCard(status: number, oldStatus: number, index: number, trigger?: string) {
+  if (store.getters.roomData.names && store.getters.roomData.names[0] === trigger) {
+    switch (status) {
+      case -1:
+        store.commit("add_log", [{ tag: "playerA" }, { text: "禁用了符卡" }, { tag: "spellCard", index }]);
+        break;
+      case 0:
+      case 3:
         store.commit("add_log", [{ tag: "playerA" }, { text: "取消选择符卡" }, { tag: "spellCard", index }]);
-      } else {
+        break;
+      case 1:
+      case 2:
+        store.commit("add_log", [{ tag: "playerA" }, { text: "选择了符卡" }, { tag: "spellCard", index }]);
+        break;
+      case 5:
+        if (store.getters.isPlayerB && (oldStatus === 3 || oldStatus === 2)) {
+          store.commit("add_log", [{ tag: "playerA" }, { text: "抢了你选择的符卡" }, { tag: "spellCard", index }]);
+          mitt.emit("spell_card_grabbed");
+        } else {
+          store.commit("add_log", [{ tag: "playerA" }, { text: "收取了符卡" }, { tag: "spellCard", index }]);
+        }
+        break;
+    }
+  } else if (store.getters.roomData.names && store.getters.roomData.names[1] === trigger) {
+    switch (status) {
+      case -1:
+        store.commit("add_log", [{ tag: "playerB" }, { text: "禁用了符卡" }, { tag: "spellCard", index }]);
+        break;
+      case 0:
+      case 1:
+        store.commit("add_log", [{ tag: "playerB" }, { text: "取消选择符卡" }, { tag: "spellCard", index }]);
+        break;
+      case 2:
+      case 3:
         store.commit("add_log", [{ tag: "playerB" }, { text: "选择了符卡" }, { tag: "spellCard", index }]);
-      }
-      break;
-    case 5:
-      if (oldStatus === 3) {
-        store.commit("add_log", [{ tag: "playerA" }, { text: "抢了你选择的符卡" }, { tag: "spellCard", index }]);
-        mitt.emit("spell_card_grabbed");
-      } else {
-        store.commit("add_log", [{ tag: "playerA" }, { text: "收取了符卡" }, { tag: "spellCard", index }]);
-      }
-      break;
-    case 7:
-      if (oldStatus === 1) {
-        store.commit("add_log", [{ tag: "playerB" }, { text: "抢了你选择的符卡" }, { tag: "spellCard", index }]);
-        mitt.emit("spell_card_grabbed");
-      } else {
-        store.commit("add_log", [{ tag: "playerB" }, { text: "收取了符卡" }, { tag: "spellCard", index }]);
-      }
-
-      break;
+        break;
+      case 7:
+        if (store.getters.isPlayerA && (oldStatus === 1 || oldStatus === 2)) {
+          store.commit("add_log", [{ tag: "playerB" }, { text: "抢了你选择的符卡" }, { tag: "spellCard", index }]);
+          mitt.emit("spell_card_grabbed");
+        } else {
+          store.commit("add_log", [{ tag: "playerB" }, { text: "收取了符卡" }, { tag: "spellCard", index }]);
+        }
+        break;
+    }
+  } else {
+    switch (status) {
+      case -1:
+        store.commit("add_log", [
+          { tag: "host" },
+          { text: "把符卡" },
+          { tag: "spellCard", index },
+          { text: "设置为禁用" },
+        ]);
+        break;
+      case 0:
+        store.commit("add_log", [
+          { tag: "host" },
+          { text: "把符卡" },
+          { tag: "spellCard", index },
+          { text: "状态置空" },
+        ]);
+        break;
+      case 1:
+        store.commit("add_log", [
+          { tag: "host" },
+          { text: "把符卡" },
+          { tag: "spellCard", index },
+          { text: "设置为" },
+          { tag: "playerA" },
+          { text: "选择" },
+        ]);
+        break;
+      case 2:
+        store.commit("add_log", [
+          { tag: "host" },
+          { text: "把符卡" },
+          { tag: "spellCard", index },
+          { text: "设置为双方选择" },
+        ]);
+        break;
+      case 3:
+        store.commit("add_log", [
+          { tag: "host" },
+          { text: "把符卡" },
+          { tag: "spellCard", index },
+          { text: "设置为" },
+          { tag: "playerB" },
+          { text: "选择" },
+        ]);
+        break;
+      case 5:
+        store.commit("add_log", [
+          { tag: "host" },
+          { text: "把符卡" },
+          { tag: "spellCard", index },
+          { text: "设置为" },
+          { tag: "playerA" },
+          { text: "收取" },
+        ]);
+        break;
+      case 6:
+        store.commit("add_log", [
+          { tag: "host" },
+          { text: "把符卡" },
+          { tag: "spellCard", index },
+          { text: "设置为双方收取" },
+        ]);
+        break;
+      case 7:
+        store.commit("add_log", [
+          { tag: "host" },
+          { text: "把符卡" },
+          { tag: "spellCard", index },
+          { text: "设置为" },
+          { tag: "playerB" },
+          { text: "收取" },
+        ]);
+        break;
+    }
   }
 }
 
@@ -242,6 +307,10 @@ const list: Array<StoreAction | StoreMutation> = [
               item.style.color = "var(--B-color)";
               item.text = store.getters.roomData.names[1];
               break;
+            case "host":
+              item.style.fontWeight = 600;
+              item.text = store.getters.roomData.host;
+              break;
             case "spellCard":
               item.style.fontWeight = 600;
               item.text = store.getters.gameData.spells[v.index].name;
@@ -417,7 +486,7 @@ const list: Array<StoreAction | StoreMutation> = [
       if (res.whose_turn !== undefined) {
         data.whose_turn = res.whose_turn;
       }
-      logSpellCard(params.status, data.status[params.idx], params.idx);
+      logSpellCard(params.status, data.status[params.idx], params.idx, store.getters.userData.userName);
       data.status[params.idx] = params.status;
       return { ...data };
     },
@@ -429,47 +498,31 @@ const list: Array<StoreAction | StoreMutation> = [
     default: {},
     dataHandler: ((newVal: DefaultData, oldVal: DefaultData, trigger: string): Promise<DefaultData> => {
       return new Promise((reslove, reject) => {
-        let oldStatus = oldVal.status[newVal.idx];
-        let status = [...oldVal.status];
+        const index = newVal.idx;
+        const newStatus = newVal.status;
+        let oldStatus = oldVal.status[index];
 
         function setData() {
-          logSpellCard(status[newVal.idx], oldStatus, newVal.idx);
+          const statusList = store.getters.gameData.status;
+          statusList[index] = newStatus;
+          logSpellCard(statusList[index], oldStatus, index, trigger);
           const data = { ...oldVal };
-          data.status = status;
+          data.status = statusList;
           reslove(data);
         }
 
         switch (store.getters.roomData.type) {
           case 1:
-            if (store.getters.isPlayerA) {
-              if (newVal.status === 2) {
-                status[newVal.idx] = newVal.status - 1;
-              } else if (newVal.status === 3) {
-                status[newVal.idx] = 0;
-              } else {
-                status[newVal.idx] = newVal.status;
-              }
-            } else if (store.getters.isPlayerB) {
-              if (newVal.status === 2) {
-                status[newVal.idx] = newVal.status + 1;
-              } else if (newVal.status === 1) {
-                status[newVal.idx] = 0;
-              } else {
-                status[newVal.idx] = newVal.status;
-              }
-            } else {
-              status[newVal.idx] = newVal.status;
-            }
             if (store.getters.isHost) {
               if (store.getters.roomData.names && store.getters.roomData.names[0] === trigger) {
                 window.setTimeout(() => {
-                  oldStatus = store.getters.gameData.status[newVal.idx];
+                  oldStatus = store.getters.gameData.status[index];
                   setData();
                 }, store.getters.roomSettings.playerA.delay * 1000);
               }
               if (store.getters.roomData.names && store.getters.roomData.names[1] === trigger) {
                 window.setTimeout(() => {
-                  oldStatus = store.getters.gameData.status[newVal.idx];
+                  oldStatus = store.getters.gameData.status[index];
                   setData();
                 }, store.getters.roomSettings.playerB.delay * 1000);
               }
@@ -484,34 +537,33 @@ const list: Array<StoreAction | StoreMutation> = [
             if (newVal.whose_turn !== undefined) {
               oldVal.whose_turn = newVal.whose_turn;
             }
-            status[newVal.idx] = newVal.status;
             setData();
             break;
           case 3:
-            status[newVal.idx] = newVal.status;
             if (store.getters.roomData.names && store.getters.roomData.names[0] === trigger) {
               if (store.getters.isHost) {
                 window.setTimeout(() => {
-                  oldStatus = store.getters.gameData.status[newVal.idx];
+                  oldStatus = store.getters.gameData.status[index];
                   setData();
-                  mitt.emit("A_link_change", newVal.idx);
+                  mitt.emit("A_link_change", index);
                 }, store.getters.roomSettings.playerA.delay * 1000);
               } else {
                 setData();
-                mitt.emit("A_link_change", newVal.idx);
+                mitt.emit("A_link_change", index);
               }
             } else if (store.getters.roomData.names && store.getters.roomData.names[1] === trigger) {
               if (store.getters.isHost) {
                 window.setTimeout(() => {
-                  oldStatus = store.getters.gameData.status[newVal.idx];
-                  console.log(status[newVal.idx], oldStatus);
+                  oldStatus = store.getters.gameData.status[index];
                   setData();
-                  mitt.emit("B_link_change", newVal.idx);
+                  mitt.emit("B_link_change", index);
                 }, store.getters.roomSettings.playerB.delay * 1000);
               } else {
                 setData();
-                mitt.emit("B_link_change", newVal.idx);
+                mitt.emit("B_link_change", index);
               }
+            } else {
+              setData();
             }
             break;
         }
