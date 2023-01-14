@@ -111,7 +111,7 @@
               </div>
               <div class="change-card-number-info">{{ roomData.change_card_count[1] }}</div>
               <div class="change-card-number-btn">
-                <el-button type="primary" link :icon="Plus" @click="addChangeCardCount(0)" v-if="isHost" />
+                <el-button type="primary" link :icon="Plus" @click="addChangeCardCount(1)" v-if="isHost" />
               </div>
             </div>
             <div class="change-card-text">换卡次数</div>
