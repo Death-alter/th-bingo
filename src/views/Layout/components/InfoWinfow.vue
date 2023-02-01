@@ -312,6 +312,7 @@ export default defineComponent({
     this.userName = this.userData && this.userData.userName;
     this.roomType = this.roomData && this.roomData.type;
     const savedSettings = Storage.local.get("roomSettings");
+    console.log(this.scrollbar);
     if (savedSettings) {
       this.roomSettings = {
         gameTimeLimit: this.roomType ? savedSettings.gameTimeLimit[this.roomType] : savedSettings.gameTimeLimit[1],
