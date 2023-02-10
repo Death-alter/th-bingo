@@ -247,7 +247,7 @@ export default defineComponent({
         if (proxy.gamePhase !== 4) {
           return 0;
         }
-        const delta = (proxy.spendTimeB - proxy.spendTimeA) / 30000;
+        const delta = (proxy.spendTimeB - proxy.spendTimeA) / 15000;
         return delta > 0 ? Math.floor(delta) : Math.ceil(delta);
       }),
       countDown,
@@ -274,18 +274,27 @@ export default defineComponent({
 
         if (standbyCountDown > 0) {
           this.countDownSeconds = Math.ceil(standbyCountDown);
-          if (this.gameData.need_win === 2 && !this.audioPlaying) {
-            const gameIndex = this.roomData.score[0] + this.roomData.score[1] + 1;
-            switch (gameIndex) {
+          if (!this.audioPlaying) {
+            switch (this.gameData.need_win) {
               case 1:
                 this.turn1CountdownAudio.currentTime = pasedTime;
                 this.turn1CountdownAudio.play();
                 this.audioPlaying = true;
                 break;
-              case 3:
-                this.turn3CountdownAudio.currentTime = pasedTime + 2;
-                this.turn3CountdownAudio.play();
-                this.audioPlaying = true;
+              case 2:
+                const gameIndex = this.roomData.score[0] + this.roomData.score[1] + 1;
+                switch (gameIndex) {
+                  case 1:
+                    this.turn1CountdownAudio.currentTime = pasedTime;
+                    this.turn1CountdownAudio.play();
+                    this.audioPlaying = true;
+                    break;
+                  case 3:
+                    this.turn3CountdownAudio.currentTime = pasedTime + 2;
+                    this.turn3CountdownAudio.play();
+                    this.audioPlaying = true;
+                    break;
+                }
                 break;
             }
           }
