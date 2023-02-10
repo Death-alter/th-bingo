@@ -9,23 +9,27 @@ on:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        runs-on: [ubuntu-latest, windows-latest]
-        node-version: [14.x, 16.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
-    runs-on: ${{ matrix.runs-on }}
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: Use Node.js 14.x
       uses: actions/setup-node@v2
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: 14.x
     - name: Update .env.production
-      run: echo "VUE_APP_WS_API = 'ws://127.0.0.1:9999/ws'" >> .env.production
+      run: echo "VUE_APP_WS_API = 'ws://${{ secrets.REMOTE_HOST }}:9999/ws'" >> .env.production
     - name: Build
       run: |
         npm install
         npm run build:prod
+    - name: Deploy to Server
+      if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+      uses: easingthemes/ssh-deploy@main
+      env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          ARGS: "-rlgoDzvc -i --delete"
+          SOURCE: "dist/"
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          TARGET: ${{ secrets.REMOTE_TARGET }}
