@@ -25,6 +25,7 @@ module.exports = {
     "@typescript-eslint/no-inferrable-types": "off",
     "prettier/prettier": ["off"],
     "no-prototype-builtins": "off",
+    "no-case-declarations": "off",
     "vue/no-parsing-error": "off",
     "no-empty": "off",
   },

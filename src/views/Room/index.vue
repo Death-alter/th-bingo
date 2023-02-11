@@ -26,15 +26,20 @@
       <bp v-if="roomData.type === 2" />
       <bingo-link v-if="roomData.type === 3" />
     </div>
+    <div class="audio">
+      <bgm ref="spellCardGrabbedAudio" :src="require('@/assets/audio/spell_card_grabbed.mp3')"></bgm>
+      <bgm ref="turn1CountdownAudio" src="http://link.hhtjim.com/163/22636827.mp3" :loop="true" :endTime="184"></bgm>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, computed } from "vue";
+import { defineComponent, computed, ref, h, getCurrentInstance, onMounted, onUnmounted } from "vue";
 import { useStore } from "vuex";
 import standard from "./games/standard.vue";
 import bp from "./games/bp.vue";
 import bingoLink from "./games/link.vue";
+import bgm from "@/components/bgm.vue";
 
 export default defineComponent({
   name: "Room",
@@ -47,21 +52,55 @@ export default defineComponent({
     standard,
     bp,
     bingoLink,
+    bgm,
   },
   setup() {
     const store = useStore();
+    const { proxy }: any = getCurrentInstance();
+    const spellCardGrabbedAudio = ref();
+    const turn1CountdownAudio = ref();
+
+    onMounted(() => {
+      proxy.$bus.on("spell_card_grabbed", () => {
+        spellCardGrabbedAudio.value.play();
+      });
+    });
+    onUnmounted(() => {
+      proxy.$bus.off("spell_card_grabbed");
+    });
+
     if (store.getters.roomData.started) {
       store.dispatch("get_spells");
     }
     return {
       roomData: computed(() => store.getters.roomData),
       gameData: computed(() => store.getters.gameData),
+      gamePhase: computed(() => store.getters.gameData.phase || 0),
+      timeMistake: computed(() => store.getters.heartBeat.timeMistake),
+      spellCardGrabbedAudio,
+      turn1CountdownAudio,
     };
   },
   watch: {
     gameData(value) {
       if (value.need_win) {
         this.needWin = value.need_win;
+      }
+      if (value.phase === 1 && this.turn1CountdownAudio.paused) {
+        const pauseBeginTime = value.pause_begin_ms || null;
+        const currentTime = new Date().getTime() + this.timeMistake;
+        const startTime = value.start_time;
+        const totalPauseTime = value.total_pause_ms || 0;
+        let pasedTime;
+        if (pauseBeginTime) {
+          pasedTime = (pauseBeginTime - startTime - totalPauseTime) / 1000;
+        } else {
+          pasedTime = (currentTime - startTime - totalPauseTime) / 1000;
+        }
+        this.turn1CountdownAudio.setCurrent(pasedTime);
+        this.turn1CountdownAudio.play();
+      } else {
+        this.turn1CountdownAudio.stop();
       }
     },
   },

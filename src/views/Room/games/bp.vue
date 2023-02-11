@@ -72,10 +72,6 @@
             bpPhase ? (isMyTurn ? "禁用符卡" : "等待对手禁用符卡") : "等待房主操作"
           }}</el-button>
         </div>
-        <div class="audio">
-          <audio ref="turn1CountdownAudio" :src="require('@/assets/audio/turn1_countdown.mp3')"></audio>
-          <audio ref="turn3CountdownAudio" :src="require('@/assets/audio/turn3_countdown.mp3')"></audio>
-        </div>
       </el-col>
       <el-col :span="4">
         <div class="player-extra-info" v-if="roomData.started">
@@ -163,8 +159,6 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const countDown = ref();
-    const turn1CountdownAudio = ref();
-    const turn3CountdownAudio = ref();
 
     return {
       timeMistake: computed(() => store.getters.heartBeat.timeMistake),
@@ -183,8 +177,6 @@ export default defineComponent({
       ),
       bpPhase: computed(() => store.getters.gameData.ban_pick !== 2),
       countDown,
-      turn1CountdownAudio,
-      turn3CountdownAudio,
     };
   },
   mounted() {
@@ -203,30 +195,6 @@ export default defineComponent({
         if (standbyCountDown > 0) {
           this.gamePhase = 1;
           this.countDownSeconds = Math.ceil(standbyCountDown);
-          if (!this.audioPlaying) {
-            switch (this.gameData.need_win) {
-              case 1:
-                this.turn1CountdownAudio.currentTime = pasedTime;
-                this.turn1CountdownAudio.play();
-                this.audioPlaying = true;
-                break;
-              case 2:
-                const gameIndex = this.roomData.score[0] + this.roomData.score[1] + 1;
-                switch (gameIndex) {
-                  case 1:
-                    this.turn1CountdownAudio.currentTime = pasedTime;
-                    this.turn1CountdownAudio.play();
-                    this.audioPlaying = true;
-                    break;
-                  case 3:
-                    this.turn3CountdownAudio.currentTime = pasedTime + 2;
-                    this.turn3CountdownAudio.play();
-                    this.audioPlaying = true;
-                    break;
-                }
-                break;
-            }
-          }
           this.$nextTick(() => {
             this.countDown.start();
           });
@@ -334,7 +302,6 @@ export default defineComponent({
       if (!value) {
         this.gamePhase = 0;
         this.countDownSeconds = 0;
-        this.stopBGM();
       }
     },
   },
@@ -425,7 +392,6 @@ export default defineComponent({
       if (this.gamePhase === 1) {
         this.gamePhase = 2;
         this.countDownSeconds = this.gameData.game_time * 60 - this.gameData.countdown;
-        this.stopBGM();
         this.$nextTick(() => {
           this.countDown.start();
         });
@@ -467,12 +433,6 @@ export default defineComponent({
       if (index !== null) {
         this.$store.dispatch("update_spell", { idx: parseInt(index), status: item.value });
       }
-    },
-    stopBGM() {
-      this.turn1CountdownAudio.pause();
-      this.turn1CountdownAudio.currentTime = 0;
-      this.turn3CountdownAudio.pause();
-      this.turn3CountdownAudio.currentTime = 0;
     },
     resetRoom() {
       ElMessageBox.confirm("该操作会把房间回复到初始状态，是否确认？", "警告", {

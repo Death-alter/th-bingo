@@ -89,11 +89,6 @@
             >确认收取</el-button
           >
         </div>
-        <div class="audio">
-          <audio ref="spellCardGrabbedAudio" :src="require('@/assets/audio/spell_card_grabbed.mp3')"></audio>
-          <audio ref="turn1CountdownAudio" :src="require('@/assets/audio/turn1_countdown.mp3')"></audio>
-          <audio ref="turn3CountdownAudio" :src="require('@/assets/audio/turn3_countdown.mp3')"></audio>
-        </div>
       </el-col>
       <el-col :span="4">
         <div class="player-extra-info" v-if="roomData.started">
@@ -123,7 +118,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ref, h, getCurrentInstance, onMounted, onUnmounted } from "vue";
+import { defineComponent, computed, ref, h } from "vue";
 import { useStore } from "vuex";
 import SpellCardCell from "@/components/spell-card-cell.vue";
 import RightClickMenu from "@/components/right-click-menu.vue";
@@ -137,7 +132,6 @@ export default defineComponent({
   data() {
     return {
       countDownSeconds: 0,
-      gamePhase: 0,
       selectedSpellIndex: -1,
       winFlag: 0,
       audioPlaying: false,
@@ -190,18 +184,6 @@ export default defineComponent({
     const store = useStore();
     const countDown = ref();
     const spellCardGrabbedAudio = ref();
-    const turn1CountdownAudio = ref();
-    const turn3CountdownAudio = ref();
-    const { proxy }: any = getCurrentInstance();
-
-    onMounted(() => {
-      proxy.$bus.on("spell_card_grabbed", () => {
-        spellCardGrabbedAudio.value.play();
-      });
-    });
-    onUnmounted(() => {
-      proxy.$bus.off("spell_card_grabbed");
-    });
 
     return {
       timeMistake: computed(() => store.getters.heartBeat.timeMistake),
@@ -216,6 +198,7 @@ export default defineComponent({
       isPlayerB: computed(() => store.getters.isPlayerB),
       plyaerASelectedIndex: computed(() => store.getters.plyaerASelectedIndex),
       plyaerBSelectedIndex: computed(() => store.getters.plyaerBSelectedIndex),
+      gamePhase: computed(() => store.getters.gameData.phase || 0),
       spellCardSelected: computed(() => {
         if (store.getters.isPlayerA) {
           return store.getters.plyaerASelectedIndex !== -1;
@@ -227,8 +210,6 @@ export default defineComponent({
       }),
       countDown,
       spellCardGrabbedAudio,
-      turn1CountdownAudio,
-      turn3CountdownAudio,
       Minus,
       Plus,
     };
@@ -253,37 +234,14 @@ export default defineComponent({
         const standbyCountDown = value.countdown - pasedTime;
         const gameCountDown = value.game_time * 60 - pasedTime;
         if (standbyCountDown > 0) {
-          this.gamePhase = 1;
           this.countDownSeconds = Math.ceil(standbyCountDown);
-          if (!this.audioPlaying) {
-            switch (this.gameData.need_win) {
-              case 1:
-                this.turn1CountdownAudio.currentTime = pasedTime;
-                this.turn1CountdownAudio.play();
-                this.audioPlaying = true;
-                break;
-              case 2:
-                const gameIndex = this.roomData.score[0] + this.roomData.score[1] + 1;
-                switch (gameIndex) {
-                  case 1:
-                    this.turn1CountdownAudio.currentTime = pasedTime;
-                    this.turn1CountdownAudio.play();
-                    this.audioPlaying = true;
-                    break;
-                  case 3:
-                    this.turn3CountdownAudio.currentTime = pasedTime + 2;
-                    this.turn3CountdownAudio.play();
-                    this.audioPlaying = true;
-                    break;
-                }
-                break;
-            }
-          }
           this.$nextTick(() => {
             this.countDown.start();
           });
-        } else if (gameCountDown > 0) {
-          this.gamePhase = 2;
+        } else {
+          if (this.isHost && value.phase < 2) {
+            this.$store.dispatch("set_phase", { phase: 2 });
+          }
           this.countDownSeconds = Math.ceil(gameCountDown);
           if (!value.pause_begin_ms) {
             this.$nextTick(() => {
@@ -362,7 +320,6 @@ export default defineComponent({
       if (!value.started) {
         this.alertInfo = "等待房主抽取符卡";
         this.alertInfoColor = "#000";
-        this.gamePhase = 0;
       }
       if (value.winner !== undefined) {
         ElMessageBox.alert(`${this.roomData.names[value.winner]}获胜`, "比赛结束", {
@@ -374,9 +331,7 @@ export default defineComponent({
     },
     inGame(value) {
       if (!value) {
-        this.gamePhase = 0;
         this.countDownSeconds = 0;
-        this.stopBGM();
       }
     },
     gamePaused(value) {
@@ -440,11 +395,15 @@ export default defineComponent({
               //winner
               if (checked.value < 0) {
                 this.$store.dispatch("stop_game", { winner: -1 }).then(() => {
-                  this.countDownSeconds = this.roomSettings.countDownTime;
+                  this.$store.dispatch("set_phase", { phase: 0 }).then(() => {
+                    this.countDownSeconds = this.roomSettings.countDownTime;
+                  });
                 });
               } else {
                 this.$store.dispatch("stop_game", { winner: checked.value }).then(() => {
-                  this.countDownSeconds = this.roomSettings.countDownTime;
+                  this.$store.dispatch("set_phase", { phase: 0 }).then(() => {
+                    this.countDownSeconds = this.roomSettings.countDownTime;
+                  });
                 });
               }
             })
@@ -464,8 +423,9 @@ export default defineComponent({
               cnt: [this.roomSettings.playerA.changeCardCount, this.roomSettings.playerB.changeCardCount],
             });
             this.$store.commit("change_game_state", true);
-            this.gamePhase = 1;
-            this.countDown.start();
+            this.$store.dispatch("set_phase", { phase: 1 }).then(() => {
+              this.countDown.start();
+            });
           });
       }
     },
@@ -478,14 +438,16 @@ export default defineComponent({
     },
     onCountDownComplete() {
       if (this.gamePhase === 1) {
-        this.gamePhase = 2;
         this.countDownSeconds = this.gameData.game_time * 60 - this.gameData.countdown;
-        this.stopBGM();
-        this.$nextTick(() => {
-          this.countDown.start();
-        });
+        if (this.isHost) {
+          this.$store.dispatch("set_phase", { phase: 2 }).then(() => {
+            this.countDown.start();
+          });
+        }
       } else if (this.gamePhase === 2) {
-        this.gamePhase = 0;
+        if (this.isHost) {
+          this.$store.dispatch("set_phase", { phase: 0 });
+        }
       }
     },
     selectSpellCard(index: number) {
@@ -526,12 +488,6 @@ export default defineComponent({
       if (index !== null) {
         this.$store.dispatch("update_spell", { idx: parseInt(index), status: item.value });
       }
-    },
-    stopBGM() {
-      this.turn1CountdownAudio.pause();
-      this.turn1CountdownAudio.currentTime = 0;
-      this.turn3CountdownAudio.pause();
-      this.turn3CountdownAudio.currentTime = 0;
     },
     resetRoom() {
       ElMessageBox.confirm("该操作会把房间回复到初始状态，是否确认？", "警告", {
