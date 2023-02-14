@@ -29,6 +29,8 @@
     <div class="audio">
       <bgm ref="spellCardGrabbedAudio" :src="require('@/assets/audio/spell_card_grabbed.mp3')"></bgm>
       <bgm ref="turn1CountdownAudio" src="http://link.hhtjim.com/163/22636827.mp3" :loop="true" :endTime="184"></bgm>
+      <bgm ref="turn2CountdownAudio" src="http://link.hhtjim.com/163/30854145.mp3" :loop="true"></bgm>
+      <!-- <bgm ref="turn3CountdownAudio" src="http://link.hhtjim.com/163/22636827.mp3" :loop="true" :endTime="184"></bgm> -->
     </div>
   </div>
 </template>
@@ -59,6 +61,8 @@ export default defineComponent({
     const { proxy }: any = getCurrentInstance();
     const spellCardGrabbedAudio = ref();
     const turn1CountdownAudio = ref();
+    const turn2CountdownAudio = ref();
+    const turn3CountdownAudio = ref();
 
     onMounted(() => {
       proxy.$bus.on("spell_card_grabbed", () => {
@@ -79,6 +83,8 @@ export default defineComponent({
       timeMistake: computed(() => store.getters.heartBeat.timeMistake),
       spellCardGrabbedAudio,
       turn1CountdownAudio,
+      turn2CountdownAudio,
+      turn3CountdownAudio,
     };
   },
   watch: {
