@@ -97,7 +97,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ref, h, getCurrentInstance, onMounted, onUnmounted } from "vue";
+import { defineComponent, computed, ref, h, getCurrentInstance, onMounted, onUnmounted, watch } from "vue";
 import { useStore } from "vuex";
 import SpellCardCell from "@/components/spell-card-cell.vue";
 import RightClickMenu from "@/components/right-click-menu.vue";
@@ -160,6 +160,7 @@ export default defineComponent({
     const store = useStore();
     const countDown = ref();
     const { proxy }: any = getCurrentInstance();
+    const gamePhase = computed(() => store.getters.gameData.phase || 0);
 
     onMounted(() => {
       proxy.$bus.on("A_link_change", (index: number) => {
@@ -181,9 +182,16 @@ export default defineComponent({
         }
       });
     });
+    
     onUnmounted(() => {
       proxy.$bus.off("A_link_change");
       proxy.$bus.off("B_link_change");
+    });
+
+    watch(gamePhase, (newVal, oldVal) => {
+      if (oldVal === 2 && newVal === 3) {
+        proxy.$bus.emit("right_link_start");
+      }
     });
 
     return {
@@ -194,7 +202,7 @@ export default defineComponent({
       inRoom: computed(() => store.getters.inRoom),
       isHost: computed(() => store.getters.isHost),
       inGame: computed(() => store.getters.inGame),
-      gamePhase: computed(() => store.getters.gameData.phase || 0),
+      gamePhase,
       gamePaused: computed(() => {
         if (store.getters.gameData.link_data) {
           const link_data = proxy.gameData.link_data;

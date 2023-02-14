@@ -28,9 +28,9 @@
     </div>
     <div class="audio">
       <bgm ref="spellCardGrabbedAudio" :src="require('@/assets/audio/spell_card_grabbed.mp3')"></bgm>
-      <bgm ref="turn1CountdownAudio" src="http://link.hhtjim.com/163/22636827.mp3" :loop="true" :endTime="184"></bgm>
+      <bgm ref="turn1CountdownAudio" src="http://link.hhtjim.com/163/22636828.mp3" :loop="true"></bgm>
       <bgm ref="turn2CountdownAudio" src="http://link.hhtjim.com/163/30854145.mp3" :loop="true"></bgm>
-      <!-- <bgm ref="turn3CountdownAudio" src="http://link.hhtjim.com/163/22636827.mp3" :loop="true" :endTime="184"></bgm> -->
+      <bgm ref="turn3CountdownAudio" src="http://link.hhtjim.com/163/22636827.mp3" :loop="true" :endTime="184"></bgm>
     </div>
   </div>
 </template>
@@ -66,6 +66,9 @@ export default defineComponent({
 
     onMounted(() => {
       proxy.$bus.on("spell_card_grabbed", () => {
+        spellCardGrabbedAudio.value.play();
+      });
+      proxy.$bus.on("right_link_start", () => {
         spellCardGrabbedAudio.value.play();
       });
     });
