@@ -63,7 +63,7 @@ export class WS {
       if (this.retryTime >= WS.retryLimit) {
         ElMessage({
           type: "error",
-          message: "无法连接到服务器，请稍检查网络连接并刷新页面重试",
+          message: "无法连接到服务器，请检查网络连接并刷新页面重试",
         });
         return;
       }
