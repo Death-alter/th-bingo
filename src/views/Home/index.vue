@@ -87,7 +87,7 @@ export default defineComponent({
             })
             .then(() => {
               this.$router.push("/room");
-            })
+            });
         }
       });
     },

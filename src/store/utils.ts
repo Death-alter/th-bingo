@@ -124,7 +124,6 @@ export const createAction = (
         });
         reject();
       }
-
       if (state[name].status !== "pending") {
         promisePool[token] = {
           resolve,
