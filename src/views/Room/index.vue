@@ -5,7 +5,7 @@
       <div class="scoreboard">
         <div class="A-scoreboard" v-if="roomData.names[0]">
           <div
-            :class="{ 'score-circle': true, scored: roomData.score[0] >= needWin - index }"
+            :class="{ 'score-circle': true, 'scored-A': roomData.score[0] >= needWin - index }"
             v-for="(item, index) in needWinArr"
             :key="index"
           ></div>
@@ -13,7 +13,7 @@
         <div class="vs-text">VS</div>
         <div class="B-scoreboard" v-if="roomData.names[1]">
           <div
-            :class="{ 'score-circle': true, scored: roomData.score[1] >= index + 1 }"
+            :class="{ 'score-circle': true, 'scored-B': roomData.score[1] >= index + 1 }"
             v-for="(item, index) in needWinArr"
             :key="index"
           ></div>
@@ -28,13 +28,15 @@
     </div>
     <div class="audio">
       <bgm ref="spellCardGrabbedAudio" :src="require('@/assets/audio/spell_card_grabbed.mp3')"></bgm>
-      <bgm ref="turn1CountdownAudio" src="http://link.hhtjim.com/163/22636827.mp3" :loop="true" :endTime="184"></bgm>
+      <bgm ref="turn1CountdownAudio" src="http://link.hhtjim.com/163/22636828.mp3" :loop="true"></bgm>
+      <bgm ref="turn2CountdownAudio" src="http://link.hhtjim.com/163/30854145.mp3" :loop="true"></bgm>
+      <bgm ref="turn3CountdownAudio" src="http://link.hhtjim.com/163/22636827.mp3" :loop="true" :endTime="184"></bgm>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ref, h, getCurrentInstance, onMounted, onUnmounted } from "vue";
+import { defineComponent, computed, ref, getCurrentInstance, onMounted, onUnmounted } from "vue";
 import { useStore } from "vuex";
 import standard from "./games/standard.vue";
 import bp from "./games/bp.vue";
@@ -59,9 +61,14 @@ export default defineComponent({
     const { proxy }: any = getCurrentInstance();
     const spellCardGrabbedAudio = ref();
     const turn1CountdownAudio = ref();
+    const turn2CountdownAudio = ref();
+    const turn3CountdownAudio = ref();
 
     onMounted(() => {
       proxy.$bus.on("spell_card_grabbed", () => {
+        spellCardGrabbedAudio.value.play();
+      });
+      proxy.$bus.on("right_link_start", () => {
         spellCardGrabbedAudio.value.play();
       });
     });
@@ -79,6 +86,8 @@ export default defineComponent({
       timeMistake: computed(() => store.getters.heartBeat.timeMistake),
       spellCardGrabbedAudio,
       turn1CountdownAudio,
+      turn2CountdownAudio,
+      turn3CountdownAudio,
     };
   },
   watch: {
@@ -158,8 +167,12 @@ export default defineComponent({
     background-color: #999;
     margin: 0 3px;
 
-    &.scored {
-      background-color: red;
+    &.scored-A {
+      background-color: var(--A-color);
+    }
+
+    &.scored-B {
+      background-color: var(--B-color);
     }
   }
 }
