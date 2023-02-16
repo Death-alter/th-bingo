@@ -112,17 +112,26 @@
                     }}</el-checkbox>
                   </el-checkbox-group>
                 </el-form-item>
-                <el-form-item label="难度：">
+                <el-form-item label="符卡来源：">
                   <el-checkbox-group
-                    v-model="roomSettings.difficultyList"
+                    v-model="roomSettings.rankList"
                     style="text-align: left"
                     :min="1"
                     @change="synchroRoomSettings"
                   >
-                    <el-checkbox v-for="(item, index) in difficultyList" :label="item" :key="index">{{
-                      item
-                    }}</el-checkbox>
+                    <el-checkbox v-for="(item, index) in rankList" :label="item" :key="index">{{ item }}</el-checkbox>
                   </el-checkbox-group>
+                </el-form-item>
+                <el-form-item label="bingo难度：">
+                  <el-radio-group
+                    v-model="roomSettings.difficulty"
+                    style="text-align: left"
+                    @change="synchroRoomSettings"
+                  >
+                    <el-radio v-for="(item, index) in difficultyList" :label="item.value" :key="index">{{
+                      item.name
+                    }}</el-radio>
+                  </el-radio-group>
                 </el-form-item>
               </el-form>
               <el-divider style="margin: 10px 0"></el-divider>
@@ -237,6 +246,8 @@ import {
   ElOption,
   ElCheckboxGroup,
   ElCheckbox,
+  ElRadioGroup,
+  ElRadio,
   ElInputNumber,
   ElColorPicker,
   ElScrollbar,
@@ -255,6 +266,7 @@ export default defineComponent({
       userName: "",
       roomType: 1,
       gameList: config.gameOptionList,
+      rankList: config.rankList,
       difficultyList: config.difficultyList,
       predefineColors: config.predefineColors,
       gameTypeList: config.gameTypeList,
@@ -263,7 +275,8 @@ export default defineComponent({
         countDownTime: 180,
         format: 1,
         checkList: ["6", "7", "8", "10", "11", "12", "13", "14", "15", "16", "17", "18"],
-        difficultyList: ["L", "EX"],
+        rankList: ["L", "EX"],
+        difficulty: 3,
         playerA: {
           color: "hsl(16, 100%, 50%)",
           delay: 5,
@@ -289,6 +302,8 @@ export default defineComponent({
     ElOption,
     ElCheckboxGroup,
     ElCheckbox,
+    ElRadioGroup,
+    ElRadio,
     ElInputNumber,
     ElColorPicker,
     ElScrollbar,
@@ -312,13 +327,13 @@ export default defineComponent({
     this.userName = this.userData && this.userData.userName;
     this.roomType = this.roomData && this.roomData.type;
     const savedSettings = Storage.local.get("roomSettings");
-    console.log(this.scrollbar);
     if (savedSettings) {
       this.roomSettings = {
         gameTimeLimit: this.roomType ? savedSettings.gameTimeLimit[this.roomType] : savedSettings.gameTimeLimit[1],
         countDownTime: this.roomType ? savedSettings.countDownTime[this.roomType] : savedSettings.countDownTime[1],
         format: savedSettings.format,
-        difficultyList: savedSettings.difficultyList,
+        rankList: savedSettings.rankList,
+        difficulty: savedSettings.difficulty,
         checkList: savedSettings.checkList,
         playerA: savedSettings.playerA,
         playerB: savedSettings.playerB,

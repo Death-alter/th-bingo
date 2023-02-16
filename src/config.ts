@@ -5,7 +5,21 @@ class WebSocketConfig {
   public static readonly timeOutSeconds = 2; //发出心跳后多少秒没收到消息判断掉线
 }
 
-const difficultyList = ["L", "EX", "PH"];
+const rankList = ["L", "EX", "PH"];
+const difficultyList = [
+  {
+    name: "E",
+    value: 1,
+  },
+  {
+    name: "N",
+    value: 2,
+  },
+  {
+    name: "L",
+    value: 3,
+  },
+];
 
 const gameOptionList = [
   {
@@ -91,10 +105,11 @@ const gameTypeList = [
 
 class Config {
   public static readonly webSocket = WebSocketConfig;
-  public static readonly difficultyList = difficultyList;
+  public static readonly rankList = rankList;
   public static readonly gameOptionList = gameOptionList;
   public static readonly predefineColors = predefineColors;
   public static readonly gameTypeList = gameTypeList;
+  public static readonly difficultyList = difficultyList;
 }
 
 export default Config;

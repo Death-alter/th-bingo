@@ -375,7 +375,8 @@ export default defineComponent({
             game_time: this.roomSettings.gameTimeLimit,
             countdown: this.roomSettings.countDownTime,
             games: this.roomSettings.checkList,
-            ranks: this.roomSettings.difficultyList,
+            ranks: this.roomSettings.rankList,
+            difficulty: this.roomSettings.difficulty,
             need_win: (this.roomSettings.format + 1) / 2,
           })
           .then(() => {
