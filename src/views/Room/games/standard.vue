@@ -273,7 +273,7 @@ export default defineComponent({
               sumArr[10] -= 1;
               if (available[10] > 0) available[10] -= 2;
             }
-            if (index && index % 4 === 0) {
+            if (index && index !== 24 && index % 4 === 0) {
               sumArr[11] -= 1;
               if (available[11] > 0) available[11] -= 2;
             }
@@ -287,13 +287,12 @@ export default defineComponent({
               sumArr[10] += 1;
               if (available[10] % 2 === 0) available[10] -= 1;
             }
-            if (index && index % 4 === 0) {
+            if (index && index !== 24 && index % 4 === 0) {
               sumArr[11] += 1;
               if (available[11] % 2 === 0) available[11] -= 1;
             }
           }
         });
-
         for (let i = 0; i < 12; i++) {
           if (sumArr[i] === -5) {
             this.winFlag = -(i + 1);

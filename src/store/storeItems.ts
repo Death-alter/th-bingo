@@ -527,7 +527,10 @@ const list: Array<StoreAction | StoreMutation> = [
                 }, store.getters.roomSettings.playerB.delay * 1000);
               }
             } else {
-              setData();
+              console.log(trigger, newStatus);
+              if (newStatus === 5 || newStatus === 7) {
+                setData();
+              }
             }
             break;
           case 2:
@@ -612,7 +615,6 @@ const list: Array<StoreAction | StoreMutation> = [
     wsName: "link_data",
     default: {},
     dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
-      console.log(newVal);
       oldVal.link_data = newVal;
       return { ...oldVal };
     }) as MutationHandler,
