@@ -273,7 +273,7 @@ export default defineComponent({
               sumArr[10] -= 1;
               if (available[10] > 0) available[10] -= 2;
             }
-            if (index && index % 4 === 0) {
+            if (index && index !== 24 && index % 4 === 0) {
               sumArr[11] -= 1;
               if (available[11] > 0) available[11] -= 2;
             }
@@ -287,13 +287,12 @@ export default defineComponent({
               sumArr[10] += 1;
               if (available[10] % 2 === 0) available[10] -= 1;
             }
-            if (index && index % 4 === 0) {
+            if (index && index !== 24 && index % 4 === 0) {
               sumArr[11] += 1;
               if (available[11] % 2 === 0) available[11] -= 1;
             }
           }
         });
-
         for (let i = 0; i < 12; i++) {
           if (sumArr[i] === -5) {
             this.winFlag = -(i + 1);
@@ -415,7 +414,8 @@ export default defineComponent({
             game_time: this.roomSettings.gameTimeLimit,
             countdown: this.roomSettings.countDownTime,
             games: this.roomSettings.checkList,
-            ranks: this.roomSettings.difficultyList,
+            ranks: this.roomSettings.rankList,
+            difficulty: this.roomSettings.difficulty,
             need_win: (this.roomSettings.format + 1) / 2,
           })
           .then(() => {

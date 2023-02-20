@@ -20,6 +20,8 @@
             level1: level === 1,
             level2: level === 2,
             level3: level === 3,
+            level4: level === 4,
+            level5: level === 5,
           }"
         >
           <el-icon v-for="(item, index) in new Array(level)" :key="index"><StarFilled /></el-icon>
@@ -119,14 +121,22 @@ export default defineComponent({
       left: 0;
 
       .level1 {
-        color: rgb(233, 220, 36);
+        color: rgb(223, 233, 36);
       }
 
       .level2 {
-        color: rgb(212, 124, 9);
+        color: rgb(214, 181, 31);
       }
 
       .level3 {
+        color: rgb(212, 124, 9);
+      }
+
+      .level4 {
+        color: rgb(213, 86, 18);
+      }
+
+      .level5 {
         color: red;
       }
     }
