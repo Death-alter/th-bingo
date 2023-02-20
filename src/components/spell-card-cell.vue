@@ -31,7 +31,7 @@
         {{ desc }}
       </div>
       <div class="name">{{ name }}</div>
-      <div class="game-name"></div>
+      <!-- <div class="game-name"></div> -->
     </div>
   </div>
 </template>
@@ -151,6 +151,7 @@ export default defineComponent({
     .name {
       text-align: center;
       word-break: break-all;
+      white-space: "pre-wrap";
       font-size: 14px;
     }
   }

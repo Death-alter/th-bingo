@@ -61,6 +61,9 @@ export default defineComponent({
       const audio = this.audio as HTMLAudioElement;
       audio.play();
       let delay = this.duration || audio.duration;
+      if (audio.currentTime) {
+        delay -= audio.currentTime;
+      }
       this.timer = window.setTimeout(() => {
         if (!this.loop) {
           this.stop();
@@ -79,6 +82,9 @@ export default defineComponent({
       if (this.audio) this.audio.currentTime = this.startTime || 0;
     },
     setCurrent(time: number) {
+      const audio = this.audio as HTMLAudioElement;
+      const delay = this.duration || audio.duration;
+      if (time > delay) time %= delay;
       if (this.audio) this.audio.currentTime = time;
     },
   },
