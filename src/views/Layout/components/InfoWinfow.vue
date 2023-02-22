@@ -217,7 +217,7 @@
             <div class="setting-title">通用设置</div>
             <el-form label-width="90px">
               <el-form-item label="BGM静音：">
-                <el-checkbox v-model="roomSettings.bgmMuted" :key="index" @change="synchroRoomSettings"></el-checkbox>
+                <el-checkbox v-model="roomSettings.bgmMuted" @change="synchroRoomSettings"></el-checkbox>
               </el-form-item>
             </el-form>
           </el-scrollbar>
