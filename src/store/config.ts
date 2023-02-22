@@ -15,7 +15,7 @@ const config = {
     plyaerASelectedIndex: (state: VuexState) => state.gameData.data?.status && state.gameData.data?.status.indexOf(1),
     plyaerBSelectedIndex: (state: VuexState) => state.gameData.data?.status && state.gameData.data?.status.indexOf(3),
     inGame: (state: VuexState) => !!state.roomData.data?.started,
-    gamePaused:(state: VuexState) => !!state.gameData.data?.pause_begin_ms,
+    gamePaused: (state: VuexState) => !!state.gameData.data?.pause_begin_ms,
   },
   mutations: {},
   actions: {},

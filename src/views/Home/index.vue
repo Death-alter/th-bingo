@@ -14,6 +14,11 @@
             />
           </div>
         </el-form-item>
+        <el-form-item prop="soloMode">
+          <div class="solo-mode-check-box">
+            <el-checkbox v-model="form.soloMode">无转播模式</el-checkbox>
+          </div>
+        </el-form-item>
       </el-form>
       <div class="btns">
         <el-button type="primary" @click="createRoom">创建房间</el-button>
@@ -25,7 +30,7 @@
 
 <script lang="ts">
 import { defineComponent, computed, ref } from "vue";
-import { ElInput, ElButton, ElForm, ElFormItem } from "element-plus";
+import { ElInput, ElButton, ElForm, ElFormItem, ElCheckbox } from "element-plus";
 import { useStore } from "vuex";
 import type { FormInstance } from "element-plus";
 
@@ -35,6 +40,7 @@ export default defineComponent({
     return {
       form: {
         roomPassword: "",
+        soloMode: false,
       },
       rules: {
         roomPassword: [
@@ -64,6 +70,7 @@ export default defineComponent({
     ElButton,
     ElForm,
     ElFormItem,
+    ElCheckbox,
   },
   setup() {
     const store = useStore();
@@ -83,11 +90,12 @@ export default defineComponent({
             .dispatch("create_room", {
               name: this.userData.userName,
               rid: this.form.roomPassword,
+              solo: this.form.soloMode,
               type: 1,
             })
             .then(() => {
               this.$router.push("/room");
-            })
+            });
         }
       });
     },
@@ -130,8 +138,13 @@ export default defineComponent({
     }
   }
 
+  .solo-mode-check-box {
+    width: 100%;
+    text-align: center;
+  }
+
   .btns {
-    margin-top: 50px;
+    margin-top: 30px;
 
     & > * {
       margin: 0 30px;
