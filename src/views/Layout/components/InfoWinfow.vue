@@ -213,6 +213,13 @@
                 </el-form-item>
               </template>
             </el-form>
+            <el-divider style="margin: 10px 0"></el-divider>
+            <div class="setting-title">通用设置</div>
+            <el-form label-width="90px">
+              <el-form-item label="BGM静音：">
+                <el-checkbox v-model="roomSettings.bgmMuted" @change="synchroRoomSettings"></el-checkbox>
+              </el-form-item>
+            </el-form>
           </el-scrollbar>
         </el-tab-pane>
         <el-tab-pane label="操作记录" :name="2" class="tab-content">
@@ -277,6 +284,7 @@ export default defineComponent({
         checkList: ["6", "7", "8", "10", "11", "12", "13", "14", "15", "16", "17", "18"],
         rankList: ["L", "EX"],
         difficulty: 3,
+        bgmMuted: false,
         playerA: {
           color: "hsl(16, 100%, 50%)",
           delay: 5,
@@ -337,6 +345,7 @@ export default defineComponent({
         checkList: savedSettings.checkList,
         playerA: savedSettings.playerA,
         playerB: savedSettings.playerB,
+        bgmMuted: savedSettings.bgmMuted,
       };
     } else if (this.roomType) {
       this.roomSettings.gameTimeLimit = this.gameTypeList[this.roomType - 1].timeLimit;
