@@ -28,9 +28,30 @@
     </div>
     <div class="audio">
       <bgm ref="spellCardGrabbedAudio" :src="require('@/assets/audio/spell_card_grabbed.mp3')"></bgm>
-      <bgm ref="turn1CountdownAudio" src="http://link.hhtjim.com/163/22636828.mp3" :loop="true" :endTime="174"></bgm>
-      <bgm ref="turn2CountdownAudio" src="http://link.hhtjim.com/163/30854145.mp3" :loop="true" :endTime="242"></bgm>
-      <bgm ref="turn3CountdownAudio" src="http://link.hhtjim.com/163/22636827.mp3" :loop="true" :endTime="184"></bgm>
+      <bgm
+        ref="turn1CountdownAudio"
+        src="http://link.hhtjim.com/163/22636828.mp3"
+        :loop="true"
+        :endTime="174"
+        :volume="0.3"
+        :muted="muted"
+      ></bgm>
+      <bgm
+        ref="turn2CountdownAudio"
+        src="http://link.hhtjim.com/163/30854145.mp3"
+        :loop="true"
+        :endTime="242"
+        :volume="0.3"
+        :muted="muted"
+      ></bgm>
+      <bgm
+        ref="turn3CountdownAudio"
+        src="http://link.hhtjim.com/163/22636827.mp3"
+        :loop="true"
+        :endTime="184"
+        :volume="0.3"
+        :muted="muted"
+      ></bgm>
     </div>
   </div>
 </template>
@@ -88,6 +109,7 @@ export default defineComponent({
       BGMpaused: computed(
         () => proxy.turn1CountdownAudio.paused && proxy.turn2CountdownAudio.paused && proxy.turn3CountdownAudio.paused
       ),
+      muted: computed(() => store.getters.roomSettings.bgmMuted),
       spellCardGrabbedAudio,
       turn1CountdownAudio,
       turn2CountdownAudio,

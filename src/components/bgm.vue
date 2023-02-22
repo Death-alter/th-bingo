@@ -1,5 +1,5 @@
 <template>
-  <audio ref="audio" :src="src" :muted="muted"></audio>
+  <audio ref="audio" :src="src" :muted="muted" :volume="volume"></audio>
 </template>
 
 <script lang="ts">
@@ -28,6 +28,10 @@ export default defineComponent({
     },
     muted: {
       type: Boolean,
+      defalut: false,
+    },
+    volume: {
+      type: Number, //0.0 - 1.0
       defalut: false,
     },
   },
@@ -64,6 +68,7 @@ export default defineComponent({
       if (audio.currentTime) {
         delay -= audio.currentTime;
       }
+      if (this.timer) window.clearTimeout(this.timer);
       this.timer = window.setTimeout(() => {
         if (!this.loop) {
           this.stop();
