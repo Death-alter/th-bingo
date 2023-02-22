@@ -28,8 +28,8 @@
     </div>
     <div class="audio">
       <bgm ref="spellCardGrabbedAudio" :src="require('@/assets/audio/spell_card_grabbed.mp3')"></bgm>
-      <bgm ref="turn1CountdownAudio" src="http://link.hhtjim.com/163/22636828.mp3" :loop="true"></bgm>
-      <bgm ref="turn2CountdownAudio" src="http://link.hhtjim.com/163/30854145.mp3" :loop="true"></bgm>
+      <bgm ref="turn1CountdownAudio" src="http://link.hhtjim.com/163/22636828.mp3" :loop="true" :endTime="174"></bgm>
+      <bgm ref="turn2CountdownAudio" src="http://link.hhtjim.com/163/30854145.mp3" :loop="true" :endTime="242"></bgm>
       <bgm ref="turn3CountdownAudio" src="http://link.hhtjim.com/163/22636827.mp3" :loop="true" :endTime="184"></bgm>
     </div>
   </div>
@@ -84,6 +84,10 @@ export default defineComponent({
       gameData: computed(() => store.getters.gameData),
       gamePhase: computed(() => store.getters.gameData.phase || 0),
       timeMistake: computed(() => store.getters.heartBeat.timeMistake),
+      needWinArr: computed(() => new Array(proxy.needWin)),
+      BGMpaused: computed(
+        () => proxy.turn1CountdownAudio.paused && proxy.turn2CountdownAudio.paused && proxy.turn3CountdownAudio.paused
+      ),
       spellCardGrabbedAudio,
       turn1CountdownAudio,
       turn2CountdownAudio,
@@ -95,7 +99,7 @@ export default defineComponent({
       if (value.need_win) {
         this.needWin = value.need_win;
       }
-      if (value.phase === 1 && this.turn1CountdownAudio.paused) {
+      if (value.phase === 1 && this.BGMpaused) {
         const pauseBeginTime = value.pause_begin_ms || null;
         const currentTime = new Date().getTime() + this.timeMistake;
         const startTime = value.start_time;
@@ -106,19 +110,36 @@ export default defineComponent({
         } else {
           pasedTime = (currentTime - startTime - totalPauseTime) / 1000;
         }
-        this.turn1CountdownAudio.setCurrent(pasedTime);
-        this.turn1CountdownAudio.play();
+        const score = this.roomData.score[0] + this.roomData.score[1];
+        switch (score) {
+          case 0:
+            this.turn1CountdownAudio.setCurrent(pasedTime);
+            this.turn1CountdownAudio.play();
+            break;
+          case 1:
+            this.turn2CountdownAudio.setCurrent(pasedTime);
+            this.turn2CountdownAudio.play();
+            break;
+          case 2:
+            this.turn3CountdownAudio.setCurrent(pasedTime);
+            this.turn3CountdownAudio.play();
+            break;
+          default:
+            this.turn1CountdownAudio.setCurrent(pasedTime);
+            this.turn1CountdownAudio.play();
+        }
       } else {
-        this.turn1CountdownAudio.stop();
+        this.stopBGM();
       }
     },
   },
-  computed: {
-    needWinArr() {
-      return new Array(this.needWin);
+  methods: {
+    stopBGM() {
+      this.turn1CountdownAudio.stop();
+      this.turn2CountdownAudio.stop();
+      this.turn3CountdownAudio.stop();
     },
   },
-  methods: {},
 });
 </script>
 
