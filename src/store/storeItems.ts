@@ -379,9 +379,20 @@ const list: Array<StoreAction | StoreMutation> = [
       if (res.started === false) {
         store.commit("clear_game_data");
       }
-      console.log(res, data);
       return res;
     },
+  },
+  {
+    name: "roomData",
+    actionName: "sit_down",
+    wsName: "sit_down",
+    default: {},
+  },
+  {
+    name: "roomData",
+    actionName: "stand_up",
+    wsName: "stand_up",
+    default: {},
   },
   {
     name: "gameData",

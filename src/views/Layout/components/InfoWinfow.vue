@@ -43,6 +43,16 @@
                 </el-form-item>
               </el-form>
               <div class="info-button">
+                <template v-if="!isHost">
+                  <el-button
+                    v-if="isWatcher"
+                    type="primary"
+                    @click="sitDown"
+                    :disabled="inGame || (roomData.names[0] !== '' && roomData.names[1] !== '')"
+                    >成为玩家</el-button
+                  >
+                  <el-button v-if="isPlayer" type="primary" @click="standUp" :disabled="inGame">成为观众</el-button>
+                </template>
                 <el-button type="primary" @click="leaveRoom" :disabled="inGame && !isWatcher">退出房间</el-button>
               </div>
             </div>
@@ -335,6 +345,7 @@ export default defineComponent({
       inRoom: computed(() => store.getters.inRoom),
       isHost: computed(() => store.getters.isHost),
       isWatcher: computed(() => store.getters.isWatcher),
+      isPlayer: computed(() => store.getters.isPlayer),
       inGame: computed(() => store.getters.inGame),
       logList: computed(() => store.getters.logList),
       scrollbar,
@@ -519,6 +530,12 @@ export default defineComponent({
       } else {
         return v.text;
       }
+    },
+    standUp() {
+      this.$store.dispatch("stand_up");
+    },
+    sitDown() {
+      this.$store.dispatch("sit_down");
     },
   },
 });
