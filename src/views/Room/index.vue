@@ -22,7 +22,10 @@
       <div class="player-B">{{ roomData.names[1] }}</div>
     </div>
     <div class="game">
-      <standard v-if="roomData.type === 1" />
+      <template v-if="roomData.type === 1">
+        <standard v-if="roomData.host" />
+        <standard-solo v-else />
+      </template>
       <bp v-if="roomData.type === 2" />
       <bingo-link v-if="roomData.type === 3" />
     </div>
@@ -60,6 +63,7 @@
 import { defineComponent, computed, ref, getCurrentInstance, onMounted, onUnmounted } from "vue";
 import { useStore } from "vuex";
 import standard from "./games/standard.vue";
+import standardSolo from "./games/standardSolo.vue";
 import bp from "./games/bp.vue";
 import bingoLink from "./games/link.vue";
 import bgm from "@/components/bgm.vue";
@@ -74,6 +78,7 @@ export default defineComponent({
   },
   components: {
     standard,
+    standardSolo,
     bp,
     bingoLink,
     bgm,

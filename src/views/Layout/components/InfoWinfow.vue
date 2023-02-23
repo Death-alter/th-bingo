@@ -61,7 +61,7 @@
         </el-tab-pane>
         <el-tab-pane label="房间设置" :name="1" class="tab-content">
           <el-scrollbar>
-            <template v-if="isHost">
+            <template v-if="(soloMode && isHost) || (!soloMode && isPlayerA)">
               <div class="setting-title">房间设置</div>
               <el-form label-width="90px">
                 <el-form-item label="规则：">
@@ -346,6 +346,8 @@ export default defineComponent({
       isHost: computed(() => store.getters.isHost),
       isWatcher: computed(() => store.getters.isWatcher),
       isPlayer: computed(() => store.getters.isPlayer),
+      isPlayerA: computed(() => store.getters.isPlayerA),
+      soloMode: computed(() => store.getters.soloMode),
       inGame: computed(() => store.getters.inGame),
       logList: computed(() => store.getters.logList),
       scrollbar,
