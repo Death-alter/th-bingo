@@ -205,6 +205,7 @@ export default defineComponent({
             },
           ];
         }
+        return [];
       }),
       countDown,
       spellCardGrabbedAudio,
