@@ -14,11 +14,11 @@
             />
           </div>
         </el-form-item>
-        <el-form-item prop="soloMode">
+        <!-- <el-form-item prop="soloMode">
           <div class="solo-mode-check-box">
-            <el-checkbox v-model="form.soloMode">无转播模式</el-checkbox>
+            <el-checkbox v-model="form.soloMode">无导播模式</el-checkbox>
           </div>
-        </el-form-item>
+        </el-form-item> -->
       </el-form>
       <div class="btns">
         <el-button type="primary" @click="createRoom">创建房间</el-button>
@@ -144,7 +144,7 @@ export default defineComponent({
   }
 
   .btns {
-    margin-top: 30px;
+    margin-top: 50px;
 
     & > * {
       margin: 0 30px;

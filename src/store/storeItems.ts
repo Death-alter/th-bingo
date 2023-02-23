@@ -526,6 +526,8 @@ const list: Array<StoreAction | StoreMutation> = [
                   setData();
                 }, store.getters.roomSettings.playerB.delay * 1000);
               }
+            } else if (store.getters.isWatcher) {
+              setData();
             } else {
               if (newStatus === 5 || newStatus === 7) {
                 setData();

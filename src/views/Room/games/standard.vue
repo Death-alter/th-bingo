@@ -6,7 +6,7 @@
         <div class="player-extra-info" v-if="roomData.started">
           <div class="change-card">
             <div class="change-card-number">
-              <div class="change-card-number-btn">
+              <div class="change-card-number-btn" v-if="!isWatcher">
                 <el-button
                   :disabled="roomData.change_card_count[0] <= 0"
                   type="primary"
@@ -16,7 +16,7 @@
                 />
               </div>
               <div class="change-card-number-info">{{ roomData.change_card_count[0] }}</div>
-              <div class="change-card-number-btn">
+              <div class="change-card-number-btn" v-if="!isWatcher">
                 <el-button type="primary" link :icon="Plus" @click="addChangeCardCount(0)" />
               </div>
             </div>
@@ -72,7 +72,7 @@
             gamePaused ? "继续比赛" : "暂停比赛"
           }}</el-button>
         </div>
-        <div v-if="inGame && !isHost">
+        <div v-if="inGame && (isPlayerA || isPlayerB)">
           <el-button
             type="primary"
             @click="confirmSelect"
@@ -93,7 +93,7 @@
         <div class="player-extra-info" v-if="roomData.started">
           <div class="change-card">
             <div class="change-card-number">
-              <div class="change-card-number-btn">
+              <div class="change-card-number-btn" v-if="!isWatcher">
                 <el-button
                   :disabled="roomData.change_card_count[1] <= 0"
                   type="primary"
@@ -103,7 +103,7 @@
                 />
               </div>
               <div class="change-card-number-info">{{ roomData.change_card_count[1] }}</div>
-              <div class="change-card-number-btn">
+              <div class="change-card-number-btn" v-if="!isWatcher">
                 <el-button type="primary" link :icon="Plus" @click="addChangeCardCount(1)" />
               </div>
             </div>
@@ -194,6 +194,7 @@ export default defineComponent({
       gamePaused: computed(() => store.getters.gamePaused),
       isPlayerA: computed(() => store.getters.isPlayerA),
       isPlayerB: computed(() => store.getters.isPlayerB),
+      isWatcher: computed(() => store.getters.isWatcher),
       plyaerASelectedIndex: computed(() => store.getters.plyaerASelectedIndex),
       plyaerBSelectedIndex: computed(() => store.getters.plyaerBSelectedIndex),
       gamePhase: computed(() => store.getters.gameData.phase || 0),
@@ -449,6 +450,9 @@ export default defineComponent({
       }
     },
     selectSpellCard(index: number) {
+      if (this.isWatcher) {
+        return;
+      }
       if (this.selectedSpellIndex === index) {
         this.selectedSpellIndex = -1;
       } else if (!this.spellCardSelected && this.gameData.status[index] === 0) {

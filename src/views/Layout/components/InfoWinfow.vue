@@ -29,13 +29,21 @@
                     <el-button link type="primary" @click="copyPassword">复制</el-button>
                   </div>
                 </el-form-item>
-                <el-form-item label="规则：">
+                <el-form-item label="房间规则：">
                   {{ getRoomTypeText(roomData.type) }}
                 </el-form-item>
-                <el-form-item label="创建者：">{{ roomData.host }}</el-form-item>
+                <el-form-item label="房间模式：">{{ roomData.host ? "导播模式" : "无导播模式" }}</el-form-item>
+                <el-form-item v-if="roomData.host" label="导播：">{{ roomData.host }}</el-form-item>
+                <el-form-item label="左侧玩家：">{{ roomData.names[0] }}</el-form-item>
+                <el-form-item label="右侧玩家：">{{ roomData.names[1] }}</el-form-item>
+                <el-form-item label="观众：" v-if="roomData.watchers.length">
+                  <div>
+                    <div v-for="(item, index) in roomData.watchers" :key="index">{{ item }}</div>
+                  </div>
+                </el-form-item>
               </el-form>
               <div class="info-button">
-                <el-button type="primary" @click="leaveRoom" :disabled="inGame">退出房间</el-button>
+                <el-button type="primary" @click="leaveRoom" :disabled="inGame && !isWatcher">退出房间</el-button>
               </div>
             </div>
             <div class="room-info-none" v-if="!inRoom">目前尚未加入房间</div>
@@ -326,6 +334,7 @@ export default defineComponent({
       gameData: computed(() => store.getters.gameData),
       inRoom: computed(() => store.getters.inRoom),
       isHost: computed(() => store.getters.isHost),
+      isWatcher: computed(() => store.getters.isWatcher),
       inGame: computed(() => store.getters.inGame),
       logList: computed(() => store.getters.logList),
       scrollbar,

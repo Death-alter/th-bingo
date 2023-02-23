@@ -33,7 +33,7 @@
         src="http://link.hhtjim.com/163/22636828.mp3"
         :loop="true"
         :endTime="174"
-        :volume="0.3"
+        :volume="volume"
         :muted="muted"
       ></bgm>
       <bgm
@@ -41,7 +41,7 @@
         src="http://link.hhtjim.com/163/30854145.mp3"
         :loop="true"
         :endTime="242"
-        :volume="0.3"
+        :volume="volume"
         :muted="muted"
       ></bgm>
       <bgm
@@ -49,7 +49,7 @@
         src="http://link.hhtjim.com/163/22636827.mp3"
         :loop="true"
         :endTime="184"
-        :volume="0.3"
+        :volume="volume"
         :muted="muted"
       ></bgm>
     </div>
@@ -69,6 +69,7 @@ export default defineComponent({
   data() {
     return {
       needWin: 1,
+      volume: 0.3,
     };
   },
   components: {
