@@ -303,8 +303,8 @@ export default defineComponent({
             this.winFlag = i + 1;
             break;
           } else if (
-            (sumArr[i] === -4 && this.oldSumArr[i] !== -4 && this.isPlayerB) ||
-            (sumArr[i] === 4 && this.oldSumArr[i] !== 4 && this.isPlayerA)
+            (sumArr[i] === -4 && this.oldSumArr[i] > -4 && this.isPlayerB) ||
+            (sumArr[i] === 4 && this.oldSumArr[i] < 4 && this.isPlayerA)
           ) {
             gamePointFlag = true;
           }
