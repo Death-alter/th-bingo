@@ -136,6 +136,7 @@ export default defineComponent({
       alertInfo: "等待房主抽取符卡",
       alertInfoColor: "#000",
       cardCount: [2, 2],
+      oldSumArr: [] as number[],
       menuData: [
         {
           label: "置空",
@@ -301,14 +302,18 @@ export default defineComponent({
           } else if (sumArr[i] === 5) {
             this.winFlag = i + 1;
             break;
-          } else if ((sumArr[i] === -4 && this.isPlayerB) || (sumArr[i] === 4 && this.isPlayerA)) {
+          } else if (
+            (sumArr[i] === -4 && this.oldSumArr[i] !== -4 && this.isPlayerB) ||
+            (sumArr[i] === 4 && this.oldSumArr[i] !== 4 && this.isPlayerA)
+          ) {
             gamePointFlag = true;
           }
         }
         if (gamePointFlag) {
           this.$bus.emit("game_point");
         }
-
+        this.oldSumArr = sumArr;
+        
         if (countA >= 13) {
           this.winFlag = -13;
         }
