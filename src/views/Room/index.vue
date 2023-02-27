@@ -102,7 +102,6 @@ export default defineComponent({
         spellCardGrabbedAudio.value.play();
       });
       proxy.$bus.on("game_point", () => {
-        console.log(1);
         gamePointAudio.value.play();
       });
     });
