@@ -31,6 +31,7 @@
     </div>
     <div class="audio">
       <bgm ref="spellCardGrabbedAudio" :src="require('@/assets/audio/spell_card_grabbed.mp3')"></bgm>
+      <bgm ref="gamePointAudio" :src="require('@/assets/audio/game_point.wav')"></bgm>
       <bgm
         ref="turn1CountdownAudio"
         src="http://link.hhtjim.com/163/22636828.mp3"
@@ -87,6 +88,7 @@ export default defineComponent({
     const store = useStore();
     const { proxy }: any = getCurrentInstance();
     const spellCardGrabbedAudio = ref();
+    const gamePointAudio = ref();
     const turn1CountdownAudio = ref();
     const turn2CountdownAudio = ref();
     const turn3CountdownAudio = ref();
@@ -98,9 +100,15 @@ export default defineComponent({
       proxy.$bus.on("right_link_start", () => {
         spellCardGrabbedAudio.value.play();
       });
+      proxy.$bus.on("game_point", () => {
+        console.log(1);
+        gamePointAudio.value.play();
+      });
     });
     onUnmounted(() => {
       proxy.$bus.off("spell_card_grabbed");
+      proxy.$bus.off("right_link_start");
+      proxy.$bus.off("game_point");
     });
 
     if (store.getters.roomData.started) {
@@ -117,6 +125,7 @@ export default defineComponent({
       ),
       muted: computed(() => store.getters.roomSettings.bgmMuted),
       spellCardGrabbedAudio,
+      gamePointAudio,
       turn1CountdownAudio,
       turn2CountdownAudio,
       turn3CountdownAudio,

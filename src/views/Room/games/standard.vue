@@ -292,6 +292,8 @@ export default defineComponent({
             }
           }
         });
+
+        let gamePointFlag = false;
         for (let i = 0; i < 12; i++) {
           if (sumArr[i] === -5) {
             this.winFlag = -(i + 1);
@@ -299,7 +301,12 @@ export default defineComponent({
           } else if (sumArr[i] === 5) {
             this.winFlag = i + 1;
             break;
+          } else if ((sumArr[i] === -4 && this.isPlayerB) || (sumArr[i] === 4 && this.isPlayerA)) {
+            gamePointFlag = true;
           }
+        }
+        if (gamePointFlag) {
+          this.$bus.emit("game_point");
         }
 
         if (countA >= 13) {
