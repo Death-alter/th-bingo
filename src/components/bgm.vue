@@ -24,15 +24,15 @@ export default defineComponent({
     },
     loop: {
       type: Boolean,
-      defalut: false,
+      default: false,
     },
     muted: {
       type: Boolean,
-      defalut: false,
+      default: false,
     },
     volume: {
       type: Number, //0.0 - 1.0
-      defalut: false,
+      default: 1.0,
     },
   },
   setup() {
@@ -63,6 +63,7 @@ export default defineComponent({
   methods: {
     play() {
       const audio = this.audio as HTMLAudioElement;
+      if (!audio.paused) return;
       audio.play();
       let delay = this.duration || audio.duration;
       if (audio.currentTime) {
