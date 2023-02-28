@@ -540,7 +540,7 @@ const list: Array<StoreAction | StoreMutation> = [
             } else if (store.getters.isWatcher) {
               setData();
             } else {
-              if (newStatus !== 1 || newStatus !== 3) {
+              if (newStatus === 0 || newStatus === 5 || newStatus === 7) {
                 setData();
               }
             }
