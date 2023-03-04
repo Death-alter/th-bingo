@@ -121,11 +121,13 @@ export class WS {
           }
           console.log("ws已断开");
           if (this.autoReconnect) {
-            this.createConnection().then(() => {
-              for (const callback of this.eventList.reconnect) {
-                callback("reconnect", {}, "", this);
-              }
-            });
+            this.createConnection()
+              .then(() => {
+                for (const callback of this.eventList.reconnect) {
+                  callback("reconnect", {}, "", this);
+                }
+              })
+              .catch((e) => {});
           }
         };
 

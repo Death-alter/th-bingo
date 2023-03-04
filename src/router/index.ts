@@ -52,9 +52,11 @@ router.beforeEach((to, from, next) => {
           }
         }, WS.timeOutSeconds * 1000);
       });
-      ws.createConnection().then(() => {
-        store.dispatch("login", { token: userData.token });
-      });
+      ws.createConnection()
+        .then(() => {
+          store.dispatch("login", { token: userData.token });
+        })
+        .catch((e) => {});
       ws.on("reconnect", () => {
         store.dispatch("login", { token: userData.token }).then(() => {
           if (store.getters.inRoom) {

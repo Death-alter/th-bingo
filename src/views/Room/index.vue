@@ -92,6 +92,43 @@ export default defineComponent({
     const turn1CountdownAudio = ref();
     const turn2CountdownAudio = ref();
     const turn3CountdownAudio = ref();
+    let ws: WebSocket | null = null;
+
+    function connectToolServer() {
+      ws = new WebSocket(process.env.VUE_APP_TOOL_WS_API);
+      ws.onopen = () => {
+        console.log("tool_ws已连接");
+      };
+      ws.onerror = () => {
+        console.log("tool_ws连接失败");
+        window.setTimeout(connectToolServer, 5000);
+      };
+      ws.onmessage = ({ data }) => {
+        data = JSON.parse(data);
+        if (proxy.gamePhase === 1) return;
+        for (let i = 0; i < proxy.gameData.spells.length; i++) {
+          const item = proxy.gameData.spells[i];
+          console.log(item.game, data.game, item.id, data.id);
+          if (item.game == data.game && item.id == data.id) {
+            console.log(item);
+            if (data.event === 0 && proxy.gameData.status[i] === 0) {
+              if (proxy.isPlayerA) {
+                proxy.$store.dispatch("update_spell", { idx: i, status: 1 });
+              } else if (proxy.isPlayerB && proxy.gameData.status[i] !== 3) {
+                proxy.$store.dispatch("update_spell", { idx: i, status: 3 });
+              }
+            } else if (data.event === 1) {
+              if (proxy.isPlayerA && proxy.gameData.status[i] === 1) {
+                proxy.$store.dispatch("update_spell", { idx: i, status: 5 });
+              } else if (proxy.isPlayerB && proxy.gameData.status[i] === 3) {
+                proxy.$store.dispatch("update_spell", { idx: i, status: 7 });
+              }
+            }
+            break;
+          }
+        }
+      };
+    }
 
     onMounted(() => {
       proxy.$bus.on("spell_card_grabbed", () => {
@@ -104,11 +141,13 @@ export default defineComponent({
       proxy.$bus.on("game_point", () => {
         gamePointAudio.value.play();
       });
+      connectToolServer();
     });
     onUnmounted(() => {
       proxy.$bus.off("spell_card_grabbed");
       proxy.$bus.off("right_link_start");
       proxy.$bus.off("game_point");
+      ws?.close();
     });
 
     if (store.getters.roomData.started) {
@@ -117,6 +156,8 @@ export default defineComponent({
     return {
       roomData: computed(() => store.getters.roomData),
       gameData: computed(() => store.getters.gameData),
+      isPlayerA: computed(() => store.getters.isPlayerA),
+      isPlayerB: computed(() => store.getters.isPlayerB),
       gamePhase: computed(() => store.getters.gameData.phase || 0),
       timeMistake: computed(() => store.getters.heartBeat.timeMistake),
       needWinArr: computed(() => new Array(proxy.needWin)),
