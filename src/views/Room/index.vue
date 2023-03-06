@@ -106,11 +106,19 @@ export default defineComponent({
       ws.onmessage = ({ data }) => {
         data = JSON.parse(data);
         if (proxy.gamePhase === 1) return;
+
+        //选择符卡时检查有没有已选的符卡
+        if (data.event === 0) {
+          for (let item of proxy.gameData.status) {
+            if ((item === 1 && proxy.isPlayerA) || (item === 3 && proxy.isPlayerB)) {
+              return;
+            }
+          }
+        }
+
         for (let i = 0; i < proxy.gameData.spells.length; i++) {
           const item = proxy.gameData.spells[i];
-          console.log(item.game, data.game, item.id, data.id);
           if (item.game == data.game && item.id == data.id) {
-            console.log(item);
             if (data.event === 0 && proxy.gameData.status[i] === 0) {
               if (proxy.isPlayerA) {
                 proxy.$store.dispatch("update_spell", { idx: i, status: 1 });
