@@ -104,8 +104,8 @@ export default defineComponent({
         window.setTimeout(connectToolServer, 5000);
       };
       ws.onmessage = ({ data }) => {
+        if (!proxy.roomData.started || proxy.gamePhase === 1) return;
         data = JSON.parse(data);
-        if (proxy.gamePhase === 1) return;
 
         //选择符卡时检查有没有已选的符卡
         if (data.event === 0) {
