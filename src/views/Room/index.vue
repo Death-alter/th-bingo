@@ -149,7 +149,9 @@ export default defineComponent({
       proxy.$bus.on("game_point", () => {
         gamePointAudio.value.play();
       });
-      connectToolServer();
+      if (proxy.isPlayer) {
+        connectToolServer();
+      }
     });
     onUnmounted(() => {
       proxy.$bus.off("spell_card_grabbed");
@@ -164,6 +166,7 @@ export default defineComponent({
     return {
       roomData: computed(() => store.getters.roomData),
       gameData: computed(() => store.getters.gameData),
+      isPlayer: computed(() => store.getters.isPlayer),
       isPlayerA: computed(() => store.getters.isPlayerA),
       isPlayerB: computed(() => store.getters.isPlayerB),
       gamePhase: computed(() => store.getters.gameData.phase || 0),
