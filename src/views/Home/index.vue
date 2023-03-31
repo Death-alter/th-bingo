@@ -94,7 +94,7 @@ export default defineComponent({
               type: 1,
             })
             .then(() => {
-              this.$router.push("/room");
+              this.$router.push(`/room/${this.form.roomPassword}`);
             });
         }
       });
@@ -109,7 +109,7 @@ export default defineComponent({
               rid: this.form.roomPassword,
             })
             .then(() => {
-              this.$router.push("/room");
+              this.$router.push(`/room/${this.form.roomPassword}`);
             });
         }
       });

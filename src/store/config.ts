@@ -12,8 +12,8 @@ const config = {
       state.roomData.data?.names && state.roomData.data?.names[0] === state.userData.data?.userName,
     isPlayerB: (state: VuexState) =>
       state.roomData.data?.names && state.roomData.data?.names[1] === state.userData.data?.userName,
-    isPlayer: (state: VuexState) => state.roomData.data?.names.includes(state.userData.data?.userName),
-    isWatcher: (state: VuexState) => state.roomData.data?.watchers.includes(state.userData.data?.userName),
+    isPlayer: (state: VuexState) => state.roomData.data?.names?.includes(state.userData.data?.userName),
+    isWatcher: (state: VuexState) => state.roomData.data?.watchers?.includes(state.userData.data?.userName),
     soloMode: (state: VuexState) => !state.roomData.data?.host,
     plyaerASelectedIndex: (state: VuexState) => state.gameData.data?.status && state.gameData.data?.status.indexOf(1),
     plyaerBSelectedIndex: (state: VuexState) => state.gameData.data?.status && state.gameData.data?.status.indexOf(3),

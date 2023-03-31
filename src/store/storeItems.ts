@@ -192,7 +192,9 @@ const list: Array<StoreAction | StoreMutation> = [
     default: {},
     dataHandler: {
       replied: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
-        router.push("/room");
+        if (res) {
+          router.push(`/room/${res.rid}`);
+        }
         return res;
       },
       error: (res: DefaultData, data: DefaultData, params: RequestParams) => {

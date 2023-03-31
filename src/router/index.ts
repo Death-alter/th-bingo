@@ -14,7 +14,7 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import("@/views/Home/index.vue"),
       },
       {
-        path: "/room",
+        path: "/room/:rid",
         name: "Room",
         component: () => import("@/views/Room/index.vue"),
       },
@@ -32,7 +32,7 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const userData = store.getters.userData;
   if (to.path === "/login") {
     if (userData.token) {
@@ -52,11 +52,19 @@ router.beforeEach((to, from, next) => {
           }
         }, WS.timeOutSeconds * 1000);
       });
-      ws.createConnection()
-        .then(() => {
-          store.dispatch("login", { token: userData.token });
-        })
-        .catch((e) => {});
+      await ws.createConnection();
+      await store.dispatch("login", { token: userData.token });
+      if (/^\/room/.test(to.path) && to.params.rid && !store.getters.roomData.rid) {
+        try {
+          await store.dispatch("join_room", {
+            name: store.getters.userData.userName,
+            rid: to.params.rid,
+          });
+        } catch (e) {
+          next("/");
+          return;
+        }
+      }
       ws.on("reconnect", () => {
         store.dispatch("login", { token: userData.token }).then(() => {
           if (store.getters.inRoom) {
@@ -67,16 +75,9 @@ router.beforeEach((to, from, next) => {
     }
   }
 
-  if (to.path === "/room") {
-    if (!store.getters.roomData.rid) {
-      next("/");
-      return;
-    }
-  } else {
-    if (store.getters.roomData.rid) {
-      next("/room");
-      return;
-    }
+  if (/^\/room/.test(to.path) && !to.params.rid) {
+    next("/");
+    return;
   }
 
   next();
