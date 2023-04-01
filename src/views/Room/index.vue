@@ -61,7 +61,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ref, getCurrentInstance, onMounted, onUnmounted } from "vue";
+import { defineComponent, computed, ref, getCurrentInstance, onMounted, onUnmounted, watch } from "vue";
 import { useStore } from "vuex";
 import standard from "./games/standard.vue";
 import standardSolo from "./games/standardSolo.vue";
@@ -93,6 +93,7 @@ export default defineComponent({
     const turn2CountdownAudio = ref();
     const turn3CountdownAudio = ref();
     let ws: WebSocket | null = null;
+    let timer: number = 0;
 
     function connectToolServer() {
       ws = new WebSocket(process.env.VUE_APP_TOOL_WS_API);
@@ -101,7 +102,8 @@ export default defineComponent({
       };
       ws.onerror = () => {
         console.log("tool_ws连接失败");
-        window.setTimeout(connectToolServer, 5000);
+        ws = null;
+        timer = window.setTimeout(connectToolServer, 5000);
       };
       ws.onmessage = ({ data }) => {
         if (!proxy.roomData.started || proxy.gamePhase === 1) return;
@@ -149,9 +151,6 @@ export default defineComponent({
       proxy.$bus.on("game_point", () => {
         gamePointAudio.value.play();
       });
-      if (proxy.isPlayer) {
-        connectToolServer();
-      }
     });
     onUnmounted(() => {
       proxy.$bus.off("spell_card_grabbed");
@@ -160,12 +159,33 @@ export default defineComponent({
       ws?.close();
     });
 
+    const gameData = computed(() => store.getters.gameData);
+    const roomData = computed(() => store.getters.roomData);
+
+    watch(gameData, (value) => {
+      if (proxy.isPlayer && ws === null && value.enable_tools) {
+        connectToolServer();
+      }
+    });
+
+    watch(roomData, (value, oldValue) => {
+      if (oldValue.started && !value.started) {
+        if (!ws) {
+          window.clearTimeout(timer);
+          timer = 0;
+        } else {
+          ws.close();
+        }
+      }
+    });
+
     if (store.getters.roomData.started) {
       store.dispatch("get_spells");
     }
+
     return {
-      roomData: computed(() => store.getters.roomData),
-      gameData: computed(() => store.getters.gameData),
+      roomData,
+      gameData,
       isPlayer: computed(() => store.getters.isPlayer),
       isPlayerA: computed(() => store.getters.isPlayerA),
       isPlayerB: computed(() => store.getters.isPlayerB),
@@ -181,6 +201,8 @@ export default defineComponent({
       turn1CountdownAudio,
       turn2CountdownAudio,
       turn3CountdownAudio,
+      ws,
+      timer,
     };
   },
   watch: {

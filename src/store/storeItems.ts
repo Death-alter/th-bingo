@@ -404,7 +404,7 @@ const list: Array<StoreAction | StoreMutation> = [
     dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
       const obj = { ...data };
       obj.pause_begin_ms = res.pause_begin_ms;
-      obj.total_pause_ms = res.total_pause_ms || 0;
+      obj.total_pause_time = res.total_pause_time || 0;
       obj.time = res.time;
       return obj;
     },
@@ -592,24 +592,22 @@ const list: Array<StoreAction | StoreMutation> = [
     mutationName: "modify_room_settings",
     default: {},
     dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
-      if (store.getters.isHost) {
-        const savedSettings = Storage.local.get("roomSettings");
-        const settings = { ...newVal };
-        if (savedSettings) {
-          settings.gameTimeLimit = savedSettings.gameTimeLimit;
-          settings.countDownTime = savedSettings.countDownTime;
-          settings.gameTimeLimit[store.getters.roomData.type] = newVal.gameTimeLimit;
-          settings.countDownTime[store.getters.roomData.type] = newVal.countDownTime;
-        } else {
-          const gameTimeLimit = {};
-          const countDownTime = {};
-          gameTimeLimit[store.getters.roomData.type] = newVal.gameTimeLimit;
-          countDownTime[store.getters.roomData.type] = newVal.countDownTime;
-          settings.gameTimeLimit = gameTimeLimit;
-          settings.countDownTime = countDownTime;
-        }
-        Storage.local.set("roomSettings", settings);
+      const savedSettings = Storage.local.get("roomSettings");
+      const settings = { ...newVal };
+      if (savedSettings) {
+        settings.gameTimeLimit = savedSettings.gameTimeLimit;
+        settings.countDownTime = savedSettings.countDownTime;
+        settings.gameTimeLimit[store.getters.roomData.type] = newVal.gameTimeLimit;
+        settings.countDownTime[store.getters.roomData.type] = newVal.countDownTime;
+      } else {
+        const gameTimeLimit = {};
+        const countDownTime = {};
+        gameTimeLimit[store.getters.roomData.type] = newVal.gameTimeLimit;
+        countDownTime[store.getters.roomData.type] = newVal.countDownTime;
+        settings.gameTimeLimit = gameTimeLimit;
+        settings.countDownTime = countDownTime;
       }
+      Storage.local.set("roomSettings", settings);
       return newVal;
     }) as MutationHandler,
   },

@@ -223,7 +223,7 @@ export default defineComponent({
         const pauseBeginTime = value.pause_begin_ms || null;
         const currentTime = new Date().getTime() + this.timeMistake;
         const startTime = value.start_time;
-        const totalPauseTime = value.total_pause_ms || 0;
+        const totalPauseTime = value.total_pause_time || 0;
 
         let pasedTime;
         if (pauseBeginTime) {
@@ -363,6 +363,7 @@ export default defineComponent({
           ranks: this.roomSettings.rankList,
           difficulty: this.roomSettings.difficulty,
           need_win: (this.roomSettings.format + 1) / 2,
+          enable_tools: this.roomSettings.enableTools,
         })
         .then(() => {
           this.$store.dispatch("change_card_count", {

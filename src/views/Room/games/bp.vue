@@ -378,6 +378,7 @@ export default defineComponent({
             ranks: this.roomSettings.rankList,
             difficulty: this.roomSettings.difficulty,
             need_win: (this.roomSettings.format + 1) / 2,
+            enable_tools: this.roomSettings.enableTools,
           })
           .then(() => {
             this.$store.dispatch("change_card_count", {
