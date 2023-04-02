@@ -67,7 +67,7 @@ router.beforeEach(async (to, from, next) => {
       }
       ws.on("reconnect", () => {
         store.dispatch("login", { token: userData.token }).then(() => {
-          if (store.getters.inRoom) {
+          if (store.getters.roomData.started) {
             store.dispatch("get_spells");
           }
         });

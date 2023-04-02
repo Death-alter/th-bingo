@@ -108,27 +108,29 @@ export class WS {
         };
 
         this.ws.onclose = (event) => {
-          window.clearInterval(this.heartBeatTimer);
-          this.ws = null;
-          for (const callback of this.eventList.disconnect) {
-            callback("disconnect", {}, "", this);
-          }
-          if (this.retryTime == 1) {
-            ElMessage({
-              type: "error",
-              message: "网络连接已断开，正在尝试重新连接",
-            });
-          }
-          console.log("ws已断开");
-          if (this.autoReconnect) {
-            this.createConnection()
-              .then(() => {
-                for (const callback of this.eventList.reconnect) {
-                  callback("reconnect", {}, "", this);
-                }
-              })
-              .catch((e) => {});
-          }
+          setTimeout(() => {
+            window.clearInterval(this.heartBeatTimer);
+            this.ws = null;
+            for (const callback of this.eventList.disconnect) {
+              callback("disconnect", {}, "", this);
+            }
+            if (this.retryTime == 1) {
+              ElMessage({
+                type: "error",
+                message: "网络连接已断开，正在尝试重新连接",
+              });
+            }
+            console.log("ws已断开");
+            if (this.autoReconnect) {
+              this.createConnection()
+                .then(() => {
+                  for (const callback of this.eventList.reconnect) {
+                    callback("reconnect", {}, "", this);
+                  }
+                })
+                .catch((e) => {});
+            }
+          }, 1000);
         };
 
         this.ws.onerror = (error) => {
