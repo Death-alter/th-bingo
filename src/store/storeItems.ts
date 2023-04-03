@@ -15,7 +15,11 @@ function logSpellCard(status: number, oldStatus: number, index: number, trigger?
       case 0:
       case 3:
         if (store.getters.isPlayerA) {
-          store.commit("add_log", [{ tag: "playerA" }, { text: "取消选择符卡" }, { tag: "spellCard", index }]);
+          if (oldStatus === 5) {
+            store.commit("add_log", [{ tag: "playerA" }, { text: "取消收取符卡" }, { tag: "spellCard", index }]);
+          } else {
+            store.commit("add_log", [{ tag: "playerA" }, { text: "取消选择符卡" }, { tag: "spellCard", index }]);
+          }
         }
         break;
       case 1:
@@ -39,7 +43,11 @@ function logSpellCard(status: number, oldStatus: number, index: number, trigger?
       case 0:
       case 1:
         if (store.getters.isPlayerB) {
-          store.commit("add_log", [{ tag: "playerB" }, { text: "取消选择符卡" }, { tag: "spellCard", index }]);
+          if (oldStatus === 7) {
+            store.commit("add_log", [{ tag: "playerB" }, { text: "取消收取符卡" }, { tag: "spellCard", index }]);
+          } else {
+            store.commit("add_log", [{ tag: "playerB" }, { text: "取消选择符卡" }, { tag: "spellCard", index }]);
+          }
         }
         break;
       case 2:

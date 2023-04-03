@@ -255,6 +255,10 @@ export default defineComponent({
 
       const status = value.status;
       if (status && status.length) {
+        if (status[this.selectedSpellIndex] !== 0) {
+          this.selectedSpellIndex = -1;
+        }
+
         const available: number[] = new Array(12).fill(2);
         const sumArr: number[] = new Array(12).fill(0);
         this.winFlag = 0;
