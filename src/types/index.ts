@@ -22,7 +22,7 @@ export interface VuexState {
 }
 
 export interface ActionHandler {
-  (res: DefaultData, data: DefaultData, params: RequestParams | Array<any>): DefaultData;
+  (res: DefaultData, data: DefaultData, params: RequestParams | Array<any>, trigger?: string): DefaultData;
 }
 
 export interface MutationHandler {

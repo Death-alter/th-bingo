@@ -142,7 +142,6 @@ export default defineComponent({
 
     onMounted(() => {
       proxy.$bus.on("spell_card_grabbed", () => {
-        console.log(spellCardGrabbedAudio.value);
         spellCardGrabbedAudio.value.play();
       });
       proxy.$bus.on("right_link_start", () => {

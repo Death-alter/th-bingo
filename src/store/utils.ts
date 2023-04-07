@@ -91,10 +91,10 @@ export const createAction = (
   const token = Md5.hashStr(wsName + "_cs");
 
   let requestParams: RequestParams;
-  ws.on(wsName + "_cs", async (resName, data) => {
+  ws.on(wsName + "_cs", async (resName, data, trigger) => {
     if (resName === "error_sc") {
       if (!(callback instanceof Function) && "error" in callback && callback.error) {
-        data = callback.error(data, store.state[name].data, requestParams);
+        data = callback.error(data, store.state[name].data, requestParams, trigger);
       }
       ElMessage({
         message: data.msg,
@@ -105,9 +105,9 @@ export const createAction = (
       delete promisePool[token];
     } else {
       if (callback instanceof Function) {
-        data = await callback(data, store.state[name].data, requestParams);
+        data = await callback(data, store.state[name].data, requestParams, trigger);
       } else if ("replied" in callback && callback.replied) {
-        data = await callback.replied(data, store.state[name].data, requestParams);
+        data = await callback.replied(data, store.state[name].data, requestParams, trigger);
       }
       store.commit(actionName + "_replied", data);
       promisePool[token].resolve(data);

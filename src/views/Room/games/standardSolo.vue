@@ -157,15 +157,15 @@ export default defineComponent({
       isPlayerA: computed(() => store.getters.isPlayerA),
       isPlayerB: computed(() => store.getters.isPlayerB),
       isWatcher: computed(() => store.getters.isWatcher),
-      plyaerASelectedIndex: computed(() => store.getters.plyaerASelectedIndex),
-      plyaerBSelectedIndex: computed(() => store.getters.plyaerBSelectedIndex),
+      playerASelectedIndex: computed(() => store.getters.playerASelectedIndex),
+      playerBSelectedIndex: computed(() => store.getters.playerBSelectedIndex),
       gamePhase: computed(() => store.getters.gameData.phase || 0),
       spellCardSelected: computed(() => {
         if (store.getters.isPlayerA) {
-          return store.getters.plyaerASelectedIndex !== -1;
+          return store.getters.playerASelectedIndex !== -1;
         }
         if (store.getters.isPlayerB) {
-          return store.getters.plyaerBSelectedIndex !== -1;
+          return store.getters.playerBSelectedIndex !== -1;
         }
         return false;
       }),
@@ -218,7 +218,7 @@ export default defineComponent({
     this.countDownSeconds = this.roomSettings.countDownTime;
   },
   watch: {
-    gameData(value) {
+    gameData(value, oldValue) {
       if (value.start_time) {
         const pauseBeginTime = value.pause_begin_ms || null;
         const currentTime = new Date().getTime() + this.timeMistake;
@@ -251,6 +251,10 @@ export default defineComponent({
         }
       } else {
         this.$store.commit("change_game_state", false);
+      }
+
+      if (value.phase === 2 && oldValue.phase === 1) {
+        this.$store.dispatch("get_spells");
       }
 
       const status = value.status;
@@ -470,8 +474,13 @@ export default defineComponent({
       }
       if (this.selectedSpellIndex === index) {
         this.selectedSpellIndex = -1;
-      } else if (!this.spellCardSelected && this.gameData.status[index] === 0) {
-        this.selectedSpellIndex = index;
+      } else if (!this.spellCardSelected) {
+        if (
+          this.gameData.status[index] === 0 ||
+          (this.isPlayerB && this.gameData.status[index] === 1) ||
+          (this.isPlayerA && this.gameData.status[index] === 3)
+        )
+          this.selectedSpellIndex = index;
       }
     },
     confirmSelect() {
@@ -488,10 +497,10 @@ export default defineComponent({
     },
     confirmAttained() {
       if (this.isPlayerA) {
-        this.$store.dispatch("update_spell", { idx: this.plyaerASelectedIndex, status: 5 });
+        this.$store.dispatch("update_spell", { idx: this.playerASelectedIndex, status: 5 });
       }
       if (this.isPlayerB) {
-        this.$store.dispatch("update_spell", { idx: this.plyaerBSelectedIndex, status: 7 });
+        this.$store.dispatch("update_spell", { idx: this.playerBSelectedIndex, status: 7 });
       }
     },
     confirmWinner() {

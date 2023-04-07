@@ -219,14 +219,14 @@ export default defineComponent({
       }),
       isPlayerA: computed(() => store.getters.isPlayerA),
       isPlayerB: computed(() => store.getters.isPlayerB),
-      plyaerASelectedIndex: computed(() => store.getters.plyaerASelectedIndex),
-      plyaerBSelectedIndex: computed(() => store.getters.plyaerBSelectedIndex),
+      playerASelectedIndex: computed(() => store.getters.playerASelectedIndex),
+      playerBSelectedIndex: computed(() => store.getters.playerBSelectedIndex),
       spellCardSelected: computed(() => {
         if (store.getters.isPlayerA) {
-          return store.getters.plyaerASelectedIndex !== -1;
+          return store.getters.playerASelectedIndex !== -1;
         }
         if (store.getters.isPlayerB) {
-          return store.getters.plyaerBSelectedIndex !== -1;
+          return store.getters.playerBSelectedIndex !== -1;
         }
         return false;
       }),

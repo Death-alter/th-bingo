@@ -363,23 +363,31 @@ const list: Array<StoreAction | StoreMutation> = [
     wsName: "get_spells",
     default: {},
     dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
-      if (store.getters.isPlayerA) {
-        res.status.forEach((item: number, index: number) => {
-          if (item === 2) {
-            res.status[index] = item - 1;
-          } else if (item === 3) {
-            res.status[index] = 0;
-          }
-        });
+      let num = 0;
+      for (let item of res.status) {
+        if (item === (store.getters.isPlayerA ? 7 : 5)) {
+          num++;
+        }
       }
-      if (store.getters.isPlayerB) {
-        res.status.forEach((item: number, index: number) => {
-          if (item === 2) {
-            res.status[index] = item + 1;
-          } else if (item === 1) {
-            res.status[index] = 0;
-          }
-        });
+      if (num >= 5 || res.phase === 1) {
+        if (store.getters.isPlayerA) {
+          res.status.forEach((item: number, index: number) => {
+            if (item === 2) {
+              res.status[index] = item - 1;
+            } else if (item === 3) {
+              res.status[index] = 0;
+            }
+          });
+        }
+        if (store.getters.isPlayerB) {
+          res.status.forEach((item: number, index: number) => {
+            if (item === 2) {
+              res.status[index] = item + 1;
+            } else if (item === 1) {
+              res.status[index] = 0;
+            }
+          });
+        }
       }
       return res;
     },
@@ -504,7 +512,7 @@ const list: Array<StoreAction | StoreMutation> = [
     actionName: "update_spell",
     wsName: "update_spell",
     default: {},
-    dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
+    dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams, trigger): DefaultData => {
       if (res.ban_pick !== undefined) {
         data.ban_pick = res.ban_pick;
       }
@@ -512,7 +520,18 @@ const list: Array<StoreAction | StoreMutation> = [
         data.whose_turn = res.whose_turn;
       }
       logSpellCard(params.status, data.status[params.idx], params.idx, store.getters.userData.userName);
-      data.status[params.idx] = params.status;
+      let num = 0;
+      for (let item of data.status) {
+        if (item === (store.getters.isPlayerA ? 7 : 5)) {
+          num++;
+        }
+      }
+      if (num >= 5 || store.getters.gameData.phase === 1) {
+        data.status[params.idx] = params.status;
+      } else {
+        data.status[params.idx] = res.status;
+      }
+
       return { ...data };
     },
   },
@@ -554,7 +573,17 @@ const list: Array<StoreAction | StoreMutation> = [
             } else if (store.getters.isWatcher) {
               setData();
             } else {
-              if (newStatus === 0 || newStatus === 5 || newStatus === 7) {
+              let num = 0;
+              for (let item of oldVal.status) {
+                if (item === (store.getters.isPlayerA ? 7 : 5)) {
+                  num++;
+                }
+              }
+              if (num >= 5 || store.getters.gameData.phase === 1) {
+                if (newStatus === 0 || newStatus === 5 || newStatus === 7) {
+                  setData();
+                }
+              } else {
                 setData();
               }
             }
@@ -649,8 +678,9 @@ const list: Array<StoreAction | StoreMutation> = [
     wsName: "set_phase",
     default: {},
     dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
-      data.phase = res.phase;
-      return { ...data };
+      const newData = { ...data };
+      newData.phase = res.phase;
+      return newData;
     },
   },
   {
@@ -659,8 +689,9 @@ const list: Array<StoreAction | StoreMutation> = [
     wsName: "set_phase",
     default: {},
     dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
-      oldVal.phase = newVal.phase;
-      return { ...oldVal };
+      const data = { ...oldVal };
+      data.phase = newVal.phase;
+      return data;
     }) as MutationHandler,
   },
 ];

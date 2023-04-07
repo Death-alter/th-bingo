@@ -15,8 +15,28 @@ const config = {
     isPlayer: (state: VuexState) => state.roomData.data?.names?.includes(state.userData.data?.userName),
     isWatcher: (state: VuexState) => state.roomData.data?.watchers?.includes(state.userData.data?.userName),
     soloMode: (state: VuexState) => !state.roomData.data?.host,
-    plyaerASelectedIndex: (state: VuexState) => state.gameData.data?.status && state.gameData.data?.status.indexOf(1),
-    plyaerBSelectedIndex: (state: VuexState) => state.gameData.data?.status && state.gameData.data?.status.indexOf(3),
+    playerASelectedIndex: (state: VuexState) =>
+      (() => {
+        if (state.gameData.data?.status) {
+          const index = state.gameData.data?.status.indexOf(1);
+          if (index !== -1) {
+            return index;
+          } else {
+            return state.gameData.data?.status.indexOf(2);
+          }
+        }
+      })(),
+    playerBSelectedIndex: (state: VuexState) =>
+      (() => {
+        if (state.gameData.data?.status) {
+          const index = state.gameData.data?.status.indexOf(3);
+          if (index !== -1) {
+            return index;
+          } else {
+            return state.gameData.data?.status.indexOf(2);
+          }
+        }
+      })(),
     inGame: (state: VuexState) => !!state.roomData.data?.started,
     gamePaused: (state: VuexState) => !!state.gameData.data?.pause_begin_ms,
   },
