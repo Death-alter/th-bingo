@@ -8,7 +8,7 @@
               v-model="form.roomPassword"
               :rules="rules"
               type="password"
-              placeholder="请输入4-16位数房间密码，可以使用大小写字母和数字"
+              placeholder="请输入4-16位数房间密码，仅支持数字"
               maxlength="16"
               show-password
             />
@@ -16,7 +16,7 @@
         </el-form-item>
         <el-form-item prop="soloMode">
           <div class="solo-mode-check-box">
-            <el-checkbox v-model="form.soloMode" @change="onDisableSoloMode">无导播模式</el-checkbox>
+            <el-checkbox v-model="form.soloMode" @change="onChangeSoloMode">无导播模式</el-checkbox>
             <el-checkbox v-model="form.addRobot" :disabled="!form.soloMode">单人练习模式</el-checkbox>
           </div>
         </el-form-item>
@@ -50,13 +50,13 @@ export default defineComponent({
           {
             min: 4,
             max: 16,
-            message: "密码长度应为4-16个字符",
+            message: "密码长度应为4-16个数字",
             trigger: "blur",
           },
           {
             validator: (rule: any, value: any, callback: any) => {
-              if (/[^a-zA-Z0-9]/.test(value)) {
-                callback(new Error("密码只能使用数字和字母"));
+              if (/\D/.test(value)) {
+                callback(new Error("密码只能使用数字"));
               } else {
                 callback();
               }
@@ -117,7 +117,7 @@ export default defineComponent({
         }
       });
     },
-    onDisableSoloMode(val: boolean) {
+    onChangeSoloMode(val: boolean) {
       if (!val) {
         this.form.addRobot = false
       }
