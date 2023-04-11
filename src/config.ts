@@ -8,15 +8,15 @@ class WebSocketConfig {
 const rankList = ["L", "EX", "PH"];
 const difficultyList = [
   {
-    name: "E",
+    name: "低",
     value: 1,
   },
   {
-    name: "N",
+    name: "中",
     value: 2,
   },
   {
-    name: "L",
+    name: "高",
     value: 3,
   },
 ];
