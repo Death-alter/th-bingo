@@ -32,6 +32,7 @@ export default defineComponent({
       left: 0,
       top: 0,
       targetElement: null,
+      timer: 0,
     };
   },
   emits: ["click"],
@@ -73,9 +74,38 @@ export default defineComponent({
             this.top = e.offsetY + e.target.offsetTop;
             this.targetElement = e.target;
           }
-          document.addEventListener("click", (e) => {
+          const hideMenu = () => {
             this.showMenu = false;
-          });
+            document.removeEventListener("click", hideMenu);
+          };
+          document.addEventListener("click", hideMenu);
+        });
+        this.innerElement.addEventListener("touchstart", (e: any) => {
+          if (e.changedTouches.length === 1) {
+            console.log(e.changedTouches[0]);
+            let flag = false;
+            this.timer = window.setTimeout(() => {
+              flag = true;
+              this.showMenu = true;
+              this.left = e.changedTouches[0].pageX - e.target.offsetParent.getBoundingClientRect().left + 10;
+              this.top = e.changedTouches[0].pageY - e.target.offsetParent.getBoundingClientRect().top;
+              this.targetElement = e.target;
+
+              const hideMenu = () => {
+                this.showMenu = false;
+                document.removeEventListener("click", hideMenu);
+              };
+              document.addEventListener("click", hideMenu);
+            }, 800);
+            const onTouchEnd = () => {
+              if (!flag) {
+                window.clearInterval(this.timer);
+                this.timer = 0;
+              }
+              this.innerElement.removeEventListener("touchend", onTouchEnd);
+            };
+            this.innerElement.addEventListener("touchend", onTouchEnd);
+          }
         });
       }
     },
