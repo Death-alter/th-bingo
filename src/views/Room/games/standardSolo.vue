@@ -66,13 +66,11 @@
               v-if="!spellCardSelected"
               >选择符卡</el-button
             >
-            <el-button
-              type="primary"
+            <confirm-select-button
               @click="confirmAttained"
               v-if="spellCardSelected"
               :disabled="gamePhase < 2 || gamePaused"
-              >确认收取</el-button
-            >
+            ></confirm-select-button>
           </template>
           <el-button v-if="isPlayerA && !inGame" type="primary" @click="start">抽取符卡</el-button>
           <el-button v-if="isPlayerA" size="small" @click="pause" :disabled="gamePhase !== 2">{{
@@ -113,6 +111,7 @@ import SpellCardCell from "@/components/spell-card-cell.vue";
 import RightClickMenu from "@/components/right-click-menu.vue";
 import BingoEffect from "@/components/bingo-effect/index.vue";
 import CountDown from "@/components/count-down.vue";
+import ConfirmSelectButton from "@/components/confirm-select-button.vue";
 import { ElButton, ElMessageBox, ElRadio, ElRadioGroup, ElRow, ElCol } from "element-plus";
 import { Minus, Plus } from "@element-plus/icons-vue";
 
@@ -128,6 +127,7 @@ export default defineComponent({
       alertInfoColor: "#000",
       cardCount: [2, 2],
       oldSumArr: [] as number[],
+      enableConfirm: true,
     };
   },
 
@@ -139,6 +139,7 @@ export default defineComponent({
     RightClickMenu,
     ElRow,
     ElCol,
+    ConfirmSelectButton
   },
   setup() {
     const store = useStore();
@@ -358,6 +359,11 @@ export default defineComponent({
         this.countDown.pause();
       } else {
         this.countDown.start();
+      }
+    },
+    spellCardSelected(value) {
+      if (value) {
+        this.enableConfirm = false;
       }
     },
   },

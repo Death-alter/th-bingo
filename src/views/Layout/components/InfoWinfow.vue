@@ -245,6 +245,17 @@
               <el-form-item label="BGM静音：">
                 <el-checkbox v-model="roomSettings.bgmMuted" @change="synchroRoomSettings"></el-checkbox>
               </el-form-item>
+              <el-form-item label="收取延时：">
+                <el-input-number
+                  class="input-number"
+                  v-model="roomSettings.confirmDelay"
+                  :min="0"
+                  size="small"
+                  controls-position="right"
+                  @change="synchroRoomSettings"
+                />
+                <span class="input-number-text">秒</span>
+              </el-form-item>
             </el-form>
           </el-scrollbar>
         </el-tab-pane>
@@ -312,6 +323,7 @@ export default defineComponent({
         difficulty: 3,
         enableTools: true,
         bgmMuted: false,
+        confirmDelay: 5,
         playerA: {
           color: "hsl(16, 100%, 50%)",
           delay: 5,
@@ -368,16 +380,21 @@ export default defineComponent({
     const savedSettings = Storage.local.get("roomSettings");
     if (savedSettings) {
       this.roomSettings = {
-        gameTimeLimit: this.roomType ? savedSettings.gameTimeLimit[this.roomType] : savedSettings.gameTimeLimit[1],
-        countDownTime: this.roomType ? savedSettings.countDownTime[this.roomType] : savedSettings.countDownTime[1],
-        format: savedSettings.format,
-        rankList: savedSettings.rankList,
-        difficulty: savedSettings.difficulty,
-        enableTools: savedSettings.enableTools,
-        checkList: savedSettings.checkList,
-        playerA: savedSettings.playerA,
-        playerB: savedSettings.playerB,
-        bgmMuted: savedSettings.bgmMuted,
+        gameTimeLimit:
+          (this.roomType ? savedSettings.gameTimeLimit[this.roomType] : savedSettings.gameTimeLimit[1]) ||
+          this.roomSettings.gameTimeLimit,
+        countDownTime:
+          (this.roomType ? savedSettings.countDownTime[this.roomType] : savedSettings.countDownTime[1]) ||
+          this.roomSettings.countDownTime,
+        format: savedSettings.format || this.roomSettings.format,
+        rankList: savedSettings.rankList || this.roomSettings.rankList,
+        difficulty: savedSettings.difficulty || this.roomSettings.difficulty,
+        enableTools: savedSettings.enableTools || this.roomSettings.enableTools,
+        checkList: savedSettings.checkList || this.roomSettings.checkList,
+        playerA: savedSettings.playerA || this.roomSettings.playerA,
+        playerB: savedSettings.playerB || this.roomSettings.playerA,
+        bgmMuted: savedSettings.bgmMuted || this.roomSettings.bgmMuted,
+        confirmDelay: savedSettings.confirmDelay || this.roomSettings.confirmDelay,
       };
     } else if (this.roomType) {
       this.roomSettings.gameTimeLimit = this.gameTypeList[this.roomType - 1].timeLimit;

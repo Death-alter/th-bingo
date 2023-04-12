@@ -80,13 +80,11 @@
             v-if="!spellCardSelected"
             >选择符卡</el-button
           >
-          <el-button
-            type="primary"
+          <confirm-select-button
             @click="confirmAttained"
             v-if="spellCardSelected"
             :disabled="gamePhase < 2 || gamePaused"
-            >确认收取</el-button
-          >
+          ></confirm-select-button>
         </div>
       </el-col>
       <el-col :span="4">
@@ -122,6 +120,7 @@ import SpellCardCell from "@/components/spell-card-cell.vue";
 import RightClickMenu from "@/components/right-click-menu.vue";
 import BingoEffect from "@/components/bingo-effect/index.vue";
 import CountDown from "@/components/count-down.vue";
+import ConfirmSelectButton from "@/components/confirm-select-button.vue";
 import { ElButton, ElMessageBox, ElRadio, ElRadioGroup, ElRow, ElCol } from "element-plus";
 import { Minus, Plus } from "@element-plus/icons-vue";
 
@@ -178,6 +177,7 @@ export default defineComponent({
     RightClickMenu,
     ElRow,
     ElCol,
+    ConfirmSelectButton,
   },
   setup() {
     const store = useStore();
