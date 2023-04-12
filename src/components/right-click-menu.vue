@@ -82,7 +82,6 @@ export default defineComponent({
         });
         this.innerElement.addEventListener("touchstart", (e: any) => {
           if (e.changedTouches.length === 1) {
-            console.log(e.changedTouches[0]);
             let flag = false;
             this.timer = window.setTimeout(() => {
               flag = true;
