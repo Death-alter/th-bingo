@@ -32,6 +32,8 @@ export default defineComponent({
       left: 0,
       top: 0,
       targetElement: null,
+      mouseDownTimeout: 0,
+      isLongPress: false,
     };
   },
   emits: ["click"],
@@ -66,19 +68,38 @@ export default defineComponent({
           e.preventDefault();
           return false;
         };
-        this.innerElement.addEventListener("mouseup", (e: any) => {
-          if (e.button === 2) {
-            this.showMenu = true;
-            this.left = e.offsetX + e.target.offsetLeft + 10;
-            this.top = e.offsetY + e.target.offsetTop;
-            this.targetElement = e.target;
+        this.innerElement.addEventListener("mousedown", (e: any) => {
+          if (e.button === 0) {
+            this.mouseDownTimeout && clearTimeout(this.mouseDownTimeout)
+            this.mouseDownTimeout = setTimeout(() => {
+              this.isLongPress = true;
+              this.displayMenu(e);
+            }, 500);
           }
-          document.addEventListener("click", (e) => {
-            this.showMenu = false;
-          });
+        });
+        this.innerElement.addEventListener("mouseup", (e: any) => {
+          if (e.button === 0) {
+            this.mouseDownTimeout && clearTimeout(this.mouseDownTimeout);
+          }
+          if (e.button === 2) {
+            this.displayMenu(e);
+          }
+        });
+        document.addEventListener("click", (e) => {
+          if (this.isLongPress) {
+            this.isLongPress = false
+            return
+          }
+          this.showMenu = false;
         });
       }
     },
+    displayMenu(e: any) {
+      this.showMenu = true;
+      this.left = e.offsetX + e.target.offsetLeft + 10;
+      this.top = e.offsetY + e.target.offsetTop;
+      this.targetElement = e.target;
+    }
   },
 });
 </script>
