@@ -81,13 +81,13 @@ export default defineComponent({
           document.addEventListener("click", hideMenu);
         });
         this.innerElement.addEventListener("touchstart", (e: any) => {
-          if (e.changedTouches.length === 1) {
+          if (e.touches.length === 1) {
             let flag = false;
             this.timer = window.setTimeout(() => {
               flag = true;
               this.showMenu = true;
-              this.left = e.changedTouches[0].pageX - e.target.offsetParent.getBoundingClientRect().left + 10;
-              this.top = e.changedTouches[0].pageY - e.target.offsetParent.getBoundingClientRect().top;
+              this.left = e.touches[0].pageX - e.target.offsetParent.getBoundingClientRect().left + 10;
+              this.top = e.touches[0].pageY - e.target.offsetParent.getBoundingClientRect().top;
               this.targetElement = e.target;
 
               const hideMenu = () => {
@@ -95,7 +95,7 @@ export default defineComponent({
                 document.removeEventListener("click", hideMenu);
               };
               document.addEventListener("click", hideMenu);
-            }, 800);
+            }, 500);
             const onTouchEnd = () => {
               if (!flag) {
                 window.clearInterval(this.timer);

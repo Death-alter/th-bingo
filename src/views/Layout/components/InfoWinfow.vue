@@ -394,7 +394,7 @@ export default defineComponent({
         playerA: savedSettings.playerA || this.roomSettings.playerA,
         playerB: savedSettings.playerB || this.roomSettings.playerA,
         bgmMuted: savedSettings.bgmMuted || this.roomSettings.bgmMuted,
-        confirmDelay: savedSettings.confirmDelay || this.roomSettings.confirmDelay,
+        confirmDelay: savedSettings.confirmDelay != null ? savedSettings.confirmDelay : this.roomSettings.confirmDelay,
       };
     } else if (this.roomType) {
       this.roomSettings.gameTimeLimit = this.gameTypeList[this.roomType - 1].timeLimit;

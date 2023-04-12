@@ -4,23 +4,31 @@
     <el-row>
       <el-col :span="4">
         <div class="player-extra-info" v-if="roomData.started">
-          <div class="change-card">
-            <div class="change-card-number">
-              <div class="change-card-number-btn" v-if="!isWatcher">
-                <el-button
-                  :disabled="roomData.change_card_count[0] <= 0"
-                  type="primary"
-                  link
-                  :icon="Minus"
-                  @click="removeChangeCardCount(0)"
-                />
+          <div class="player-extra-info-inner">
+            <div class="change-card">
+              <div class="change-card-number">
+                <div class="change-card-number-btn" v-if="!isWatcher">
+                  <el-button
+                    :disabled="roomData.change_card_count[0] <= 0"
+                    type="primary"
+                    link
+                    :icon="Minus"
+                    @click="removeChangeCardCount(0)"
+                  />
+                </div>
+                <div class="change-card-number-info">{{ roomData.change_card_count[0] }}</div>
+                <div class="change-card-number-btn" v-if="!isWatcher">
+                  <el-button type="primary" link :icon="Plus" @click="addChangeCardCount(0)" />
+                </div>
               </div>
-              <div class="change-card-number-info">{{ roomData.change_card_count[0] }}</div>
-              <div class="change-card-number-btn" v-if="!isWatcher">
-                <el-button type="primary" link :icon="Plus" @click="addChangeCardCount(0)" />
-              </div>
+              <div class="change-card-text">换卡次数</div>
             </div>
-            <div class="change-card-text">换卡次数</div>
+            <div class="spell-card-score">
+              <div class="spell-card-score-number">
+                <div class="spell-card-score-number-info">{{ playerAScore }}</div>
+              </div>
+              <div class="spell-card-score-text">得分</div>
+            </div>
           </div>
         </div>
       </el-col>
@@ -80,23 +88,31 @@
       </el-col>
       <el-col :span="4">
         <div class="player-extra-info" v-if="roomData.started">
-          <div class="change-card">
-            <div class="change-card-number">
-              <div class="change-card-number-btn" v-if="!isWatcher">
-                <el-button
-                  :disabled="roomData.change_card_count[1] <= 0"
-                  type="primary"
-                  link
-                  :icon="Minus"
-                  @click="removeChangeCardCount(1)"
-                />
+          <div class="player-extra-info-inner">
+            <div class="change-card">
+              <div class="change-card-number">
+                <div class="change-card-number-btn" v-if="!isWatcher">
+                  <el-button
+                    :disabled="roomData.change_card_count[1] <= 0"
+                    type="primary"
+                    link
+                    :icon="Minus"
+                    @click="removeChangeCardCount(1)"
+                  />
+                </div>
+                <div class="change-card-number-info">{{ roomData.change_card_count[1] }}</div>
+                <div class="change-card-number-btn" v-if="!isWatcher">
+                  <el-button type="primary" link :icon="Plus" @click="addChangeCardCount(1)" />
+                </div>
               </div>
-              <div class="change-card-number-info">{{ roomData.change_card_count[1] }}</div>
-              <div class="change-card-number-btn" v-if="!isWatcher">
-                <el-button type="primary" link :icon="Plus" @click="addChangeCardCount(1)" />
-              </div>
+              <div class="change-card-text">换卡次数</div>
             </div>
-            <div class="change-card-text">换卡次数</div>
+            <div class="spell-card-score">
+              <div class="spell-card-score-number">
+                <div class="spell-card-score-number-info">{{ playerBScore }}</div>
+              </div>
+              <div class="spell-card-score-text">得分</div>
+            </div>
           </div>
         </div>
       </el-col>
@@ -127,6 +143,8 @@ export default defineComponent({
       alertInfoColor: "#000",
       cardCount: [2, 2],
       oldSumArr: [] as number[],
+      playerAScore: 0,
+      playerBScore: 0,
       enableConfirm: true,
     };
   },
@@ -139,7 +157,7 @@ export default defineComponent({
     RightClickMenu,
     ElRow,
     ElCol,
-    ConfirmSelectButton
+    ConfirmSelectButton,
   },
   setup() {
     const store = useStore();
@@ -269,11 +287,14 @@ export default defineComponent({
         this.winFlag = 0;
         let countA = 0;
         let countB = 0;
+        let scoreA = 0;
+        let scoreB = 0;
         status.forEach((item: number, index: number) => {
           const rowIndex = Math.floor(index / 5);
           const columnIndex = index % 5;
           if (item === 5) {
             countA++;
+            scoreA += 1;
             if (available[rowIndex] > 0) available[rowIndex] -= 2;
             if (available[columnIndex + 5] > 0) available[columnIndex + 5] -= 2;
             sumArr[rowIndex] -= 1;
@@ -288,6 +309,7 @@ export default defineComponent({
             }
           } else if (item === 7) {
             countB++;
+            scoreB += 1;
             if (available[rowIndex] % 2 === 0) available[rowIndex] -= 1;
             if (available[columnIndex + 5] % 2 === 0) available[columnIndex + 5] -= 1;
             sumArr[rowIndex] += 1;
@@ -322,6 +344,9 @@ export default defineComponent({
           this.$bus.emit("game_point");
         }
         this.oldSumArr = sumArr;
+
+        this.playerAScore = scoreA;
+        this.playerBScore = scoreB;
 
         if (countA >= 13) {
           this.winFlag = -13;
@@ -624,13 +649,19 @@ export default defineComponent({
   display: flex;
   justify-content: center;
   align-items: center;
+  flex-wrap: wrap;
+}
+
+.player-extra-info-inner {
+  padding-bottom: 64px;
 }
 
 .change-card {
-  padding-bottom: 64px;
-
+  width: 100%;
+  margin-bottom: 20px;
   .change-card-number {
     display: flex;
+    justify-content: center;
     align-items: center;
 
     .change-card-number-btn {
@@ -644,6 +675,24 @@ export default defineComponent({
   }
 
   .change-card-text {
+    font-size: 12px;
+  }
+}
+
+.spell-card-score {
+  width: 100%;
+  .spell-card-score-number {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .spell-card-score-number-info {
+      font-size: 30px;
+      margin: 0 15px;
+    }
+  }
+
+  .spell-card-score-text {
     font-size: 12px;
   }
 }
