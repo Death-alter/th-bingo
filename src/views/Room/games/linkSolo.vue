@@ -271,9 +271,6 @@ export default defineComponent({
       Plus,
     };
   },
-  mounted() {
-    this.countDownSeconds = this.roomSettings.countDownTime;
-  },
   watch: {
     gameData(value) {
       const currentTime = new Date().getTime() + this.timeMistake;

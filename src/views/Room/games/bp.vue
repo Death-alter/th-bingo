@@ -179,9 +179,6 @@ export default defineComponent({
       countDown,
     };
   },
-  mounted() {
-    this.countDownSeconds = this.roomSettings.countDownTime;
-  },
   watch: {
     gameData(value) {
       if (value.start_time) {

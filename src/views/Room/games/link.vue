@@ -260,7 +260,6 @@ export default defineComponent({
     };
   },
   mounted() {
-    this.countDownSeconds = this.roomSettings.countDownTime;
     if (!this.isHost) {
       this.getAvailableIndexList();
     }

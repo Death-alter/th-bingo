@@ -232,9 +232,6 @@ export default defineComponent({
       Plus,
     };
   },
-  mounted() {
-    this.countDownSeconds = this.roomSettings.countDownTime;
-  },
   watch: {
     gameData(value, oldValue) {
       if (value.start_time) {
