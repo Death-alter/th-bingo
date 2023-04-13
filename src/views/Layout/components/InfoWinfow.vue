@@ -440,13 +440,14 @@ export default defineComponent({
   },
   methods: {
     logout() {
-      this.$store.commit("remove_user_data");
       if (this.inRoom) {
         this.$store.dispatch("leave_room").then(() => {
+          this.$store.commit("remove_user_data");
           ws.closeConnection();
           this.$router.push("/login");
         });
       } else {
+        this.$store.commit("remove_user_data");
         ws.closeConnection();
         this.$router.push("/login");
       }

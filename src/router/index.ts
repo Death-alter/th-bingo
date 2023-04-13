@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
 import store from "../store";
+import { ElMessage } from "element-plus";
 import ws, { WS } from "@/utils/webSocket";
 
 const routes: Array<RouteRecordRaw> = [
@@ -51,6 +52,15 @@ router.beforeEach(async (to, from, next) => {
             ws.reconnect();
           }
         }, WS.timeOutSeconds * 1000);
+      });
+      ws.on("error_sc", (resName, data, trigger) => {
+        ElMessage({
+          message: data.msg,
+          type: "error",
+        });
+        if (data.code < 0) {
+          ws.closeConnection();
+        }
       });
       await ws.createConnection();
       await store.dispatch("login", { token: userData.token });

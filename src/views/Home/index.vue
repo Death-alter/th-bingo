@@ -18,6 +18,7 @@
           <div class="solo-mode-check-box">
             <el-checkbox v-model="form.soloMode" @change="onChangeSoloMode">无导播模式</el-checkbox>
             <el-checkbox v-model="form.addRobot" :disabled="!form.soloMode">单人练习模式</el-checkbox>
+            <el-checkbox v-model="form.private">私密房间</el-checkbox>
           </div>
         </el-form-item>
       </el-form>
@@ -43,6 +44,7 @@ export default defineComponent({
         roomPassword: "",
         soloMode: false,
         addRobot: false,
+        private: false,
       },
       rules: {
         roomPassword: [
@@ -94,6 +96,7 @@ export default defineComponent({
               rid: this.form.roomPassword,
               solo: this.form.soloMode,
               add_robot: this.form.addRobot,
+              is_private: this.form.private,
               type: 1,
             })
             .then(() => {
@@ -119,9 +122,9 @@ export default defineComponent({
     },
     onChangeSoloMode(val: boolean) {
       if (!val) {
-        this.form.addRobot = false
+        this.form.addRobot = false;
       }
-    }
+    },
   },
 });
 </script>

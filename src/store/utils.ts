@@ -50,15 +50,8 @@ export const createAsyncMutations = (name: string, actionName: string) => {
 export const createSyncMutation = (name: string, wsName: string | undefined, callback: MutationHandler) => {
   if (wsName) {
     ws.on(wsName + "_sc", (resName, data, trigger) => {
-      if (resName === "error_sc") {
-        ElMessage({
-          message: data.msg,
-          type: "error",
-        });
-      } else {
-        store.commit(wsName + "_received", { data, trigger });
-        console.log(wsName + "_received");
-      }
+      store.commit(wsName + "_received", { data, trigger });
+      console.log(wsName + "_received");
     });
 
     return async (state: VuexState, data: RequestParams) => {
@@ -96,10 +89,6 @@ export const createAction = (
       if (!(callback instanceof Function) && "error" in callback && callback.error) {
         data = callback.error(data, store.state[name].data, requestParams, trigger);
       }
-      ElMessage({
-        message: data.msg,
-        type: "error",
-      });
       store.commit(actionName + "_error", data);
       promisePool[token].reject(data);
       delete promisePool[token];
