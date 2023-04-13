@@ -55,6 +55,18 @@ export default defineComponent({
       this.enableRightClick();
     }
   },
+  watch: {
+    disabled: {
+      handler(val) {
+        if (val) {
+          this.disableRightClick();
+        } else {
+          this.enableRightClick();
+        }
+      },
+      immediate: true,
+    },
+  },
   methods: {
     onMenuItemClick(e: any, item: any) {
       this.$emit("click", { event: e, target: this.targetElement, item });
@@ -67,45 +79,54 @@ export default defineComponent({
           e.preventDefault();
           return false;
         };
-        this.innerElement.addEventListener("mouseup", (e: any) => {
-          if (e.button === 2) {
-            this.showMenu = true;
-            this.left = e.offsetX + e.target.offsetLeft + 10;
-            this.top = e.offsetY + e.target.offsetTop;
-            this.targetElement = e.target;
-          }
+        this.innerElement.addEventListener("mouseup", this.onMouseUp);
+        this.innerElement.addEventListener("touchstart", this.onTouchStart);
+      }
+    },
+    disableRightClick() {
+      if (this.innerElement) {
+        this.innerElement.oncontextmenu = null;
+        this.innerElement.removeEventListener("mouseup", this.onMouseUp);
+        this.innerElement.removeEventListener("touchstart", this.onTouchStart);
+      }
+    },
+    onMouseUp(e: any) {
+      if (e.button === 2) {
+        this.showMenu = true;
+        this.left = e.offsetX + e.target.offsetLeft + 10;
+        this.top = e.offsetY + e.target.offsetTop;
+        this.targetElement = e.target;
+      }
+      const hideMenu = () => {
+        this.showMenu = false;
+        document.removeEventListener("click", hideMenu);
+      };
+      document.addEventListener("click", hideMenu);
+    },
+    onTouchStart(e: any) {
+      if (e.touches.length === 1) {
+        let flag = false;
+        this.timer = window.setTimeout(() => {
+          flag = true;
+          this.showMenu = true;
+          this.left = e.touches[0].pageX - e.target.offsetParent.getBoundingClientRect().left + 10;
+          this.top = e.touches[0].pageY - e.target.offsetParent.getBoundingClientRect().top;
+          this.targetElement = e.target;
+
           const hideMenu = () => {
             this.showMenu = false;
             document.removeEventListener("click", hideMenu);
           };
           document.addEventListener("click", hideMenu);
-        });
-        this.innerElement.addEventListener("touchstart", (e: any) => {
-          if (e.touches.length === 1) {
-            let flag = false;
-            this.timer = window.setTimeout(() => {
-              flag = true;
-              this.showMenu = true;
-              this.left = e.touches[0].pageX - e.target.offsetParent.getBoundingClientRect().left + 10;
-              this.top = e.touches[0].pageY - e.target.offsetParent.getBoundingClientRect().top;
-              this.targetElement = e.target;
-
-              const hideMenu = () => {
-                this.showMenu = false;
-                document.removeEventListener("click", hideMenu);
-              };
-              document.addEventListener("click", hideMenu);
-            }, 500);
-            const onTouchEnd = () => {
-              if (!flag) {
-                window.clearInterval(this.timer);
-                this.timer = 0;
-              }
-              this.innerElement.removeEventListener("touchend", onTouchEnd);
-            };
-            this.innerElement.addEventListener("touchend", onTouchEnd);
+        }, 500);
+        const onTouchEnd = () => {
+          if (!flag) {
+            window.clearInterval(this.timer);
+            this.timer = 0;
           }
-        });
+          this.innerElement.removeEventListener("touchend", onTouchEnd);
+        };
+        this.innerElement.addEventListener("touchend", onTouchEnd);
       }
     },
   },

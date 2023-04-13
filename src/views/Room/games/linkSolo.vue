@@ -17,7 +17,12 @@
       </el-col>
       <el-col :span="16">
         <div class="bingo-wrap">
-          <right-click-menu style="width: 100%; height: 100%" :menuData="menuData" @click="onMenuClick">
+          <right-click-menu
+            style="width: 100%; height: 100%"
+            :menuData="menuData"
+            @click="onMenuClick"
+            :disabled="gamePhase === 1"
+          >
             <div class="bingo-items">
               <template v-if="gameData.spells">
                 <div class="spell-card" v-for="(item, index) in gameData.spells" :key="index">
@@ -58,7 +63,7 @@
             type="primary"
             @click="confirmSelect"
             :disabled="gamePaused || !routeComplete"
-            v-if="inGame && (gamePhase === 1 || !confirmed) && !(gamePhase > 1 && routeComplete)"
+            v-if="inGame && (gamePhase === 1 || !confirmed) && !(gamePhase > 1 && routeComplete) && gamePhase !== 4"
             >{{ confirmed ? "取消确认" : "确认路线" }}</el-button
           >
           <template v-else>
