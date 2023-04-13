@@ -89,6 +89,13 @@ export const createAction = (
       if (!(callback instanceof Function) && "error" in callback && callback.error) {
         data = callback.error(data, store.state[name].data, requestParams, trigger);
       }
+      ElMessage({
+        message: data.msg,
+        type: "error",
+      });
+      if (data.code < 0) {
+        ws.closeConnection();
+      }
       store.commit(actionName + "_error", data);
       promisePool[token].reject(data);
       delete promisePool[token];

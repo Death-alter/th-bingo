@@ -4,10 +4,15 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
+import Storage from "./utils/Storage";
 
 export default defineComponent({
   created() {
     this.$store.commit("get_user_data");
+    const savedSettings = Storage.local.get("roomSettings");
+    savedSettings.gameTimeLimit = savedSettings.gameTimeLimit[1];
+    savedSettings.countDownTime = savedSettings.countDownTime[1];
+    this.$store.commit("modify_room_settings", savedSettings);
   },
 });
 </script>

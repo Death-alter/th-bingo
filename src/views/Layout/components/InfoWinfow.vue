@@ -397,18 +397,24 @@ export default defineComponent({
         format: savedSettings.format || this.roomSettings.format,
         rankList: savedSettings.rankList || this.roomSettings.rankList,
         difficulty: savedSettings.difficulty || this.roomSettings.difficulty,
-        private: savedSettings.private || this.roomSettings.private,
-        enableTools: savedSettings.enableTools || this.roomSettings.enableTools,
+        private: savedSettings.private != null ? savedSettings.private : this.roomSettings.private,
+        enableTools: savedSettings.enableTools != null ? savedSettings.enableTools : this.roomSettings.enableTools,
         checkList: savedSettings.checkList || this.roomSettings.checkList,
         playerA: savedSettings.playerA || this.roomSettings.playerA,
         playerB: savedSettings.playerB || this.roomSettings.playerA,
-        bgmMuted: savedSettings.bgmMuted || this.roomSettings.bgmMuted,
+        bgmMuted: savedSettings.bgmMuted != null ? savedSettings.bgmMuted : this.roomSettings.bgmMuted,
         confirmDelay: savedSettings.confirmDelay != null ? savedSettings.confirmDelay : this.roomSettings.confirmDelay,
       };
     } else if (this.roomType) {
-      this.roomSettings.gameTimeLimit = this.gameTypeList[this.roomType - 1].timeLimit;
-      this.roomSettings.countDownTime = this.gameTypeList[this.roomType - 1].countdown;
+      for (let item of this.gameTypeList) {
+        if (item.type === this.roomType) {
+          this.roomSettings.gameTimeLimit = item.timeLimit;
+          this.roomSettings.countDownTime = item.countdown;
+          break;
+        }
+      }
     }
+    console.log(savedSettings);
     this.$store.commit("modify_room_settings", this.roomSettings);
   },
   watch: {
@@ -421,12 +427,18 @@ export default defineComponent({
       }
       if (this.isHost) {
         const savedSettings = Storage.local.get("roomSettings");
-        this.roomSettings.gameTimeLimit =
-          (savedSettings && savedSettings.gameTimeLimit[this.roomType]) ||
-          this.gameTypeList[this.roomType - 1].timeLimit;
-        this.roomSettings.countDownTime =
-          (savedSettings && savedSettings.countDownTime[this.roomType]) ||
-          this.gameTypeList[this.roomType - 1].countdown;
+        if (savedSettings) {
+          this.roomSettings.gameTimeLimit = savedSettings.gameTimeLimit[this.roomType];
+          this.roomSettings.countDownTime = savedSettings.countDownTime[this.roomType];
+        } else {
+          for (let item of this.gameTypeList) {
+            if (item.type === this.roomType) {
+              this.roomSettings.gameTimeLimit = item.timeLimit;
+              this.roomSettings.countDownTime = item.countdown;
+              break;
+            }
+          }
+        }
       }
     },
     inRoom(val) {

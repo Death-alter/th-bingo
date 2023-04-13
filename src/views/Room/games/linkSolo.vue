@@ -17,12 +17,7 @@
       </el-col>
       <el-col :span="16">
         <div class="bingo-wrap">
-          <right-click-menu
-            style="width: 100%; height: 100%"
-            :menuData="menuData"
-            :disabled="!isHost"
-            @click="onMenuClick"
-          >
+          <right-click-menu style="width: 100%; height: 100%" :menuData="menuData" @click="onMenuClick">
             <div class="bingo-items">
               <template v-if="gameData.spells">
                 <div class="spell-card" v-for="(item, index) in gameData.spells" :key="index">
@@ -40,7 +35,7 @@
               </template>
             </div>
           </right-click-menu>
-          <div v-if="!inGame || ((winFlag !== 0 || gamePaused) && !isHost)" class="game-alert">
+          <div v-if="!inGame || winFlag !== 0 || gamePaused" class="game-alert">
             <div :style="{ color: alertInfoColor }">{{ alertInfo }}</div>
           </div>
           <bingo-link-effect class="bingo-effect" :route-a="routeA" :route-b="routeB" />
@@ -54,27 +49,36 @@
             v-show="inGame"
           ></count-down>
         </div>
-        <div v-if="isHost" class="host-buttons">
+        <div v-if="isPlayerA" class="host-buttons">
           <el-button v-if="!inGame" size="small" @click="resetRoom">重置房间</el-button>
           <el-button v-else size="small" @click="pause" :disabled="gamePhase !== 2">{{
             gamePaused ? "继续比赛" : "暂停比赛"
           }}</el-button>
-          <el-button type="primary" @click="start" v-if="winFlag === 0">{{
-            inGame ? "结束比赛" : "抽取符卡"
-          }}</el-button>
-          <el-button type="primary" @click="confirmWinner" v-else
-            >确认：{{ winFlag < 0 ? roomData.names[0] : roomData.names[1] }}获胜</el-button
-          >
-          <el-button size="small" @click="nextRound" :disabled="gamePhase < 2 || gamePhase > 3 || gamePaused">{{
-            gamePhase === 3 && !this.gameData.link_data.start_ms_b ? "开始计时" : "结束计时"
-          }}</el-button>
-        </div>
-        <div v-if="inGame && !isHost">
           <el-button
             type="primary"
             @click="confirmSelect"
             :disabled="gamePaused || !routeComplete"
-            v-if="(gamePhase === 1 || !confirmed) && !(gamePhase > 1 && routeComplete)"
+            v-if="inGame && (gamePhase === 1 || !confirmed) && !(gamePhase > 1 && routeComplete)"
+            >{{ confirmed ? "取消确认" : "确认路线" }}</el-button
+          >
+          <template v-else>
+            <el-button type="primary" @click="start" v-if="winFlag === 0">{{
+              inGame ? "结束比赛" : "抽取符卡"
+            }}</el-button>
+            <el-button type="primary" @click="confirmWinner" v-else
+              >确认：{{ winFlag < 0 ? roomData.names[0] : roomData.names[1] }}获胜</el-button
+            >
+          </template>
+          <el-button size="small" @click="nextRound" :disabled="gamePhase < 2 || gamePhase > 3 || gamePaused">{{
+            gamePhase === 3 && !this.gameData.link_data.start_ms_b ? "开始计时" : "结束计时"
+          }}</el-button>
+        </div>
+        <div v-if="isPlayerB">
+          <el-button
+            type="primary"
+            @click="confirmSelect"
+            :disabled="gamePaused || !routeComplete"
+            v-if="inGame && (gamePhase === 1 || !confirmed) && !(gamePhase > 1 && routeComplete)"
             >{{ confirmed ? "取消确认" : "确认路线" }}</el-button
           >
         </div>
@@ -124,26 +128,6 @@ export default defineComponent({
       alertInfo: "等待房主抽取符卡",
       alertInfoColor: "#000",
       cardCount: [2, 2],
-      menuData: [
-        {
-          label: "置空",
-          value: 0,
-        },
-        {
-          label: "两侧玩家收取",
-          value: 6,
-        },
-        {
-          label: "左侧玩家收取",
-          value: 5,
-          tag: "playerA",
-        },
-        {
-          label: "右侧玩家收取",
-          value: 7,
-          tag: "playerB",
-        },
-      ],
     };
   },
 
@@ -164,7 +148,7 @@ export default defineComponent({
 
     onMounted(() => {
       proxy.$bus.on("A_link_change", (index: number) => {
-        if (proxy.isHost || proxy.isWatcher) {
+        if (proxy.isWatcher) {
           if (!(proxy.gamePhase === 2 && proxy.countDownSeconds < 5)) {
             proxy.link("A", index);
           }
@@ -173,7 +157,7 @@ export default defineComponent({
         }
       });
       proxy.$bus.on("B_link_change", (index: number) => {
-        if (proxy.isHost || proxy.isWatcher) {
+        if (proxy.isWatcher) {
           if (!(proxy.gamePhase === 2 && proxy.countDownSeconds < 5)) {
             proxy.link("B", index);
           }
@@ -200,7 +184,6 @@ export default defineComponent({
       roomData: computed(() => store.getters.roomData),
       roomSettings: computed(() => store.getters.roomSettings),
       inRoom: computed(() => store.getters.inRoom),
-      isHost: computed(() => store.getters.isHost),
       isWatcher: computed(() => store.getters.isWatcher),
       inGame: computed(() => store.getters.inGame),
       gamePhase,
@@ -217,6 +200,45 @@ export default defineComponent({
         } else {
           return false;
         }
+      }),
+      menuData: computed(() => {
+        if (proxy.isPlayerA) {
+          return [
+            {
+              label: "置空",
+              value: 0,
+            },
+            {
+              label: "选择",
+              value: 1,
+              tag: "playerA",
+            },
+            {
+              label: "收取",
+              value: 5,
+              tag: "playerA",
+            },
+          ];
+        }
+        if (proxy.isPlayerB) {
+          return [
+            {
+              label: "置空",
+              value: 0,
+            },
+            {
+              label: "选择",
+              value: 3,
+              tag: "playerB",
+            },
+            {
+              label: "收取",
+              value: 7,
+              tag: "playerB",
+            },
+          ];
+        }
+        return [];
       }),
       isPlayerA: computed(() => store.getters.isPlayerA),
       isPlayerB: computed(() => store.getters.isPlayerB),
@@ -261,9 +283,6 @@ export default defineComponent({
   },
   mounted() {
     this.countDownSeconds = this.roomSettings.countDownTime;
-    if (!this.isHost) {
-      this.getAvailableIndexList();
-    }
   },
   watch: {
     gameData(value) {
@@ -279,7 +298,7 @@ export default defineComponent({
           this.$nextTick(() => {
             this.countDown.start();
           });
-        } else if (this.isHost) {
+        } else if (this.isPlayerA) {
           if (!value.link_data.start_ms_a && value.phase !== 2) {
             this.$store.dispatch("set_phase", { phase: 2 }).then(() => {
               this.$store.dispatch("link_time", { whose: 0, start: true }).then(() => {
@@ -335,7 +354,6 @@ export default defineComponent({
             this.playerBScore = sum;
             this.alertInfo = "比赛已结束，等待房主操作";
             this.alertInfoColor = "red";
-            this.confirmed = false;
             if (this.playerAScore + this.spendTimeScore > this.playerBScore) {
               this.winFlag = -1;
             } else {
@@ -527,7 +545,7 @@ export default defineComponent({
           this.availableIndexList = [];
           this.confirmed = true;
         }
-        if (this.isHost) {
+        if (this.isPlayerA) {
           this.$store.dispatch("set_phase", { phase: 2 }).then(() => {
             this.$store.dispatch("link_time", { whose: 0, start: true }).then(() => {
               this.countDown.start();
@@ -537,6 +555,9 @@ export default defineComponent({
       }
     },
     selectSpellCard(index: number) {
+      if (this.isWatcher) {
+        return;
+      }
       let tag: string;
       if (this.isPlayerA) {
         tag = "A";
@@ -766,7 +787,7 @@ export default defineComponent({
     }
 
     .spell-card-score-number-info {
-      font-size: 28px;
+      font-size: 40px;
       margin: 0 15px;
     }
   }

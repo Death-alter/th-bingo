@@ -27,7 +27,10 @@
         <standard-solo v-else />
       </template>
       <bp v-if="roomData.type === 2" />
-      <bingo-link v-if="roomData.type === 3" />
+      <template v-if="roomData.type === 3">
+        <bingo-link v-if="roomData.host" />
+        <bingo-link-solo v-else />
+      </template>
     </div>
     <div class="audio">
       <bgm ref="spellCardGrabbedAudio" :src="require('@/assets/audio/spell_card_grabbed.mp3')"></bgm>
@@ -67,6 +70,7 @@ import standard from "./games/standard.vue";
 import standardSolo from "./games/standardSolo.vue";
 import bp from "./games/bp.vue";
 import bingoLink from "./games/link.vue";
+import bingoLinkSolo from "./games/linkSolo.vue";
 import bgm from "@/components/bgm.vue";
 
 export default defineComponent({
@@ -82,6 +86,7 @@ export default defineComponent({
     standardSolo,
     bp,
     bingoLink,
+    bingoLinkSolo,
     bgm,
   },
   setup() {

@@ -95,12 +95,12 @@ const gameTypeList = [
   //   timeLimit: 60,
   //   countdown: 300,
   // },
-  // {
-  //   name: "bingo link赛",
-  //   type: 3,
-  //   timeLimit: 60,
-  //   countdown: 300,
-  // },
+  {
+    name: "bingo link赛",
+    type: 3,
+    timeLimit: 60,
+    countdown: 300,
+  },
 ];
 
 class Config {

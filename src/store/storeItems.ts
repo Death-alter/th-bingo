@@ -638,13 +638,17 @@ const list: Array<StoreAction | StoreMutation> = [
       if (savedSettings) {
         settings.gameTimeLimit = savedSettings.gameTimeLimit;
         settings.countDownTime = savedSettings.countDownTime;
-        settings.gameTimeLimit[store.getters.roomData.type] = newVal.gameTimeLimit;
-        settings.countDownTime[store.getters.roomData.type] = newVal.countDownTime;
+        if (store.getters.roomData && store.getters.roomData.type) {
+          settings.gameTimeLimit[store.getters.roomData.type] = newVal.gameTimeLimit;
+          settings.countDownTime[store.getters.roomData.type] = newVal.countDownTime;
+        }
       } else {
         const gameTimeLimit = {};
         const countDownTime = {};
-        gameTimeLimit[store.getters.roomData.type] = newVal.gameTimeLimit;
-        countDownTime[store.getters.roomData.type] = newVal.countDownTime;
+        if (store.getters.roomData && store.getters.roomData.type) {
+          gameTimeLimit[store.getters.roomData.type] = newVal.gameTimeLimit;
+          countDownTime[store.getters.roomData.type] = newVal.countDownTime;
+        }
         settings.gameTimeLimit = gameTimeLimit;
         settings.countDownTime = countDownTime;
       }
