@@ -209,11 +209,6 @@ export default defineComponent({
               value: 0,
             },
             {
-              label: "选择",
-              value: 1,
-              tag: "playerA",
-            },
-            {
               label: "收取",
               value: 5,
               tag: "playerA",
@@ -225,11 +220,6 @@ export default defineComponent({
             {
               label: "置空",
               value: 0,
-            },
-            {
-              label: "选择",
-              value: 3,
-              tag: "playerB",
             },
             {
               label: "收取",
