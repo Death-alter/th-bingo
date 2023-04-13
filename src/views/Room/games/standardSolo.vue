@@ -403,6 +403,7 @@ export default defineComponent({
           difficulty: this.roomSettings.difficulty,
           need_win: (this.roomSettings.format + 1) / 2,
           enable_tools: this.roomSettings.enableTools,
+          is_private: this.roomSettings.private,
         })
         .then(() => {
           this.$store.dispatch("change_card_count", {
