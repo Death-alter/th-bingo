@@ -19,6 +19,10 @@ const difficultyList = [
     name: "高",
     value: 3,
   },
+  {
+    name: "随机",
+    value: 0,
+  }
 ];
 
 const gameOptionList = [
