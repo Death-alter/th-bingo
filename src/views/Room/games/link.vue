@@ -178,7 +178,7 @@ export default defineComponent({
             proxy.link("B", index);
           }
         } else if (proxy.gamePhase > 1) {
-          proxy.link("A", index);
+          proxy.link("B", index);
         }
       });
     });
