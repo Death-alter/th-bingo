@@ -508,15 +508,10 @@ export default defineComponent({
     },
     stopTimeKeeping() {
       if (this.isPlayerA) {
-        this.$store.dispatch("link_time", { whose: 0, event: 3 }).then((res) => {
-          console.log(res);
-          this.countDown.stop();
-        });
+        this.$store.dispatch("link_time", { whose: 0, event: 3 })
       }
       if (this.isPlayerB) {
-        this.$store.dispatch("link_time", { whose: 1, event: 3 }).then(() => {
-          this.countDown.start();
-        });
+        this.$store.dispatch("link_time", { whose: 1, event: 3 })
       }
     },
     onCountDownComplete() {
