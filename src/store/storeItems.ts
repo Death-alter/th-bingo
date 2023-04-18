@@ -662,8 +662,9 @@ const list: Array<StoreAction | StoreMutation> = [
     wsName: "link_time",
     default: {},
     dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
-      data.link_data = res;
-      return { ...data };
+      const newData = { ...data };
+      newData.link_data = res;
+      return newData;
     },
   },
   {
@@ -672,8 +673,9 @@ const list: Array<StoreAction | StoreMutation> = [
     wsName: "link_data",
     default: {},
     dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
-      oldVal.link_data = newVal;
-      return { ...oldVal };
+      const data = { ...oldVal };
+      data.link_data = newVal;
+      return data;
     }) as MutationHandler,
   },
   {

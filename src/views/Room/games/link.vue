@@ -281,7 +281,7 @@ export default defineComponent({
         } else if (this.isHost) {
           if (!value.link_data.start_ms_a && value.phase !== 2) {
             this.$store.dispatch("set_phase", { phase: 2 }).then(() => {
-              this.$store.dispatch("link_time", { whose: 0, start: true }).then(() => {
+              this.$store.dispatch("link_time", { whose: 0, event: 1 }).then(() => {
                 this.countDown.start();
               });
             });
@@ -493,25 +493,25 @@ export default defineComponent({
     },
     pause() {
       if (this.gamePaused) {
-        this.$store.dispatch("link_time", { whose: this.gamePhase > 2 ? 1 : 0, start: true });
+        this.$store.dispatch("link_time", { whose: this.gamePhase > 2 ? 1 : 0, event: 1 });
       } else {
-        this.$store.dispatch("link_time", { whose: this.gamePhase > 2 ? 1 : 0, start: false });
+        this.$store.dispatch("link_time", { whose: this.gamePhase > 2 ? 1 : 0, event: 2 });
       }
     },
     nextRound() {
       if (this.gamePhase === 2) {
         this.$store.dispatch("set_phase", { phase: 3 }).then(() => {
-          this.$store.dispatch("link_time", { whose: 0, start: false }).then(() => {
+          this.$store.dispatch("link_time", { whose: 0, event: 3 }).then(() => {
             this.countDown.stop();
           });
         });
       } else if (this.gamePhase === 3) {
         if (!this.gameData.link_data.start_ms_b) {
-          this.$store.dispatch("link_time", { whose: 1, start: true }).then(() => {
+          this.$store.dispatch("link_time", { whose: 1, event: 1 }).then(() => {
             this.countDown.start();
           });
         } else {
-          this.$store.dispatch("link_time", { whose: 1, start: false }).then(() => {
+          this.$store.dispatch("link_time", { whose: 1, event: 3 }).then(() => {
             this.$store.dispatch("set_phase", { phase: 4 }).then(() => {
               this.countDown.stop();
             });
@@ -528,7 +528,7 @@ export default defineComponent({
         }
         if (this.isHost) {
           this.$store.dispatch("set_phase", { phase: 2 }).then(() => {
-            this.$store.dispatch("link_time", { whose: 0, start: true }).then(() => {
+            this.$store.dispatch("link_time", { whose: 0, event: 1 }).then(() => {
               this.countDown.start();
             });
           });

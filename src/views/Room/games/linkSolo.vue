@@ -67,24 +67,29 @@
             >{{ confirmed ? "取消确认" : "确认路线" }}</el-button
           >
           <template v-else>
-            <el-button type="primary" @click="start" v-if="winFlag === 0">{{
-              inGame ? "结束比赛" : "抽取符卡"
-            }}</el-button>
+            <el-button
+              type="primary"
+              @click="start"
+              v-if="winFlag === 0"
+              :disabled="inGame && (gamePhase < 2 || gamePhase > 3 || gamePaused || gameData.link_data.event_a !== 1)"
+              >{{ inGame ? "结束计时" : "抽取符卡" }}</el-button
+            >
             <el-button type="primary" @click="confirmWinner" v-else
               >确认：{{ winFlag < 0 ? roomData.names[0] : roomData.names[1] }}获胜</el-button
             >
           </template>
-          <el-button size="small" @click="nextRound" :disabled="gamePhase < 2 || gamePhase > 3 || gamePaused">{{
-            gamePhase === 3 && !this.gameData.link_data.start_ms_b ? "开始计时" : "结束计时"
-          }}</el-button>
+          <el-button size="small" @click="stop" :disabled="!inGame">结束比赛</el-button>
         </div>
-        <div v-if="isPlayerB">
+        <div v-if="isPlayerB && inGame">
           <el-button
             type="primary"
             @click="confirmSelect"
             :disabled="gamePaused || !routeComplete"
-            v-if="inGame && (gamePhase === 1 || !confirmed) && !(gamePhase > 1 && routeComplete)"
+            v-if="(gamePhase === 1 || !confirmed) && !(gamePhase > 1 && routeComplete)"
             >{{ confirmed ? "取消确认" : "确认路线" }}</el-button
+          >
+          <el-button type="primary" @click="stopTimeKeeping" v-else :disabled="gameData.link_data.event_b !== 1"
+            >结束计时</el-button
           >
         </div>
       </el-col>
@@ -192,20 +197,11 @@ export default defineComponent({
       isWatcher: computed(() => store.getters.isWatcher),
       inGame: computed(() => store.getters.inGame),
       gamePhase,
-      gamePaused: computed(() => {
-        if (store.getters.gameData.link_data) {
-          const link_data = proxy.gameData.link_data;
-          if (proxy.gamePhase === 2 && link_data.start_ms_a && link_data.end_ms_a) {
-            return true;
-          } else if (proxy.gamePhase === 3 && link_data.start_ms_b && link_data.end_ms_b) {
-            return true;
-          } else {
-            return false;
-          }
-        } else {
-          return false;
-        }
-      }),
+      gamePaused: computed(
+        () =>
+          store.getters.gameData.link_data &&
+          (store.getters.gameData.link_data.event_a === 2 || store.getters.gameData.link_data.event_b === 2)
+      ),
       menuData: computed(() => {
         if (proxy.isPlayerA) {
           return [
@@ -264,7 +260,7 @@ export default defineComponent({
         return "countdown";
       }),
       spendTimeScore: computed(() => {
-        if (proxy.gamePhase !== 4) {
+        if (proxy.gamePhase < 3) {
           return 0;
         }
         const delta = (proxy.spendTimeB - proxy.spendTimeA) / 10000;
@@ -291,11 +287,12 @@ export default defineComponent({
             this.countDown.start();
           });
         } else if (this.isPlayerA) {
-          if (!value.link_data.start_ms_a && value.phase !== 2) {
+          if (value.link_data.event_a === 0 && value.link_data.event_b === 0 && value.phase !== 2) {
             this.$store.dispatch("set_phase", { phase: 2 }).then(() => {
-              this.$store.dispatch("link_time", { whose: 0, start: true }).then(() => {
+              this.$store.dispatch("link_time", { whose: 0, event: 1 }).then(() => {
                 this.countDown.start();
               });
+              this.$store.dispatch("link_time", { whose: 1, event: 1 });
             });
           }
         }
@@ -320,7 +317,27 @@ export default defineComponent({
           }
         }
 
-        if (value.phase === 2 && value.link_data.start_ms_a) {
+        if (value.link_data.event_a === 3) {
+          this.spendTimeA = value.link_data.end_ms_a - value.link_data.start_ms_a;
+          let sum = 0;
+          for (let item of this.routeA) {
+            sum += value.spells[item].star;
+          }
+          this.playerAScore = sum;
+        }
+        if (value.link_data.event_b === 3) {
+          this.spendTimeB = value.link_data.end_ms_b - value.link_data.start_ms_b;
+          let sum = 0;
+          for (let item of this.routeB) {
+            sum += value.spells[item].star;
+          }
+          this.playerBScore = sum;
+        }
+        if (value.link_data.event_a === 3 && value.link_data.event_b === 3 && this.isPlayerA) {
+          this.$store.dispatch("set_phase", { phase: 3 });
+        }
+
+        if (value.phase === 2) {
           this.countDownSeconds = Math.floor(
             ((this.gamePaused ? value.link_data.end_ms_a : currentTime) - value.link_data.start_ms_a) / 1000
           );
@@ -330,38 +347,13 @@ export default defineComponent({
             });
           }
         } else if (value.phase >= 3) {
-          this.spendTimeA = value.link_data.end_ms_a - value.link_data.start_ms_a;
-          let sum = 0;
-          for (let item of this.routeA) {
-            sum += value.spells[item].star;
-          }
-          this.playerAScore = sum;
-          if (value.phase === 4) {
-            this.spendTimeB = value.link_data.end_ms_b - value.link_data.start_ms_b;
-            this.countDown.stop();
-            let sum = 0;
-            for (let item of this.routeB) {
-              sum += value.spells[item].star;
-            }
-            this.playerBScore = sum;
-            this.alertInfo = "比赛已结束，等待房主操作";
-            this.alertInfoColor = "red";
-            if (this.playerAScore + this.spendTimeScore > this.playerBScore) {
-              this.winFlag = -1;
-            } else {
-              this.winFlag = 1;
-            }
+          this.countDown.stop();
+          this.alertInfo = "比赛已结束，等待房主操作";
+          this.alertInfoColor = "red";
+          if (this.playerAScore + this.spendTimeScore > this.playerBScore) {
+            this.winFlag = -1;
           } else {
-            if (!this.gamePaused && value.link_data.start_ms_b) {
-              this.countDownSeconds = Math.floor(
-                ((this.gamePaused ? value.link_data.end_ms_b : currentTime) - value.link_data.start_ms_b) / 1000
-              );
-              this.$nextTick(() => {
-                this.countDown.start();
-              });
-            } else {
-              this.countDown.stop();
-            }
+            this.winFlag = 1;
           }
         }
 
@@ -419,6 +411,36 @@ export default defineComponent({
   },
   methods: {
     start() {
+      if (this.inGame) {
+        this.stopTimeKeeping();
+      } else {
+        this.$store
+          .dispatch("start_game", {
+            game_time: this.roomSettings.gameTimeLimit,
+            countdown: this.roomSettings.countDownTime,
+            games: this.roomSettings.checkList,
+            ranks: this.roomSettings.rankList,
+            difficulty: this.roomSettings.difficulty,
+            need_win: (this.roomSettings.format + 1) / 2,
+            enable_tools: this.roomSettings.enableTools,
+            is_private: this.roomSettings.private,
+          })
+          .then(() => {
+            this.$store.commit("change_game_state", true);
+            this.$store.dispatch("set_phase", { phase: 1 }).then(() => {
+              this.countDown.start();
+            });
+          });
+      }
+    },
+    pause() {
+      if (this.gamePaused) {
+        this.$store.dispatch("link_time", { whose: this.gamePhase > 2 ? 1 : 0, event: 1 });
+      } else {
+        this.$store.dispatch("link_time", { whose: this.gamePhase > 2 ? 1 : 0, event: 2 });
+      }
+    },
+    stop() {
       if (this.inGame) {
         if (this.winFlag === 0) {
           const checked = ref<boolean | string | number>(-1);
@@ -482,52 +504,19 @@ export default defineComponent({
             })
             .catch(() => {});
         }
-      } else {
-        this.$store
-          .dispatch("start_game", {
-            game_time: this.roomSettings.gameTimeLimit,
-            countdown: this.roomSettings.countDownTime,
-            games: this.roomSettings.checkList,
-            ranks: this.roomSettings.rankList,
-            difficulty: this.roomSettings.difficulty,
-            need_win: (this.roomSettings.format + 1) / 2,
-            enable_tools: this.roomSettings.enableTools,
-            is_private: this.roomSettings.private,
-          })
-          .then(() => {
-            this.$store.commit("change_game_state", true);
-            this.$store.dispatch("set_phase", { phase: 1 }).then(() => {
-              this.countDown.start();
-            });
-          });
       }
     },
-    pause() {
-      if (this.gamePaused) {
-        this.$store.dispatch("link_time", { whose: this.gamePhase > 2 ? 1 : 0, start: true });
-      } else {
-        this.$store.dispatch("link_time", { whose: this.gamePhase > 2 ? 1 : 0, start: false });
-      }
-    },
-    nextRound() {
-      if (this.gamePhase === 2) {
-        this.$store.dispatch("set_phase", { phase: 3 }).then(() => {
-          this.$store.dispatch("link_time", { whose: 0, start: false }).then(() => {
-            this.countDown.stop();
-          });
+    stopTimeKeeping() {
+      if (this.isPlayerA) {
+        this.$store.dispatch("link_time", { whose: 0, event: 3 }).then((res) => {
+          console.log(res);
+          this.countDown.stop();
         });
-      } else if (this.gamePhase === 3) {
-        if (!this.gameData.link_data.start_ms_b) {
-          this.$store.dispatch("link_time", { whose: 1, start: true }).then(() => {
-            this.countDown.start();
-          });
-        } else {
-          this.$store.dispatch("link_time", { whose: 1, start: false }).then(() => {
-            this.$store.dispatch("set_phase", { phase: 4 }).then(() => {
-              this.countDown.stop();
-            });
-          });
-        }
+      }
+      if (this.isPlayerB) {
+        this.$store.dispatch("link_time", { whose: 1, event: 3 }).then(() => {
+          this.countDown.start();
+        });
       }
     },
     onCountDownComplete() {
@@ -539,9 +528,14 @@ export default defineComponent({
         }
         if (this.isPlayerA) {
           this.$store.dispatch("set_phase", { phase: 2 }).then(() => {
-            this.$store.dispatch("link_time", { whose: 0, start: true }).then(() => {
+            this.$store.dispatch("link_time", { whose: 0, event: 1 }).then(() => {
               this.countDown.start();
             });
+          });
+        }
+        if (this.isPlayerB) {
+          this.$store.dispatch("link_time", { whose: 1, event: 1 }).then(() => {
+            this.countDown.start();
           });
         }
       }
@@ -779,7 +773,7 @@ export default defineComponent({
     }
 
     .spell-card-score-number-info {
-      font-size: 40px;
+      font-size: 28px;
       margin: 0 15px;
     }
   }
