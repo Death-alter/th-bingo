@@ -291,14 +291,7 @@ export default defineComponent({
             this.$store.dispatch("set_phase", { phase: 2 }).then(() => {
               this.$store.dispatch("link_time", { whose: 0, event: 1 }).then(() => {
                 this.countDown.start();
-              });
-            });
-          }
-        } else if (this.isPlayerB) {
-          if (value.link_data.event_b === 0 && value.phase !== 2) {
-            this.$store.dispatch("set_phase", { phase: 2 }).then(() => {
-              this.$store.dispatch("link_time", { whose: 1, event: 1 }).then(() => {
-                this.countDown.start();
+                this.$store.dispatch("link_time", { whose: 1, event: 1 });
               });
             });
           }
@@ -534,12 +527,8 @@ export default defineComponent({
           this.$store.dispatch("set_phase", { phase: 2 }).then(() => {
             this.$store.dispatch("link_time", { whose: 0, event: 1 }).then(() => {
               this.countDown.start();
+              this.$store.dispatch("link_time", { whose: 1, event: 1 });
             });
-          });
-        }
-        if (this.isPlayerB) {
-          this.$store.dispatch("link_time", { whose: 1, event: 1 }).then(() => {
-            this.countDown.start();
           });
         }
       }
