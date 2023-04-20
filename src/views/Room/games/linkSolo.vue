@@ -287,12 +287,19 @@ export default defineComponent({
             this.countDown.start();
           });
         } else if (this.isPlayerA) {
-          if (value.link_data.event_a === 0 && value.link_data.event_b === 0 && value.phase !== 2) {
+          if (value.link_data.event_a === 0 && value.phase !== 2) {
             this.$store.dispatch("set_phase", { phase: 2 }).then(() => {
               this.$store.dispatch("link_time", { whose: 0, event: 1 }).then(() => {
                 this.countDown.start();
               });
-              this.$store.dispatch("link_time", { whose: 1, event: 1 });
+            });
+          }
+        } else if (this.isPlayerB) {
+          if (value.link_data.event_b === 0 && value.phase !== 2) {
+            this.$store.dispatch("set_phase", { phase: 2 }).then(() => {
+              this.$store.dispatch("link_time", { whose: 1, event: 1 }).then(() => {
+                this.countDown.start();
+              });
             });
           }
         }
@@ -435,9 +442,11 @@ export default defineComponent({
     },
     pause() {
       if (this.gamePaused) {
-        this.$store.dispatch("link_time", { whose: this.gamePhase > 2 ? 1 : 0, event: 1 });
+        this.$store.dispatch("link_time", { whose: 0, event: 1 });
+        this.$store.dispatch("link_time", { whose: 1, event: 1 });
       } else {
-        this.$store.dispatch("link_time", { whose: this.gamePhase > 2 ? 1 : 0, event: 2 });
+        this.$store.dispatch("link_time", { whose: 0, event: 2 });
+        this.$store.dispatch("link_time", { whose: 1, event: 2 });
       }
     },
     stop() {
@@ -508,10 +517,10 @@ export default defineComponent({
     },
     stopTimeKeeping() {
       if (this.isPlayerA) {
-        this.$store.dispatch("link_time", { whose: 0, event: 3 })
+        this.$store.dispatch("link_time", { whose: 0, event: 3 });
       }
       if (this.isPlayerB) {
-        this.$store.dispatch("link_time", { whose: 1, event: 3 })
+        this.$store.dispatch("link_time", { whose: 1, event: 3 });
       }
     },
     onCountDownComplete() {
