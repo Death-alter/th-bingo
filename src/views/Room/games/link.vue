@@ -7,7 +7,7 @@
           <div class="spell-card-score">
             <div class="spell-card-score-number">
               <div class="spell-card-score-number-info">
-                {{ playerAScore + (spendTimeScore > 0 ? " + " + spendTimeScore.toFixed(1) : "") }}
+                {{ playerAScore * 2 + (spendTimeScore > 0 ? " + " + spendTimeScore.toFixed(1) : "") }}
               </div>
             </div>
             <div class="spell-card-score-text">得分</div>
@@ -84,7 +84,7 @@
           <div class="spell-card-score">
             <div class="spell-card-score-number">
               <div class="spell-card-score-number-info">
-                {{ playerBScore + (spendTimeScore < 0 ? "+" + (-spendTimeScore).toFixed(1) : "") }}
+                {{ playerBScore * 2 + (spendTimeScore < 0 ? "+" + (-spendTimeScore).toFixed(1) : "") }}
               </div>
             </div>
             <div class="spell-card-score-text">得分</div>
