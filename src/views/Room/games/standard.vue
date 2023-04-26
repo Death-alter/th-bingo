@@ -240,12 +240,15 @@ export default defineComponent({
         const startTime = value.start_time;
         const totalPauseTime = value.total_pause_time || 0;
 
+        console.log(currentTime, startTime, totalPauseTime);
+
         let pasedTime;
         if (pauseBeginTime) {
           pasedTime = (pauseBeginTime - startTime - totalPauseTime) / 1000;
         } else {
           pasedTime = (currentTime - startTime - totalPauseTime) / 1000;
         }
+
         const standbyCountDown = value.countdown - pasedTime;
         const gameCountDown = value.game_time * 60 - pasedTime;
         if (standbyCountDown > 0) {
@@ -497,8 +500,13 @@ export default defineComponent({
       }
       if (this.selectedSpellIndex === index) {
         this.selectedSpellIndex = -1;
-      } else if (!this.spellCardSelected && this.gameData.status[index] === 0) {
-        this.selectedSpellIndex = index;
+      } else if (!this.spellCardSelected) {
+        if (
+          this.gameData.status[index] === 0 ||
+          (this.isPlayerB && this.gameData.status[index] === 1) ||
+          (this.isPlayerA && this.gameData.status[index] === 3)
+        )
+          this.selectedSpellIndex = index;
       }
     },
     confirmSelect() {

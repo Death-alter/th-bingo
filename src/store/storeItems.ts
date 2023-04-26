@@ -426,6 +426,9 @@ const list: Array<StoreAction | StoreMutation> = [
       obj.pause_begin_ms = res.pause_begin_ms;
       obj.total_pause_time = res.total_pause_time || 0;
       obj.time = res.time;
+      if (res.pause_begin_ms) {
+        mitt.emit("game_phase");
+      }
       return obj;
     },
   },
@@ -465,8 +468,11 @@ const list: Array<StoreAction | StoreMutation> = [
     dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
       const obj = { ...oldVal };
       obj.pause_begin_ms = newVal.pause_begin_ms;
-      obj.total_pause_ms = newVal.total_pause_ms || 0;
+      obj.total_pause_time = newVal.total_pause_time || 0;
       obj.time = newVal.time;
+      if (newVal.pause_begin_ms) {
+        mitt.emit("game_phase");
+      }
       return obj;
     }) as MutationHandler,
   },

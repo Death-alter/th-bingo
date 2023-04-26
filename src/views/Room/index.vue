@@ -149,6 +149,9 @@ export default defineComponent({
       proxy.$bus.on("spell_card_grabbed", () => {
         spellCardGrabbedAudio.value.play();
       });
+      proxy.$bus.on("game_phase", () => {
+        spellCardGrabbedAudio.value.play();
+      });
       proxy.$bus.on("right_link_start", () => {
         spellCardGrabbedAudio.value.play();
       });
