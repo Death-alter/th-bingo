@@ -604,7 +604,6 @@ const list: Array<StoreAction | StoreMutation> = [
             setData();
             break;
           case 3:
-            console.log(oldVal);
             if (store.getters.roomData.names && store.getters.roomData.names[0] === trigger) {
               if (store.getters.isHost) {
                 window.setTimeout(() => {

@@ -240,8 +240,6 @@ export default defineComponent({
         const startTime = value.start_time;
         const totalPauseTime = value.total_pause_time || 0;
 
-        console.log(currentTime, startTime, totalPauseTime);
-
         let pasedTime;
         if (pauseBeginTime) {
           pasedTime = (pauseBeginTime - startTime - totalPauseTime) / 1000;
