@@ -169,10 +169,10 @@ export default defineComponent({
           value: 3,
           tag: "playerB",
         },
-        // {
-        //   label: "两侧玩家选择",
-        //   value: 2,
-        // },
+        {
+          label: "两侧玩家选择",
+          value: 2,
+        },
         {
           label: "左侧玩家收取",
           value: 5,

@@ -364,7 +364,7 @@ const list: Array<StoreAction | StoreMutation> = [
     default: {},
     dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
       let num = 0;
-      for (let item of res.status) {
+      for (const item of res.status) {
         if (item === (store.getters.isPlayerA ? 7 : 5)) {
           num++;
         }
@@ -527,7 +527,7 @@ const list: Array<StoreAction | StoreMutation> = [
       }
       logSpellCard(params.status, data.status[params.idx], params.idx, store.getters.userData.userName);
       let num = 0;
-      for (let item of data.status) {
+      for (const item of data.status) {
         if (item === (store.getters.isPlayerA ? 7 : 5)) {
           num++;
         }
@@ -580,7 +580,7 @@ const list: Array<StoreAction | StoreMutation> = [
               setData();
             } else {
               let num = 0;
-              for (let item of oldVal.status) {
+              for (const item of oldVal.status) {
                 if (item === (store.getters.isPlayerA ? 7 : 5)) {
                   num++;
                 }
@@ -604,6 +604,7 @@ const list: Array<StoreAction | StoreMutation> = [
             setData();
             break;
           case 3:
+            console.log(oldVal);
             if (store.getters.roomData.names && store.getters.roomData.names[0] === trigger) {
               if (store.getters.isHost) {
                 window.setTimeout(() => {
@@ -612,7 +613,9 @@ const list: Array<StoreAction | StoreMutation> = [
                   mitt.emit("A_link_change", index);
                 }, store.getters.roomSettings.playerA.delay * 1000);
               } else {
-                setData();
+                if (oldVal.phase > 1) {
+                  setData();
+                }
                 mitt.emit("A_link_change", index);
               }
             } else if (store.getters.roomData.names && store.getters.roomData.names[1] === trigger) {
@@ -623,7 +626,9 @@ const list: Array<StoreAction | StoreMutation> = [
                   mitt.emit("B_link_change", index);
                 }, store.getters.roomSettings.playerB.delay * 1000);
               } else {
-                setData();
+                if (oldVal.phase > 1) {
+                  setData();
+                }
                 mitt.emit("B_link_change", index);
               }
             } else {

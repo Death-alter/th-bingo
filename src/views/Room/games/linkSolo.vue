@@ -7,7 +7,7 @@
           <div class="spell-card-score">
             <div class="spell-card-score-number">
               <div class="spell-card-score-number-info">
-                {{ playerAScore + (spendTimeScore > 0 ? " + " + spendTimeScore.toFixed(1) : "") }}
+                {{ playerAScore * 2 + (spendTimeScore > 0 ? " + " + spendTimeScore.toFixed(1) : "") }}
               </div>
             </div>
             <div class="spell-card-score-text">得分</div>
@@ -98,7 +98,7 @@
           <div class="spell-card-score">
             <div class="spell-card-score-number">
               <div class="spell-card-score-number-info">
-                {{ playerBScore + (spendTimeScore < 0 ? "+" + (-spendTimeScore).toFixed(1) : "") }}
+                {{ playerBScore * 2 + (spendTimeScore < 0 ? "+" + (-spendTimeScore).toFixed(1) : "") }}
               </div>
             </div>
             <div class="spell-card-score-text">得分</div>
@@ -172,7 +172,7 @@ export default defineComponent({
             proxy.link("B", index);
           }
         } else if (proxy.gamePhase > 1) {
-          proxy.link("A", index);
+          proxy.link("B", index);
         }
       });
     });
@@ -287,12 +287,12 @@ export default defineComponent({
             this.countDown.start();
           });
         } else if (this.isPlayerA) {
-          if (value.link_data.event_a === 0 && value.link_data.event_b === 0 && value.phase !== 2) {
+          if (value.link_data.event_a === 0 && value.phase !== 2) {
             this.$store.dispatch("set_phase", { phase: 2 }).then(() => {
               this.$store.dispatch("link_time", { whose: 0, event: 1 }).then(() => {
                 this.countDown.start();
+                this.$store.dispatch("link_time", { whose: 1, event: 1 });
               });
-              this.$store.dispatch("link_time", { whose: 1, event: 1 });
             });
           }
         }
@@ -435,9 +435,11 @@ export default defineComponent({
     },
     pause() {
       if (this.gamePaused) {
-        this.$store.dispatch("link_time", { whose: this.gamePhase > 2 ? 1 : 0, event: 1 });
+        this.$store.dispatch("link_time", { whose: 0, event: 1 });
+        this.$store.dispatch("link_time", { whose: 1, event: 1 });
       } else {
-        this.$store.dispatch("link_time", { whose: this.gamePhase > 2 ? 1 : 0, event: 2 });
+        this.$store.dispatch("link_time", { whose: 0, event: 2 });
+        this.$store.dispatch("link_time", { whose: 1, event: 2 });
       }
     },
     stop() {
@@ -508,15 +510,10 @@ export default defineComponent({
     },
     stopTimeKeeping() {
       if (this.isPlayerA) {
-        this.$store.dispatch("link_time", { whose: 0, event: 3 }).then((res) => {
-          console.log(res);
-          this.countDown.stop();
-        });
+        this.$store.dispatch("link_time", { whose: 0, event: 3 });
       }
       if (this.isPlayerB) {
-        this.$store.dispatch("link_time", { whose: 1, event: 3 }).then(() => {
-          this.countDown.start();
-        });
+        this.$store.dispatch("link_time", { whose: 1, event: 3 });
       }
     },
     onCountDownComplete() {
@@ -530,12 +527,8 @@ export default defineComponent({
           this.$store.dispatch("set_phase", { phase: 2 }).then(() => {
             this.$store.dispatch("link_time", { whose: 0, event: 1 }).then(() => {
               this.countDown.start();
+              this.$store.dispatch("link_time", { whose: 1, event: 1 });
             });
-          });
-        }
-        if (this.isPlayerB) {
-          this.$store.dispatch("link_time", { whose: 1, event: 1 }).then(() => {
-            this.countDown.start();
           });
         }
       }
