@@ -194,7 +194,6 @@ export default defineComponent({
       selectCardCooldown: computed(() => {
         const lastGetTime = store.getters.gameData.last_get_time;
         if (store.getters.isPlayerA && lastGetTime[0]) {
-          console.log(new Date().getTime(), proxy.timeMistake, lastGetTime[0]);
           const second = 30 - Math.floor((new Date().getTime() + proxy.timeMistake - lastGetTime[0]) / 1000);
           return second > 0 ? second : 0;
         } else if (store.getters.isPlayerB && lastGetTime[1]) {
