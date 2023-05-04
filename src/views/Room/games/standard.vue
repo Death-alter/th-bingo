@@ -81,17 +81,20 @@
           }}</el-button>
         </div>
         <div v-if="inGame && (isPlayerA || isPlayerB)">
-          <el-button
-            type="primary"
+          <confirm-select-button
             @click="confirmSelect"
             :disabled="selectedSpellIndex < 0 || gamePaused"
             v-if="!spellCardSelected"
-            >选择符卡</el-button
-          >
+            :coolDown="30"
+            :immediate="gamePhase > 1"
+            text="选择符卡"
+          ></confirm-select-button>
           <confirm-select-button
             @click="confirmAttained"
             v-if="spellCardSelected"
             :disabled="gamePhase < 2 || gamePaused"
+            :coolDown="roomSettings.confirmDelay"
+            text="确认收取"
           ></confirm-select-button>
         </div>
       </el-col>
@@ -136,7 +139,7 @@ import SpellCardCell from "@/components/spell-card-cell.vue";
 import RightClickMenu from "@/components/right-click-menu.vue";
 import BingoEffect from "@/components/bingo-effect/index.vue";
 import CountDown from "@/components/count-down.vue";
-import ConfirmSelectButton from "@/components/confirm-select-button.vue";
+import ConfirmSelectButton from "@/components/button-with-cooldown.vue";
 import { ElButton, ElMessageBox, ElRadio, ElRadioGroup, ElRow, ElCol } from "element-plus";
 import { Minus, Plus } from "@element-plus/icons-vue";
 

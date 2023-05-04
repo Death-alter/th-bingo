@@ -1,7 +1,7 @@
 <template>
   <div class="home">
     <div class="enter-room relative-center">
-      <el-form :model="form" :rules="rules" ref="formRef">
+      <el-form :model="form" :rules="rules" @submit.prevent ref="formRef">
         <el-form-item prop="roomPassword">
           <div class="room-password">
             <el-input
