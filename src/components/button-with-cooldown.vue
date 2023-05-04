@@ -50,6 +50,7 @@ export default defineComponent({
         let second = this.cooldown;
         this.locked = true;
         this.label = `${second}秒后可` + this.text;
+        if (this.timer) window.clearInterval(this.timer);
         this.timer = window.setInterval(() => {
           --second;
           if (second <= 0) {

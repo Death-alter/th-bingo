@@ -71,7 +71,7 @@
               @click="confirmSelect"
               :disabled="selectedSpellIndex < 0 || gamePaused"
               v-if="!spellCardSelected"
-              :cooldown="30"
+              :cooldown="selectCardCooldown"
               :immediate="gamePhase > 1"
               text="选择符卡"
             ></confirm-select-button>
@@ -190,6 +190,18 @@ export default defineComponent({
           return store.getters.playerBSelectedIndex !== -1;
         }
         return false;
+      }),
+      selectCardCooldown: computed(() => {
+        const lastGetTime = store.getters.gameData.last_get_time;
+        if (store.getters.isPlayerA && lastGetTime[0]) {
+          const second = 30 - Math.floor((new Date().getTime() + proxy.timeMistake - lastGetTime[0]) / 1000);
+          return second > 0 ? second : 0;
+        } else if (store.getters.isPlayerB && lastGetTime[1]) {
+          const second = 30 - Math.floor((new Date().getTime() + proxy.timeMistake - lastGetTime[1]) / 1000);
+          return second > 0 ? second : 0;
+        } else {
+          return 30;
+        }
       }),
       menuData: computed(() => {
         if (proxy.isPlayerA) {
@@ -519,11 +531,19 @@ export default defineComponent({
       if (this.isPlayerA) {
         this.$store.dispatch("update_spell", { idx: this.selectedSpellIndex, status: 1 }).then(() => {
           this.selectedSpellIndex = -1;
+          this.$store.commit("set_last_get_time", {
+            index: 0,
+            time: new Date().getTime() - this.timeMistake,
+          });
         });
       }
       if (this.isPlayerB) {
         this.$store.dispatch("update_spell", { idx: this.selectedSpellIndex, status: 3 }).then(() => {
           this.selectedSpellIndex = -1;
+          this.$store.commit("set_last_get_time", {
+            index: 1,
+            time: new Date().getTime() - this.timeMistake,
+          });
         });
       }
     },
