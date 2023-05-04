@@ -194,6 +194,7 @@ export default defineComponent({
       selectCardCooldown: computed(() => {
         const lastGetTime = store.getters.gameData.last_get_time;
         if (store.getters.isPlayerA && lastGetTime[0]) {
+          console.log(new Date().getTime(), proxy.timeMistake, lastGetTime[0]);
           const second = 30 - Math.floor((new Date().getTime() + proxy.timeMistake - lastGetTime[0]) / 1000);
           return second > 0 ? second : 0;
         } else if (store.getters.isPlayerB && lastGetTime[1]) {
@@ -531,28 +532,28 @@ export default defineComponent({
       if (this.isPlayerA) {
         this.$store.dispatch("update_spell", { idx: this.selectedSpellIndex, status: 1 }).then(() => {
           this.selectedSpellIndex = -1;
-          this.$store.commit("set_last_get_time", {
-            index: 0,
-            time: new Date().getTime() - this.timeMistake,
-          });
         });
       }
       if (this.isPlayerB) {
         this.$store.dispatch("update_spell", { idx: this.selectedSpellIndex, status: 3 }).then(() => {
           this.selectedSpellIndex = -1;
-          this.$store.commit("set_last_get_time", {
-            index: 1,
-            time: new Date().getTime() - this.timeMistake,
-          });
         });
       }
     },
     confirmAttained() {
       if (this.isPlayerA) {
         this.$store.dispatch("update_spell", { idx: this.playerASelectedIndex, status: 5 });
+        this.$store.commit("set_last_get_time", {
+          index: 0,
+          time: new Date().getTime() - this.timeMistake,
+        });
       }
       if (this.isPlayerB) {
         this.$store.dispatch("update_spell", { idx: this.playerBSelectedIndex, status: 7 });
+        this.$store.commit("set_last_get_time", {
+          index: 1,
+          time: new Date().getTime() - this.timeMistake,
+        });
       }
     },
     confirmWinner() {

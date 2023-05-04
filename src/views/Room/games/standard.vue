@@ -527,28 +527,28 @@ export default defineComponent({
       if (this.isPlayerA) {
         this.$store.dispatch("update_spell", { idx: this.selectedSpellIndex, status: 1 }).then(() => {
           this.selectedSpellIndex = -1;
-          this.$store.commit("set_last_get_time", {
-            index: 0,
-            time: new Date().getTime() - this.timeMistake,
-          });
         });
       }
       if (this.isPlayerB) {
         this.$store.dispatch("update_spell", { idx: this.selectedSpellIndex, status: 3 }).then(() => {
           this.selectedSpellIndex = -1;
-          this.$store.commit("set_last_get_time", {
-            index: 1,
-            time: new Date().getTime() - this.timeMistake,
-          });
         });
       }
     },
     confirmAttained() {
       if (this.isPlayerA) {
         this.$store.dispatch("update_spell", { idx: this.playerASelectedIndex, status: 5 });
+        this.$store.commit("set_last_get_time", {
+          index: 0,
+          time: new Date().getTime() - this.timeMistake,
+        });
       }
       if (this.isPlayerB) {
         this.$store.dispatch("update_spell", { idx: this.playerBSelectedIndex, status: 7 });
+        this.$store.commit("set_last_get_time", {
+          index: 1,
+          time: new Date().getTime() - this.timeMistake,
+        });
       }
     },
     confirmWinner() {
