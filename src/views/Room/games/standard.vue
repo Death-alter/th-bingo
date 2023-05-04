@@ -85,7 +85,7 @@
             @click="confirmSelect"
             :disabled="selectedSpellIndex < 0 || gamePaused"
             v-if="!spellCardSelected"
-            :coolDown="30"
+            :cooldown="30"
             :immediate="gamePhase > 1"
             text="选择符卡"
           ></confirm-select-button>
@@ -93,7 +93,7 @@
             @click="confirmAttained"
             v-if="spellCardSelected"
             :disabled="gamePhase < 2 || gamePaused"
-            :coolDown="roomSettings.confirmDelay"
+            :cooldown="roomSettings.confirmDelay"
             text="确认收取"
           ></confirm-select-button>
         </div>

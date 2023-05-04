@@ -22,7 +22,7 @@ export default defineComponent({
     disabled: {
       type: Boolean,
     },
-    coolDown: {
+    cooldown: {
       type: Number,
       default: 0,
     },
@@ -46,8 +46,8 @@ export default defineComponent({
   },
   methods: {
     cooling() {
-      if (this.coolDown > 0) {
-        let second = this.coolDown;
+      if (this.cooldown > 0) {
+        let second = this.cooldown;
         this.locked = true;
         this.label = `${second}秒后可` + this.text;
         this.timer = window.setInterval(() => {
