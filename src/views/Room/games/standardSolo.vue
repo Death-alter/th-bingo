@@ -544,14 +544,14 @@ export default defineComponent({
         this.$store.dispatch("update_spell", { idx: this.playerASelectedIndex, status: 5 });
         this.$store.commit("set_last_get_time", {
           index: 0,
-          time: new Date().getTime() - this.timeMistake,
+          time: new Date().getTime() + this.timeMistake,
         });
       }
       if (this.isPlayerB) {
         this.$store.dispatch("update_spell", { idx: this.playerBSelectedIndex, status: 7 });
         this.$store.commit("set_last_get_time", {
           index: 1,
-          time: new Date().getTime() - this.timeMistake,
+          time: new Date().getTime() + this.timeMistake,
         });
       }
     },
