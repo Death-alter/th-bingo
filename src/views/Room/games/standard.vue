@@ -81,17 +81,20 @@
           }}</el-button>
         </div>
         <div v-if="inGame && (isPlayerA || isPlayerB)">
-          <el-button
-            type="primary"
+          <confirm-select-button
             @click="confirmSelect"
             :disabled="selectedSpellIndex < 0 || gamePaused"
             v-if="!spellCardSelected"
-            >选择符卡</el-button
-          >
+            :cooldown="selectCardCooldown"
+            :immediate="gamePhase > 1"
+            text="选择符卡"
+          ></confirm-select-button>
           <confirm-select-button
             @click="confirmAttained"
             v-if="spellCardSelected"
             :disabled="gamePhase < 2 || gamePaused"
+            :cooldown="roomSettings.confirmDelay"
+            text="确认收取"
           ></confirm-select-button>
         </div>
       </el-col>
@@ -130,13 +133,13 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ref, h } from "vue";
+import { defineComponent, computed, ref, h, getCurrentInstance } from "vue";
 import { useStore } from "vuex";
 import SpellCardCell from "@/components/spell-card-cell.vue";
 import RightClickMenu from "@/components/right-click-menu.vue";
 import BingoEffect from "@/components/bingo-effect/index.vue";
 import CountDown from "@/components/count-down.vue";
-import ConfirmSelectButton from "@/components/confirm-select-button.vue";
+import ConfirmSelectButton from "@/components/button-with-cooldown.vue";
 import { ElButton, ElMessageBox, ElRadio, ElRadioGroup, ElRow, ElCol } from "element-plus";
 import { Minus, Plus } from "@element-plus/icons-vue";
 
@@ -201,6 +204,7 @@ export default defineComponent({
     const store = useStore();
     const countDown = ref();
     const spellCardGrabbedAudio = ref();
+    const { proxy }: any = getCurrentInstance();
 
     return {
       timeMistake: computed(() => store.getters.heartBeat.timeMistake),
@@ -225,6 +229,18 @@ export default defineComponent({
           return store.getters.playerBSelectedIndex !== -1;
         }
         return false;
+      }),
+      selectCardCooldown: computed(() => {
+        const lastGetTime = store.getters.gameData.last_get_time;
+        if (store.getters.isPlayerA && lastGetTime[0]) {
+          const second = 30 - Math.floor((new Date().getTime() + proxy.timeMistake - lastGetTime[0]) / 1000);
+          return second > 0 ? second : 0;
+        } else if (store.getters.isPlayerB && lastGetTime[1]) {
+          const second = 30 - Math.floor((new Date().getTime() + proxy.timeMistake - lastGetTime[1]) / 1000);
+          return second > 0 ? second : 0;
+        } else {
+          return 30;
+        }
       }),
       countDown,
       spellCardGrabbedAudio,
@@ -522,9 +538,17 @@ export default defineComponent({
     confirmAttained() {
       if (this.isPlayerA) {
         this.$store.dispatch("update_spell", { idx: this.playerASelectedIndex, status: 5 });
+        this.$store.commit("set_last_get_time", {
+          index: 0,
+          time: new Date().getTime() - this.timeMistake,
+        });
       }
       if (this.isPlayerB) {
         this.$store.dispatch("update_spell", { idx: this.playerBSelectedIndex, status: 7 });
+        this.$store.commit("set_last_get_time", {
+          index: 1,
+          time: new Date().getTime() - this.timeMistake,
+        });
       }
     },
     confirmWinner() {

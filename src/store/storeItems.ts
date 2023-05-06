@@ -710,6 +710,16 @@ const list: Array<StoreAction | StoreMutation> = [
       return data;
     }) as MutationHandler,
   },
+  {
+    name: "gameData",
+    mutationName: "set_last_get_time",
+    default: {},
+    dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
+      const data = { ...oldVal };
+      data.last_get_time[newVal.index] = newVal.time;
+      return data;
+    }) as MutationHandler,
+  },
 ];
 
 export default list;
