@@ -232,12 +232,20 @@ export default defineComponent({
       }),
       selectCardCooldown: computed(() => {
         const lastGetTime = store.getters.gameData.last_get_time;
-        if (store.getters.isPlayerA && lastGetTime[0]) {
-          const second = 30 - Math.floor((new Date().getTime() + proxy.timeMistake - lastGetTime[0]) / 1000);
-          return second > 0 ? second : 0;
+        if (store.getters.isPlayerA) {
+          if (lastGetTime[0]) {
+            const second = 30 - Math.floor((new Date().getTime() + proxy.timeMistake - lastGetTime[0]) / 1000);
+            return second > 0 ? second : 0;
+          } else {
+            return 0;
+          }
         } else if (store.getters.isPlayerB && lastGetTime[1]) {
-          const second = 30 - Math.floor((new Date().getTime() + proxy.timeMistake - lastGetTime[1]) / 1000);
-          return second > 0 ? second : 0;
+          if (lastGetTime[1]) {
+            const second = 30 - Math.floor((new Date().getTime() + proxy.timeMistake - lastGetTime[1]) / 1000);
+            return second > 0 ? second : 0;
+          } else {
+            return 0;
+          }
         } else {
           return 30;
         }
