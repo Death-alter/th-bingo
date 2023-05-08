@@ -85,7 +85,8 @@
             @click="confirmSelect"
             :disabled="selectedSpellIndex < 0 || gamePaused"
             v-if="!spellCardSelected"
-            :cooldown="selectCardCooldown"
+            :cooldown="30"
+            :startTime="cooldownStartTime"
             :immediate="gamePhase > 1"
             text="选择符卡"
           ></confirm-select-button>
@@ -230,24 +231,14 @@ export default defineComponent({
         }
         return false;
       }),
-      selectCardCooldown: computed(() => {
+      cooldownStartTime: computed(() => {
         const lastGetTime = store.getters.gameData.last_get_time;
         if (store.getters.isPlayerA) {
-          if (lastGetTime[0]) {
-            const second = 30 - Math.floor((new Date().getTime() + proxy.timeMistake - lastGetTime[0]) / 1000);
-            return second > 0 ? second : 0;
-          } else {
-            return 0;
-          }
+          return lastGetTime[0];
         } else if (store.getters.isPlayerB) {
-          if (lastGetTime[1]) {
-            const second = 30 - Math.floor((new Date().getTime() + proxy.timeMistake - lastGetTime[1]) / 1000);
-            return second > 0 ? second : 0;
-          } else {
-            return 0;
-          }
+          return lastGetTime[1];
         } else {
-          return 30;
+          return 0;
         }
       }),
       countDown,
