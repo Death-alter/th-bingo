@@ -200,7 +200,7 @@ export default defineComponent({
           } else {
             return 0;
           }
-        } else if (store.getters.isPlayerB && lastGetTime[1]) {
+        } else if (store.getters.isPlayerB) {
           if (lastGetTime[1]) {
             const second = 30 - Math.floor((new Date().getTime() + proxy.timeMistake - lastGetTime[1]) / 1000);
             return second > 0 ? second : 0;
