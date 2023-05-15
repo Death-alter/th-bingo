@@ -380,6 +380,15 @@ export default defineComponent({
       inGame: computed(() => store.getters.inGame),
       logList: computed(() => store.getters.logList),
       scrollbar,
+      gameTypeList: computed(() => {
+        if (store.getters.soloMode) {
+          const list = [...config.gameTypeList];
+          list.splice(1, 1);
+          return list;
+        } else {
+          return config.gameTypeList;
+        }
+      }),
     };
   },
   mounted() {
