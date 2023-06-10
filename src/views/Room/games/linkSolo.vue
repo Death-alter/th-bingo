@@ -333,7 +333,7 @@ export default defineComponent({
           }
           this.playerBScore = sum;
         }
-        if (value.link_data.event_a === 3 && value.link_data.event_b === 3 && this.isPlayerA) {
+        if (value.link_data.event_a === 3 && value.link_data.event_b === 3 && this.isPlayerA && this.gamePhase !== 3) {
           this.$store.dispatch("set_phase", { phase: 3 });
         }
 
@@ -350,7 +350,7 @@ export default defineComponent({
           this.countDown.stop();
           this.alertInfo = "比赛已结束，等待房主操作";
           this.alertInfoColor = "red";
-          if (this.playerAScore + this.spendTimeScore > this.playerBScore) {
+          if (this.playerAScore * 2 + this.spendTimeScore > this.playerBScore * 2) {
             this.winFlag = -1;
           } else {
             this.winFlag = 1;

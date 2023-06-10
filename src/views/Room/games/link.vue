@@ -335,7 +335,7 @@ export default defineComponent({
             this.alertInfo = "比赛已结束，等待房主操作";
             this.alertInfoColor = "red";
             this.confirmed = false;
-            if (this.playerAScore + this.spendTimeScore > this.playerBScore) {
+            if (this.playerAScore * 2 + this.spendTimeScore > this.playerBScore * 2) {
               this.winFlag = -1;
             } else {
               this.winFlag = 1;
