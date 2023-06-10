@@ -30,6 +30,9 @@ export default defineComponent({
       type: String,
       default: "",
     },
+    startTime: {
+      type: Number,
+    },
     immediate: {
       type: Boolean,
       default: true,
@@ -47,21 +50,35 @@ export default defineComponent({
   methods: {
     cooling() {
       if (this.cooldown > 0) {
-        let second = this.cooldown;
-        this.locked = true;
-        this.label = `${second}秒后可` + this.text;
-        if (this.timer) window.clearInterval(this.timer);
-        this.timer = window.setInterval(() => {
-          --second;
-          if (second <= 0) {
-            this.label = this.text;
-            window.clearInterval(this.timer);
-            this.timer = 0;
-            this.locked = false;
-          } else {
-            this.label = `${second}秒后可` + this.text;
-          }
-        }, 1000);
+        let second: number;
+        if (this.startTime == null) {
+          second = this.cooldown;
+        } else {
+          const time = new Date().getTime() + this.$store.getters.heartBeat.timeMistake - this.startTime;
+          second = this.cooldown - Math.floor(time / 1000);
+          if (second < 0) second = 0;
+        }
+        if (second > 0) {
+          this.locked = true;
+          this.label = `${second}秒后可` + this.text;
+          if (this.timer) window.clearInterval(this.timer);
+          this.timer = window.setInterval(() => {
+            if (!this.startTime) {
+              --second;
+            } else {
+              const time = new Date().getTime() + this.$store.getters.heartBeat.timeMistake - this.startTime;
+              second = this.cooldown - Math.floor(time / 1000);
+            }
+            if (second <= 0) {
+              this.label = this.text;
+              window.clearInterval(this.timer);
+              this.timer = 0;
+              this.locked = false;
+            } else {
+              this.label = `${second}秒后可` + this.text;
+            }
+          }, 1000);
+        }
       }
     },
   },

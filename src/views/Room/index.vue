@@ -26,7 +26,10 @@
         <standard v-if="roomData.host" />
         <standard-solo v-else />
       </template>
-      <bp v-if="roomData.type === 2" />
+      <template v-if="roomData.type === 2">
+        <bp v-if="roomData.host" />
+        <!-- <bp-solo v-else /> -->
+      </template>
       <template v-if="roomData.type === 3">
         <bingo-link v-if="roomData.host" />
         <bingo-link-solo v-else />
@@ -69,6 +72,7 @@ import { useStore } from "vuex";
 import standard from "./games/standard.vue";
 import standardSolo from "./games/standardSolo.vue";
 import bp from "./games/bp.vue";
+// import bpSolo from "./games/bpSolo.vue";
 import bingoLink from "./games/link.vue";
 import bingoLinkSolo from "./games/linkSolo.vue";
 import bgm from "@/components/bgm.vue";
@@ -85,6 +89,7 @@ export default defineComponent({
     standard,
     standardSolo,
     bp,
+    // bpSolo,
     bingoLink,
     bingoLinkSolo,
     bgm,

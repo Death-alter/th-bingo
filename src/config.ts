@@ -93,12 +93,12 @@ const gameTypeList = [
     timeLimit: 30, //分钟
     countdown: 180, //秒
   },
-  // {
-  //   name: "bingo BP赛",
-  //   type: 2,
-  //   timeLimit: 60,
-  //   countdown: 300,
-  // },
+  {
+    name: "bingo BP赛",
+    type: 2,
+    timeLimit: 60,
+    countdown: 300,
+  },
   {
     name: "bingo link赛",
     type: 3,
