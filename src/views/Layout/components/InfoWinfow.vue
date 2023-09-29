@@ -151,14 +151,6 @@
                     }}</el-radio>
                   </el-radio-group>
                 </el-form-item>
-                <el-form-item label="自动收卡：">
-                  <el-checkbox
-                    v-model="roomSettings.enableTools"
-                    @change="synchroRoomSettings"
-                    style="margin-right: 0"
-                  ></el-checkbox>
-                  <span>(勾选才能使用自动收卡工具)</span>
-                </el-form-item>
                 <el-form-item label="禁用推送：">
                   <el-checkbox
                     v-model="roomSettings.private"
@@ -329,7 +321,6 @@ export default defineComponent({
         rankList: ["L", "EX"],
         difficulty: 3,
         private: false,
-        enableTools: true,
         bgmMuted: false,
         confirmDelay: 5,
         playerA: {
@@ -407,7 +398,6 @@ export default defineComponent({
         rankList: savedSettings.rankList || this.roomSettings.rankList,
         difficulty: savedSettings.difficulty || this.roomSettings.difficulty,
         private: savedSettings.private != null ? savedSettings.private : this.roomSettings.private,
-        enableTools: savedSettings.enableTools != null ? savedSettings.enableTools : this.roomSettings.enableTools,
         checkList: savedSettings.checkList || this.roomSettings.checkList,
         playerA: savedSettings.playerA || this.roomSettings.playerA,
         playerB: savedSettings.playerB || this.roomSettings.playerA,

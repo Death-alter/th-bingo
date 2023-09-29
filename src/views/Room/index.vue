@@ -105,51 +105,6 @@ export default defineComponent({
     let ws: WebSocket | null = null;
     let timer: number = 0;
 
-    function connectToolServer() {
-      ws = new WebSocket(process.env.VUE_APP_TOOL_WS_API);
-      ws.onopen = () => {
-        console.log("tool_ws已连接");
-      };
-      ws.onerror = () => {
-        console.log("tool_ws连接失败");
-        ws = null;
-        timer = window.setTimeout(connectToolServer, 5000);
-      };
-      ws.onmessage = ({ data }) => {
-        if (!proxy.roomData.started || proxy.gamePhase === 1) return;
-        data = JSON.parse(data);
-
-        //选择符卡时检查有没有已选的符卡
-        if (data.event === 0) {
-          for (let item of proxy.gameData.status) {
-            if ((item === 1 && proxy.isPlayerA) || (item === 3 && proxy.isPlayerB)) {
-              return;
-            }
-          }
-        }
-
-        for (let i = 0; i < proxy.gameData.spells.length; i++) {
-          const item = proxy.gameData.spells[i];
-          if (item.game == data.game && item.id == data.id) {
-            if (data.event === 0 && proxy.gameData.status[i] === 0) {
-              if (proxy.isPlayerA) {
-                proxy.$store.dispatch("update_spell", { idx: i, status: 1 });
-              } else if (proxy.isPlayerB && proxy.gameData.status[i] !== 3) {
-                proxy.$store.dispatch("update_spell", { idx: i, status: 3 });
-              }
-            } else if (data.event === 1) {
-              if (proxy.isPlayerA && proxy.gameData.status[i] === 1) {
-                proxy.$store.dispatch("update_spell", { idx: i, status: 5 });
-              } else if (proxy.isPlayerB && proxy.gameData.status[i] === 3) {
-                proxy.$store.dispatch("update_spell", { idx: i, status: 7 });
-              }
-            }
-            break;
-          }
-        }
-      };
-    }
-
     onMounted(() => {
       proxy.$bus.on("spell_card_grabbed", () => {
         spellCardGrabbedAudio.value.play();
@@ -179,12 +134,6 @@ export default defineComponent({
 
     const gameData = computed(() => store.getters.gameData);
     const roomData = computed(() => store.getters.roomData);
-
-    watch(gameData, (value) => {
-      if (proxy.isPlayer && ws === null && value.enable_tools) {
-        connectToolServer();
-      }
-    });
 
     watch(roomData, (value, oldValue) => {
       if (oldValue.started && !value.started) {
