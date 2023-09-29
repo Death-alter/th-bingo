@@ -446,6 +446,27 @@ const list: Array<StoreAction | StoreMutation> = [
     },
   },
   {
+    name: "warnData",
+    actionName: "warn_player",
+    wsName: "warn_player",
+    default: {},
+    dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
+      return res;
+    },
+  },
+  {
+    name: "warnData",
+    mutationName: "warn_player_received",
+    wsName: "warn_player",
+    default: {},
+    dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
+      if (newVal.to_name === store.getters.userData.userName) {
+        mitt.emit("alter");
+      }
+      return newVal;
+    }) as MutationHandler,
+  },
+  {
     name: "gameData",
     mutationName: "next_round_received",
     wsName: "next_round",

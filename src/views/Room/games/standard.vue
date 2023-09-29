@@ -29,6 +29,9 @@
               </div>
               <div class="spell-card-score-text">得分</div>
             </div>
+            <el-button class="alert-button" type="primary" v-if="isHost" @click="alterPlayer(roomData.names[0])"
+              >警告</el-button
+            >
           </div>
         </div>
       </el-col>
@@ -126,6 +129,9 @@
               </div>
               <div class="spell-card-score-text">得分</div>
             </div>
+            <el-button class="alert-button" type="primary" v-if="isHost" @click="alterPlayer(roomData.names[1])"
+              >警告</el-button
+            >
           </div>
         </div>
       </el-col>
@@ -587,6 +593,11 @@ export default defineComponent({
         cnt: arr,
       });
     },
+    alterPlayer(name: string) {
+      this.$store.dispatch("warn_player", {
+        name,
+      });
+    },
   },
 });
 </script>
@@ -710,5 +721,9 @@ export default defineComponent({
   .spell-card-score-text {
     font-size: 12px;
   }
+}
+
+.alert-button {
+  margin-top: 10px;
 }
 </style>

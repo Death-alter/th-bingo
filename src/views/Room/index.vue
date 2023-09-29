@@ -163,11 +163,17 @@ export default defineComponent({
       proxy.$bus.on("game_point", () => {
         gamePointAudio.value.play();
       });
+      proxy.$bus.on("alter", () => {
+        spellCardGrabbedAudio.value.stop();
+        spellCardGrabbedAudio.value.play();
+      });
     });
     onUnmounted(() => {
       proxy.$bus.off("spell_card_grabbed");
+      proxy.$bus.off("game_phase");
       proxy.$bus.off("right_link_start");
       proxy.$bus.off("game_point");
+      proxy.$bus.off("alter");
       ws?.close();
     });
 
