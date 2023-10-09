@@ -418,6 +418,7 @@ export default defineComponent({
           .dispatch("start_game", {
             game_time: this.roomSettings.gameTimeLimit,
             countdown: this.roomSettings.countDownTime,
+            cdTime: this.roomSettings.cdTime,
             games: this.roomSettings.checkList,
             ranks: this.roomSettings.rankList,
             difficulty: this.roomSettings.difficulty,

@@ -88,7 +88,7 @@
             @click="confirmSelect"
             :disabled="selectedSpellIndex < 0 || gamePaused"
             v-if="!spellCardSelected"
-            :cooldown="30"
+            :cooldown="gameData.cdTime || 30"
             :startTime="cooldownStartTime"
             :immediate="gamePhase > 1"
             text="选择符卡"
@@ -472,6 +472,7 @@ export default defineComponent({
           .dispatch("start_game", {
             game_time: this.roomSettings.gameTimeLimit,
             countdown: this.roomSettings.countDownTime,
+            cd_time: this.roomSettings.cdTime,
             games: this.roomSettings.checkList,
             ranks: this.roomSettings.rankList,
             difficulty: this.roomSettings.difficulty,

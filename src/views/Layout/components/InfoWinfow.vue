@@ -105,6 +105,17 @@
                   />
                   <span class="input-number-text">秒</span>
                 </el-form-item>
+                <el-form-item label="选卡CD：">
+                  <el-input-number
+                    class="input-number"
+                    v-model="roomSettings.cdTime"
+                    :min="0"
+                    size="small"
+                    controls-position="right"
+                    @change="synchroRoomSettings"
+                  />
+                  <span class="input-number-text">秒</span>
+                </el-form-item>
                 <el-form-item label="赛制：">
                   <span style="margin-right: 5px">BO</span>
                   <el-input-number
@@ -316,6 +327,7 @@ export default defineComponent({
       roomSettings: {
         gameTimeLimit: 60,
         countDownTime: 180,
+        cdTime: 30,
         format: 1,
         checkList: ["6", "7", "8", "10", "11", "12", "13", "14", "15", "16", "17", "18"],
         rankList: ["L", "EX"],
@@ -394,6 +406,7 @@ export default defineComponent({
         countDownTime:
           (this.roomType ? savedSettings.countDownTime[this.roomType] : savedSettings.countDownTime[1]) ||
           this.roomSettings.countDownTime,
+        cdTime: savedSettings.cdTime || this.roomSettings.cdTime,
         format: savedSettings.format || this.roomSettings.format,
         rankList: savedSettings.rankList || this.roomSettings.rankList,
         difficulty: savedSettings.difficulty || this.roomSettings.difficulty,
