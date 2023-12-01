@@ -104,7 +104,7 @@ export default defineComponent({
                 need_win: (this.roomSettings.format + 1) / 2,
                 difficulty: this.roomSettings.difficulty,
                 is_private: this.roomSettings.private,
-                cdTime: this.roomSettings.cdTime,
+                cd_time: this.roomSettings.cdTime,
               },
               type: 1,
             })

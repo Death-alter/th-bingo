@@ -124,26 +124,20 @@ import { defineComponent, computed, ref, onMounted, onUnmounted, watch } from "v
 import { useStore } from "vuex";
 import SpellCardCell from "@/components/spell-card-cell.vue";
 import RightClickMenu from "@/components/right-click-menu.vue";
-import BingoEffect from "@/components/bingo-effect/index.vue";
-import ConfirmSelectButton from "@/components/button-with-cooldown.vue";
 import GameAlert from "./gameAlert.vue";
-import { ElButton, ElRow, ElCol } from "element-plus";
-import GameBp from "@/components/game-bp.vue";
+import { ElRow, ElCol } from "element-plus";
 import { Role } from "@/types/index";
 import bgm from "@/components/bgm.vue";
 import Mit from "@/mitt";
+import GameTime from "@/utils/GameTime";
 
 export default defineComponent({
   name: "GameLayout",
   components: {
     SpellCardCell,
-    BingoEffect,
-    ElButton,
     RightClickMenu,
     ElRow,
     ElCol,
-    ConfirmSelectButton,
-    GameBp,
     GameAlert,
     bgm,
   },
@@ -171,12 +165,10 @@ export default defineComponent({
 
     const gameData = computed(() => store.getters.gameData);
     const roomData = computed(() => store.getters.roomData);
-    const userRole = computed(() => store.getters.userRole);
-    const isHost = computed(() => userRole.value === Role.HOST);
-    const isPlayer = computed(() => userRole.value === Role.PLAYER);
-    const isWatcher = computed(() => userRole.value === Role.WATHCER);
+    const isWatcher = computed(() => store.getters.userRole.value === Role.WATHCER);
     const isPlayerA = computed(() => store.getters.isPlayerA);
     const isPlayerB = computed(() => store.getters.isPlayerB);
+    const needWin = computed(() => roomData.value.room_config.need_in);
     const spellCardSelected = computed(() => {
       if (store.getters.isPlayerA) {
         return store.getters.playerASelectedIndex !== -1;
@@ -192,7 +184,6 @@ export default defineComponent({
         turn2CountdownAudioRef.value.paused &&
         turn3CountdownAudioRef.value.paused
     );
-    const timeMistake = computed(() => store.getters.heartBeat.timeMistake);
 
     const selectSpellCard = (index: number) => {
       if (isWatcher.value) {
@@ -232,20 +223,20 @@ export default defineComponent({
 
     onMounted(() => {
       Mit.on("spell_card_grabbed", () => {
-        spellCardGrabbedAudioRef.value.play();
+        spellCardGrabbedAudioRef.value?.play();
       });
       Mit.on("game_phase", () => {
-        spellCardGrabbedAudioRef.value.play();
+        spellCardGrabbedAudioRef.value?.play();
       });
       Mit.on("right_link_start", () => {
-        spellCardGrabbedAudioRef.value.play();
+        spellCardGrabbedAudioRef.value?.play();
       });
       Mit.on("game_point", () => {
-        gamePointAudioRef.value.play();
+        gamePointAudioRef.value?.play();
       });
       Mit.on("alter", () => {
-        spellCardGrabbedAudioRef.value.stop();
-        spellCardGrabbedAudioRef.value.play();
+        spellCardGrabbedAudioRef.value?.stop();
+        spellCardGrabbedAudioRef.value?.play();
       });
     });
     onUnmounted(() => {
@@ -258,32 +249,22 @@ export default defineComponent({
 
     watch(gameData, (value) => {
       if (value.phase === 1 && BGMpaused.value) {
-        const pauseBeginTime = value.pause_begin_ms || null;
-        const currentTime = new Date().getTime() + timeMistake.value;
-        const startTime = value.start_time;
-        const totalPauseTime = value.total_pause_ms || 0;
-        let pasedTime;
-        if (pauseBeginTime) {
-          pasedTime = (pauseBeginTime - startTime - totalPauseTime) / 1000;
-        } else {
-          pasedTime = (currentTime - startTime - totalPauseTime) / 1000;
-        }
         const score = roomData.value.score[0] + roomData.value.score[1];
         switch (score) {
           case 0:
-            turn1CountdownAudioRef.value.setCurrent(pasedTime);
+            turn1CountdownAudioRef.value.setCurrent(GameTime.passed);
             turn1CountdownAudioRef.value.play();
             break;
           case 1:
-            turn2CountdownAudioRef.value.setCurrent(pasedTime);
+            turn2CountdownAudioRef.value.setCurrent(GameTime.passed);
             turn2CountdownAudioRef.value.play();
             break;
           case 2:
-            turn3CountdownAudioRef.value.setCurrent(pasedTime);
+            turn3CountdownAudioRef.value.setCurrent(GameTime.passed);
             turn3CountdownAudioRef.value.play();
             break;
           default:
-            turn1CountdownAudioRef.value.setCurrent(pasedTime);
+            turn1CountdownAudioRef.value.setCurrent(GameTime.passed);
             turn1CountdownAudioRef.value.play();
         }
       } else {
@@ -299,27 +280,12 @@ export default defineComponent({
       volume,
       gameData,
       roomData,
-      timeMistake,
-      roomSettings: computed(() => store.getters.roomSettings),
-      inRoom: computed(() => store.getters.inRoom),
-      inGame: computed(() => store.getters.inGame),
-      gamePaused: computed(() => store.getters.gamePaused),
       isPlayerA,
-      isPlayerB: computed(() => store.getters.isPlayerB),
-      isHost,
-      isPlayer,
+      isPlayerB,
       isWatcher,
-      userRole,
-      needWin: computed(() => roomData.value.needWin),
-      needWinArr: computed(() => new Array(roomData.value.needWin)),
+      needWin,
+      needWinArr: computed(() => new Array(needWin.value)),
       muted: computed(() => store.getters.roomSettings.bgmMuted),
-      isMyTurn: computed(
-        () =>
-          (store.getters.isPlayerA && store.getters.gameData.whose_turn === 0) ||
-          (store.getters.isPlayerB && store.getters.gameData.whose_turn === 1)
-      ),
-      gamePhase: computed(() => store.getters.gameData.phase || 0),
-      bpPhase: computed(() => store.getters.gameData.ban_pick !== 2),
       gameAlertRef,
       spellCardGrabbedAudioRef,
       turn1CountdownAudioRef,

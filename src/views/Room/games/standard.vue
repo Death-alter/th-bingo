@@ -149,7 +149,6 @@ import CountDown from "@/components/count-down.vue";
 import ConfirmSelectButton from "@/components/button-with-cooldown.vue";
 import { ElButton, ElMessageBox, ElRadio, ElRadioGroup, ElRow, ElCol } from "element-plus";
 import { Minus, Plus } from "@element-plus/icons-vue";
-import GameBp from "@/components/game-bp.vue";
 
 export default defineComponent({
   name: "Room",
@@ -207,7 +206,6 @@ export default defineComponent({
     ElRow,
     ElCol,
     ConfirmSelectButton,
-    GameBp,
   },
   setup() {
     const store = useStore();

@@ -673,7 +673,6 @@ const list: Array<StoreAction | StoreMutation> = [
     dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
       const savedSettings = Storage.local.get("roomSettings");
       const settings = { ...newVal };
-      console.log(settings);
       if (savedSettings) {
         settings.gameTimeLimit = savedSettings.gameTimeLimit;
         settings.countdownTime = savedSettings.countdownTime;
@@ -684,7 +683,7 @@ const list: Array<StoreAction | StoreMutation> = [
       } else {
         const gameTimeLimit = {};
         const countdownTime = {};
-        for (let item of config.gameTypeList) {
+        for (const item of config.gameTypeList) {
           gameTimeLimit[item.type] = item.timeLimit;
           countdownTime[item.type] = item.countdown;
         }
@@ -758,11 +757,6 @@ const list: Array<StoreAction | StoreMutation> = [
     actionName: "start_ban_pick",
     wsName: "start_ban_pick",
     default: {},
-    // dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
-    //   const newData = { ...data };
-    //   newData.phase = res.phase;
-    //   return newData;
-    // },
   },
   {
     name: "banPickInfo",
@@ -775,11 +769,14 @@ const list: Array<StoreAction | StoreMutation> = [
     mutationName: "ban_pick_info_received",
     wsName: "ban_pick_info",
     default: {},
-    // dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
-    //   const data = { ...oldVal };
-    //   data.phase = newVal.phase;
-    //   return data;
-    // }) as MutationHandler,
+  },
+  {
+    name: "banPickInfo",
+    mutationName: "clear_ban_pick_info",
+    default: {},
+    dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
+      return {};
+    }) as MutationHandler,
   },
 ];
 

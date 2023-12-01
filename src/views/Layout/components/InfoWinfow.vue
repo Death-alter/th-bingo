@@ -88,9 +88,10 @@
                     v-model="roomSettings.gameTimeLimit"
                     :min="10"
                     :max="180"
+                    :disabled="inGame"
                     size="small"
                     controls-position="right"
-                    @change="synchroRoomSettings"
+                    @change="updateRoomConfig($event, 'game_time')"
                   />
                   <span class="input-number-text">分钟</span>
                 </el-form-item>
@@ -99,9 +100,10 @@
                     class="input-number"
                     v-model="roomSettings.countdownTime"
                     :min="0"
+                    :disabled="inGame"
                     size="small"
                     controls-position="right"
-                    @change="synchroRoomSettings"
+                    @change="updateRoomConfig($event, 'countdown')"
                   />
                   <span class="input-number-text">秒</span>
                 </el-form-item>
@@ -110,9 +112,10 @@
                     class="input-number"
                     v-model="roomSettings.cdTime"
                     :min="0"
+                    :disabled="inGame"
                     size="small"
                     controls-position="right"
-                    @change="synchroRoomSettings"
+                    @change="updateRoomConfig($event, 'cd_time')"
                   />
                   <span class="input-number-text">秒</span>
                 </el-form-item>
@@ -124,6 +127,7 @@
                     :min="1"
                     :max="9"
                     :step="2"
+                    :disabled="inMatch"
                     size="small"
                     controls-position="right"
                     @change="onFormatChange"
@@ -132,6 +136,7 @@
                 <el-form-item label="作品BP：">
                   <el-checkbox
                     v-model="roomSettings.gamebp"
+                    :disabled="inMatch"
                     @change="synchroRoomSettings"
                     style="margin-right: 0"
                   ></el-checkbox>
@@ -141,7 +146,7 @@
                     v-model="roomSettings.checkList"
                     style="text-align: left"
                     :min="1"
-                    @change="synchroRoomSettings"
+                    @change="updateRoomConfig($event, 'games')"
                   >
                     <el-checkbox v-for="(item, index) in gameList" :label="item.code" :key="index">{{
                       item.name
@@ -153,7 +158,7 @@
                     v-model="roomSettings.rankList"
                     style="text-align: left"
                     :min="1"
-                    @change="synchroRoomSettings"
+                    @change="updateRoomConfig($event, 'ranks')"
                   >
                     <el-checkbox v-for="(item, index) in rankList" :label="item" :key="index">{{ item }}</el-checkbox>
                   </el-checkbox-group>
@@ -162,7 +167,8 @@
                   <el-radio-group
                     v-model="roomSettings.difficulty"
                     style="text-align: left"
-                    @change="synchroRoomSettings"
+                    :disabled="inGame"
+                    @change="updateRoomConfig($event, 'difficulty')"
                   >
                     <el-radio v-for="(item, index) in difficultyList" :label="item.value" :key="index">{{
                       item.name
@@ -172,7 +178,8 @@
                 <el-form-item label="禁用推送：">
                   <el-checkbox
                     v-model="roomSettings.private"
-                    @change="synchroRoomSettings"
+                    :disabled="inGame"
+                    @change="updateRoomConfig($event, 'is_private')"
                     style="margin-right: 0"
                   ></el-checkbox>
                 </el-form-item>
@@ -354,13 +361,9 @@ export default defineComponent({
     const difficultyList = config.difficultyList;
     const predefineColors = config.predefineColors;
     const gameTypeList = computed(() => {
-      if (store.getters.soloMode) {
-        const list = [...config.gameTypeList];
-        list.splice(1, 1);
-        return list;
-      } else {
-        return config.gameTypeList;
-      }
+      const list = [...config.gameTypeList];
+      list.splice(1, 2);
+      return list;
     });
     const roomSettings = reactive({
       gameTimeLimit: gameTypeList.value[0].timeLimit,
@@ -395,6 +398,7 @@ export default defineComponent({
     const isPlayerA = computed(() => store.getters.isPlayerA);
     const soloMode = computed(() => store.getters.soloMode);
     const inGame = computed(() => store.getters.inGame);
+    const inMatch = computed(() => store.getters.inMatch);
     const logList = computed(() => store.getters.logList);
 
     const logout = () => {
@@ -474,6 +478,12 @@ export default defineComponent({
         }
       }
     };
+    const updateRoomConfig = (data, key) => {
+      const room_config = {};
+      room_config[key] = data;
+      store.dispatch("update_room_config", { room_config });
+      synchroRoomSettings();
+    };
     const synchroRoomSettings = () => {
       store.commit("modify_room_settings", roomSettings);
     };
@@ -481,6 +491,7 @@ export default defineComponent({
       if (value % 2 === 0) {
         roomSettings.format++;
       }
+      store.dispatch("update_room_config", { room_config: { need_win: (roomSettings.format + 1) / 2 } });
       synchroRoomSettings();
     };
     const getLogStyle = (v: DefaultData) => {
@@ -627,6 +638,7 @@ export default defineComponent({
       isPlayerA,
       soloMode,
       inGame,
+      inMatch,
       logList,
       scrollbar,
       logout,
@@ -636,6 +648,7 @@ export default defineComponent({
       editName,
       editType,
       onFormatChange,
+      updateRoomConfig,
       synchroRoomSettings,
       getLogStyle,
       getLogText,

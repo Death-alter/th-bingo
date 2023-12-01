@@ -1,6 +1,7 @@
 import { createGetter, createAsyncMutations, createSyncMutation, createAction } from "./utils";
 import storeItems from "./storeItems";
 import { MutationHandler, ActionHandler, VuexState, Role, BpStatus } from "@/types";
+import { fa } from "element-plus/es/locale";
 
 const config = {
   state: {},
@@ -51,9 +52,18 @@ const config = {
         }
       })(),
     inGame: (state: VuexState) => !!state.roomData.data?.started,
+    inMatch: (state: VuexState) => {
+      const score = state.roomData.data?.score;
+      if (!score) return false;
+      const totalScore = score[0] + score[1];
+      if (totalScore > 0 || state.banPickInfo.data?.phase != null) {
+        return true;
+      } else {
+        return false;
+      }
+    },
     gamePaused: (state: VuexState) => !!state.gameData.data?.pause_begin_ms,
     bpStatus: (state: VuexState) => {
-      console.log(state.banPickInfo);
       if (!state.banPickInfo.data || !state.banPickInfo.data.phase) return null;
       switch (state.banPickInfo.data.phase) {
         case 1:
@@ -65,11 +75,11 @@ const config = {
         case 5:
         case 8:
         case 9:
-          return BpStatus.IS_B_BAN;
+          return BpStatus.IS_A_BAN;
         case 6:
         case 7:
         case 10:
-          return BpStatus.IS_A_BAN;
+          return BpStatus.IS_B_BAN;
         case 11:
           return BpStatus.SELECT_OPEN_EX;
       }

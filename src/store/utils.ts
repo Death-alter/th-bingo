@@ -97,7 +97,7 @@ export const createAction = (
         ws.closeConnection();
       }
       store.commit(actionName + "_error", data);
-      promisePool[token].reject(data);
+      promisePool[token] && promisePool[token].reject(data);
       delete promisePool[token];
     } else {
       if (callback instanceof Function) {
@@ -106,7 +106,7 @@ export const createAction = (
         data = await callback.replied(data, store.state[name].data, requestParams, trigger);
       }
       store.commit(actionName + "_replied", data);
-      promisePool[token].resolve(data);
+      promisePool[token] && promisePool[token].resolve(data);
       delete promisePool[token];
     }
   });

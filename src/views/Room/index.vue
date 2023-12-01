@@ -4,9 +4,9 @@
       <template #left>
         <score-board
           class="change-card"
-          v-if="isBingoStandard && !isWatcher"
+          v-if="isBingoStandard"
           :size="48"
-          :manual="isHost"
+          :manual="soloMode ? isPlayerA : isHost"
           label="换卡次数"
           v-model="cardCount[0]"
           @add="addChangeCardCount(0)"
@@ -27,9 +27,9 @@
       <template #right>
         <score-board
           class="change-card"
-          v-if="isBingoStandard && !isWatcher"
+          v-if="isBingoStandard"
           :size="48"
-          :manual="isHost"
+          :manual="soloMode ? isPlayerB : isHost"
           label="换卡次数"
           v-model="cardCount[1]"
           @add="addChangeCardCount(1)"
@@ -60,9 +60,11 @@
 
       <template #button-center>
         <template v-if="isBingoStandard">
-          <template v-if="isHost">
+          <template v-if="!soloMode && isHost">
             <el-button type="primary" v-if="!inGame && !isBpPhase" @click="startGame">开始比赛</el-button>
-            <el-button type="primary" v-if="isBpPhase">抽取符卡</el-button>
+            <el-button type="primary" v-if="isBpPhase" @click="drawSpellCard" :disabled="banPickInfo.phase < 99">
+              抽取符卡
+            </el-button>
             <el-button type="primary" v-if="inGame && winFlag === 0" @click="stopGame">结束比赛</el-button>
             <el-button type="primary" v-if="winFlag !== 0" @click="confirmWinner">
               确认：{{ winFlag < 0 ? roomData.names[0] : roomData.names[1] }}获胜
@@ -75,7 +77,7 @@
                 @click="confirmSelect"
                 :disabled="selectedSpellIndex < 0 || gamePaused"
                 v-if="!spellCardSelected"
-                :cooldown="roomConfig.cdTime"
+                :cooldown="roomConfig.cd_time"
                 :startTime="cooldownStartTime"
                 :immediate="gamePhase > 1"
                 text="选择符卡"
@@ -89,12 +91,22 @@
               ></confirm-select-button>
             </template>
 
-            <el-button
-              type="primary"
-              v-if="isBpPhase"
-              :disabled="(!(isPlayerA && playerACanBP) && !(isPlayerB && playerBCanBP)) || !bpCode"
-              >确定</el-button
-            >
+            <template v-if="isBpPhase">
+              <el-button
+                type="primary"
+                v-if="banPickInfo.phase !== 11"
+                :disabled="!(isPlayerA && playerACanBP) && !(isPlayerB && playerBCanBP)"
+                @click="playerBanPick"
+                >确定</el-button
+              >
+              <el-button type="primary" v-if="banPickInfo.phase === 11" @click="confirmOpenEX(true)">开启</el-button>
+              <el-button type="primary" v-if="banPickInfo.phase === 11" @click="confirmOpenEX(false)">不开启</el-button>
+            </template>
+          </template>
+
+          <template v-if="soloMode && isPlayerA">
+            <el-button type="primary" v-if="!inGame && !isBpPhase" @click="startGame">开始比赛</el-button>
+            <el-button type="primary" v-if="isBpPhase" @click="drawSpellCard">抽取符卡</el-button>
           </template>
         </template>
 
@@ -109,16 +121,26 @@
         </template>
       </template>
 
-      <template #button-left-1 v-if="isHost">
+      <template #button-left-1>
         <template v-if="isBingoStandard">
-          <el-button size="small" :disabled="inGame" @click="resetRoom">重置房间</el-button>
+          <template v-if="!soloMode && isHost">
+            <el-button size="small" :disabled="inGame" @click="resetRoom">重置房间</el-button>
+          </template>
+          <template v-if="soloMode && isPlayerA">
+            <el-button v-if="isPlayerA && !inGame" size="small" @click="resetRoom">重置房间</el-button>
+            <el-button v-if="isPlayerA && inGame" size="small" @click="stopGame">结束比赛</el-button>
+          </template>
         </template>
       </template>
 
-      <template #button-right-1 v-if="isHost">
+      <template #button-right-1>
         <template v-if="isBingoStandard">
-          <el-button size="small" :disabled="gamePhase !== 2" v-if="gamePaused" @click="resumeGame">继续比赛</el-button>
-          <el-button size="small" :disabled="gamePhase !== 2" v-else @click="pauseGame">暂停比赛</el-button>
+          <template v-if="(!soloMode && isHost) || (soloMode && isPlayerA)">
+            <el-button size="small" :disabled="gamePhase !== 2" v-if="gamePaused" @click="resumeGame">
+              继续比赛
+            </el-button>
+            <el-button size="small" :disabled="gamePhase !== 2" v-else @click="pauseGame">暂停比赛</el-button>
+          </template>
         </template>
       </template>
     </room-layout>
@@ -167,12 +189,20 @@ export default defineComponent({
     const isWatcher = computed(() => store.getters.userRole === Role.WATHCER);
     const isPlayerA = computed(() => store.getters.isPlayerA);
     const isPlayerB = computed(() => store.getters.isPlayerB);
+    const isOwner = computed(() => (soloMode.value && isPlayerA.value) || (!soloMode.value && isHost.value));
     const playerAName = computed(() => store.getters.roomData.names[0]);
     const playerBName = computed(() => store.getters.roomData.names[1]);
     const isBingoStandard = computed(() => store.getters.roomData.type === BingoType.STANDARD);
     const isBingoBp = computed(() => store.getters.roomData.type === BingoType.BP);
     const isBingoLink = computed(() => store.getters.roomData.type === BingoType.LINK);
     const inGame = computed(() => store.getters.inGame);
+    const inMatch = computed(() => store.getters.inMatch);
+    const isBpPhase = computed(
+      () =>
+        store.getters.banPickInfo.phase &&
+        store.getters.banPickInfo.phase > 0 &&
+        (store.getters.banPickInfo.phase < 99 || !inGame.value)
+    );
     const bpStatus = computed(() => store.getters.bpStatus);
     const playerACanBP = computed(
       () =>
@@ -222,18 +252,34 @@ export default defineComponent({
               },
             ];
             if (isPlayerA.value) {
-              data.push({
-                label: "收取",
-                value: 5,
-                tag: "playerA",
-              });
+              data = [
+                ...data,
+                {
+                  label: "选择",
+                  value: 1,
+                  tag: "playerA",
+                },
+                {
+                  label: "收取",
+                  value: 5,
+                  tag: "playerA",
+                },
+              ];
             }
             if (isPlayerB.value) {
-              data.push({
-                label: "收取",
-                value: 7,
-                tag: "playerB",
-              });
+              data = [
+                ...data,
+                {
+                  label: "选择",
+                  value: 3,
+                  tag: "playerB",
+                },
+                {
+                  label: "收取",
+                  value: 7,
+                  tag: "playerB",
+                },
+              ];
             }
           } else {
             if (isHost.value) {
@@ -282,7 +328,6 @@ export default defineComponent({
 
     const selectedSpellIndex = ref(-1);
     const winFlag = ref(0);
-    const isBpPhase = ref(false);
     const bpCode = ref("");
 
     //standard
@@ -298,38 +343,47 @@ export default defineComponent({
     const routeB = ref([]);
 
     const startGame = () => {
-      if (roomSettings.value.gamebp) {
+      if (roomSettings.value.gamebp && !inMatch.value) {
         store.dispatch("start_ban_pick", {
           who_first: 0,
         });
-        isBpPhase.value = true;
       } else {
-        store
-          .dispatch("update_room_config", {
-            room_config: {
-              game_time: roomSettings.value.gameTimeLimit,
-              countdown: roomSettings.value.countdownTime,
-              cd_time: roomSettings.value.cdTime,
-              games: roomSettings.value.checkList,
-              ranks: roomSettings.value.rankList,
-              difficulty: roomSettings.value.difficulty,
-              need_win: (roomSettings.value.format + 1) / 2,
-              is_private: roomSettings.value.private,
-            },
-          })
-          .then(() => {
-            store.dispatch("start_game").then(() => {
-              store.dispatch("change_card_count", {
-                cnt: [roomSettings.value.playerA.changeCardCount, roomSettings.value.playerB.changeCardCount],
-              });
-              store.commit("change_game_state", true);
-              store.dispatch("set_phase", { phase: 1 }).then(() => {
-                layoutRef.value?.hideAlert();
-                countdownRef.value?.start();
-              });
+        store.dispatch("start_game").then(() => {
+          store.dispatch("change_card_count", {
+            cnt: [roomSettings.value.playerA.changeCardCount, roomSettings.value.playerB.changeCardCount],
+          });
+          store.commit("change_game_state", true);
+          store.dispatch("set_phase", { phase: 1 }).then(() => {
+            layoutRef.value?.hideAlert();
+            countdownRef.value?.start();
+          });
+        });
+      }
+    };
+    const drawSpellCard = () => {
+      store
+        .dispatch("update_room_config", {
+          room_config: {
+            game_time: roomSettings.value.gameTimeLimit,
+            countdown: roomSettings.value.countdownTime,
+            cd_time: roomSettings.value.cdTime,
+            difficulty: roomSettings.value.difficulty,
+            need_win: (roomSettings.value.format + 1) / 2,
+            is_private: roomSettings.value.private,
+          },
+        })
+        .then(() => {
+          store.dispatch("start_game").then(() => {
+            store.dispatch("change_card_count", {
+              cnt: [roomSettings.value.playerA.changeCardCount, roomSettings.value.playerB.changeCardCount],
+            });
+            store.commit("change_game_state", true);
+            store.dispatch("set_phase", { phase: 1 }).then(() => {
+              layoutRef.value?.hideAlert();
+              countdownRef.value?.start();
             });
           });
-      }
+        });
     };
     const stopGame = () => {
       const checked = ref<boolean | string | number>(-1);
@@ -436,7 +490,7 @@ export default defineComponent({
     };
     const onCountDownComplete = () => {
       if (gamePhase.value === 1) {
-        if (isHost.value) {
+        if (isOwner.value) {
           store.dispatch("set_phase", { phase: 2 }).then(() => {
             countdownRef.value?.start();
           });
@@ -444,7 +498,7 @@ export default defineComponent({
           store.dispatch("get_spells");
         }
       } else if (gamePhase.value === 2) {
-        if (isHost.value) {
+        if (isOwner.value) {
           store.dispatch("set_phase", { phase: 0 });
         }
       }
@@ -474,11 +528,31 @@ export default defineComponent({
         cnt: arr,
       });
     };
+    const playerBanPick = () => {
+      store.dispatch("ban_pick", {
+        selection: bpCode.value || "",
+      });
+    };
+    const confirmOpenEX = (flag: boolean) => {
+      if (flag) {
+        store.dispatch("ban_pick", {
+          selection: "1",
+        });
+      } else {
+        store.dispatch("ban_pick", {
+          selection: "-1",
+        });
+      }
+    };
 
     onMounted(() => {
       cardCount.value = roomData.value.change_card_count;
       if (!inGame.value) {
-        layoutRef.value?.showAlert("等待房主开始比赛", "#000");
+        if (soloMode.value) {
+          layoutRef.value?.showAlert("等待左侧玩家开始比赛", "#000");
+        } else {
+          layoutRef.value?.showAlert("等待房主开始比赛", "#000");
+        }
       }
     });
 
@@ -489,6 +563,7 @@ export default defineComponent({
           nextTick(() => {
             countdownRef.value?.start();
           });
+          store.commit("clear_ban_pick_info");
         } else {
           if (isHost.value && newVal.phase < 2) {
             store.dispatch("set_phase", { phase: 2 });
@@ -583,7 +658,12 @@ export default defineComponent({
           winFlag.value = 13;
         }
         if (winFlag.value !== 0) {
-          layoutRef.value?.showAlert("已满足胜利条件，等待房主判断", "red");
+          if (soloMode.value && isPlayerA.value) {
+            confirmWinner();
+          }
+          if (!soloMode.value) {
+            layoutRef.value?.showAlert("已满足胜利条件，等待房主判断", "red");
+          }
         }
       }
     });
@@ -596,11 +676,18 @@ export default defineComponent({
         delete newVal.winner;
       }
       cardCount.value = newVal.change_card_count;
+      if (!newVal.started && banPickInfo.value.phase !== 9999) {
+        layoutRef.value?.showAlert("等待房主开始比赛", "#000");
+      }
     });
 
     watch(inGame, (newVal, oldVal) => {
       if (!newVal) {
-        layoutRef.value?.showAlert("等待房主开始比赛", "#000");
+        if (soloMode.value) {
+          layoutRef.value?.showAlert("等待左侧玩家开始比赛", "#000");
+        } else {
+          layoutRef.value?.showAlert("等待房主开始比赛", "#000");
+        }
       } else {
         layoutRef.value?.hideAlert();
       }
@@ -616,11 +703,9 @@ export default defineComponent({
       }
     });
 
-    watch(banPickInfo, (newVal, oldVal) => {
-      console.log(newVal);
-      if (newVal.phase) {
-        isBpPhase.value = true;
-        console.log(isBpPhase.value);
+    watch(isBpPhase, (newVal) => {
+      if (newVal) {
+        layoutRef.value?.hideAlert();
       }
     });
 
@@ -638,6 +723,7 @@ export default defineComponent({
       isWatcher,
       isPlayerA,
       isPlayerB,
+      isOwner,
       playerAName,
       playerBName,
       playerACanBP,
@@ -645,7 +731,9 @@ export default defineComponent({
       isBingoStandard,
       isBingoBp,
       isBingoLink,
+      soloMode,
       inGame,
+      inMatch,
       bpStatus,
       isBpPhase,
       playerASelectedIndex,
@@ -666,6 +754,7 @@ export default defineComponent({
       routeA,
       routeB,
       startGame,
+      drawSpellCard,
       stopGame,
       pauseGame,
       resumeGame,
@@ -677,6 +766,8 @@ export default defineComponent({
       resetRoom,
       addChangeCardCount,
       removeChangeCardCount,
+      playerBanPick,
+      confirmOpenEX,
     };
   },
 });
