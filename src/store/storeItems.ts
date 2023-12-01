@@ -5,6 +5,7 @@ import router from "@/router";
 import { ElMessage } from "element-plus";
 import store from ".";
 import mitt from "@/mitt";
+import config from "@/config";
 
 function logSpellCard(status: number, oldStatus: number, index: number, trigger?: string) {
   if (store.getters.roomData.names && store.getters.roomData.names[0] === trigger) {
@@ -279,6 +280,12 @@ const list: Array<StoreAction | StoreMutation> = [
   },
   {
     name: "roomData",
+    actionName: "update_room_config",
+    wsName: "update_room_config",
+    default: {},
+  },
+  {
+    name: "roomData",
     mutationName: "change_game_state",
     default: {},
     dataHandler: ((newVal: boolean, oldVal: DefaultData): DefaultData => {
@@ -348,7 +355,7 @@ const list: Array<StoreAction | StoreMutation> = [
     dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
       store.commit("add_log", [
         { text: "符卡抽取完成，" },
-        { text: `${res.countdown}秒`, color: "red" },
+        { text: `${store.getters.roomData.room_config.countdown}秒`, color: "red" },
         { text: "后比赛开始" },
       ]);
       if (!res.status) {
@@ -525,7 +532,7 @@ const list: Array<StoreAction | StoreMutation> = [
       store.commit("change_game_state", true);
       store.commit("add_log", [
         { text: "符卡抽取完成，你有" },
-        { text: `${newVal.countdown}秒`, color: "red" },
+        { text: `${store.getters.roomData.room_config.countdown}秒`, color: "red" },
         { text: "的时间来进行规划" },
       ]);
       if (!newVal.status) {
@@ -666,22 +673,27 @@ const list: Array<StoreAction | StoreMutation> = [
     dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
       const savedSettings = Storage.local.get("roomSettings");
       const settings = { ...newVal };
+      console.log(settings);
       if (savedSettings) {
         settings.gameTimeLimit = savedSettings.gameTimeLimit;
-        settings.countDownTime = savedSettings.countDownTime;
+        settings.countdownTime = savedSettings.countdownTime;
         if (store.getters.roomData && store.getters.roomData.type) {
           settings.gameTimeLimit[store.getters.roomData.type] = newVal.gameTimeLimit;
-          settings.countDownTime[store.getters.roomData.type] = newVal.countDownTime;
+          settings.countdownTime[store.getters.roomData.type] = newVal.countdownTime;
         }
       } else {
         const gameTimeLimit = {};
-        const countDownTime = {};
+        const countdownTime = {};
+        for (let item of config.gameTypeList) {
+          gameTimeLimit[item.type] = item.timeLimit;
+          countdownTime[item.type] = item.countdown;
+        }
         if (store.getters.roomData && store.getters.roomData.type) {
           gameTimeLimit[store.getters.roomData.type] = newVal.gameTimeLimit;
-          countDownTime[store.getters.roomData.type] = newVal.countDownTime;
+          countdownTime[store.getters.roomData.type] = newVal.countdownTime;
         }
         settings.gameTimeLimit = gameTimeLimit;
-        settings.countDownTime = countDownTime;
+        settings.countdownTime = countdownTime;
       }
       Storage.local.set("roomSettings", settings);
       return newVal;
@@ -740,6 +752,34 @@ const list: Array<StoreAction | StoreMutation> = [
       data.last_get_time[newVal.index] = newVal.time;
       return data;
     }) as MutationHandler,
+  },
+  {
+    name: "banPickInfo",
+    actionName: "start_ban_pick",
+    wsName: "start_ban_pick",
+    default: {},
+    // dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
+    //   const newData = { ...data };
+    //   newData.phase = res.phase;
+    //   return newData;
+    // },
+  },
+  {
+    name: "banPickInfo",
+    actionName: "ban_pick",
+    wsName: "ban_pick",
+    default: {},
+  },
+  {
+    name: "banPickInfo",
+    mutationName: "ban_pick_info_received",
+    wsName: "ban_pick_info",
+    default: {},
+    // dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
+    //   const data = { ...oldVal };
+    //   data.phase = newVal.phase;
+    //   return data;
+    // }) as MutationHandler,
   },
 ];
 

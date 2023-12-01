@@ -1,6 +1,6 @@
 import { createGetter, createAsyncMutations, createSyncMutation, createAction } from "./utils";
 import storeItems from "./storeItems";
-import { MutationHandler, ActionHandler, VuexState } from "@/types";
+import { MutationHandler, ActionHandler, VuexState, Role, BpStatus } from "@/types";
 
 const config = {
   state: {},
@@ -14,6 +14,19 @@ const config = {
       state.roomData.data?.names && state.roomData.data?.names[1] === state.userData.data?.userName,
     isPlayer: (state: VuexState) => state.roomData.data?.names?.includes(state.userData.data?.userName),
     isWatcher: (state: VuexState) => state.roomData.data?.watchers?.includes(state.userData.data?.userName),
+    userRole: (state: VuexState) => {
+      const userName = state.userData.data?.userName;
+      if (!userName) return null;
+      if (state.roomData.data?.host && state.roomData.data?.host === userName) {
+        return Role.HOST;
+      }
+      if (state.roomData.data?.names?.includes(userName)) {
+        return Role.PLAYER;
+      }
+      if (state.roomData.data?.watchers?.includes(userName)) {
+        return Role.WATHCER;
+      }
+    },
     soloMode: (state: VuexState) => !state.roomData.data?.host,
     playerASelectedIndex: (state: VuexState) =>
       (() => {
@@ -39,6 +52,28 @@ const config = {
       })(),
     inGame: (state: VuexState) => !!state.roomData.data?.started,
     gamePaused: (state: VuexState) => !!state.gameData.data?.pause_begin_ms,
+    bpStatus: (state: VuexState) => {
+      console.log(state.banPickInfo);
+      if (!state.banPickInfo.data || !state.banPickInfo.data.phase) return null;
+      switch (state.banPickInfo.data.phase) {
+        case 1:
+        case 3:
+          return BpStatus.IS_A_PICK;
+        case 2:
+        case 4:
+          return BpStatus.IS_B_PICK;
+        case 5:
+        case 8:
+        case 9:
+          return BpStatus.IS_B_BAN;
+        case 6:
+        case 7:
+        case 10:
+          return BpStatus.IS_A_BAN;
+        case 11:
+          return BpStatus.SELECT_OPEN_EX;
+      }
+    },
   },
   mutations: {},
   actions: {},

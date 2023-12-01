@@ -4,16 +4,22 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
+import { useStore } from "vuex";
 import Storage from "./utils/Storage";
 
 export default defineComponent({
-  created() {
-    this.$store.commit("get_user_data");
+  setup() {
+    const store = useStore();
+    store.commit("get_user_data");
     const savedSettings = Storage.local.get("roomSettings");
     if (savedSettings) {
+      if (!savedSettings.countdownTime) {
+        Storage.local.remove("roomSettings");
+        return;
+      }
       savedSettings.gameTimeLimit = savedSettings.gameTimeLimit[1];
-      savedSettings.countDownTime = savedSettings.countDownTime[1];
-      this.$store.commit("modify_room_settings", savedSettings);
+      savedSettings.countdownTime = savedSettings.countdownTime[1];
+      store.commit("modify_room_settings", savedSettings);
     }
   },
 });

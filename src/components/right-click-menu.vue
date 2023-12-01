@@ -5,7 +5,7 @@
     </div>
     <div class="right-click-menu" v-show="showMenu" :style="{ left: left + 'px', top: top + 'px' }">
       <div
-        v-for="(item, index) in menuData"
+        v-for="(item, index) in (menuData as any[])"
         :key="index"
         @mouseup="onMenuItemClick($event, item)"
         @contextmenu="
@@ -43,7 +43,7 @@ export default defineComponent({
   props: {
     menuData: {
       type: Array,
-      default: () => [],
+      default: () => [] as any[],
     },
     disabled: {
       type: Boolean,

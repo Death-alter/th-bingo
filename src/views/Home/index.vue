@@ -77,10 +77,12 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const formRef = ref<FormInstance>();
+    const roomSettings = computed(() => store.getters.roomSettings);
 
     return {
       formRef,
       userData: computed(() => store.getters.userData),
+      roomSettings,
     };
   },
   methods: {
@@ -94,6 +96,16 @@ export default defineComponent({
               rid: this.form.roomPassword,
               solo: this.form.soloMode,
               add_robot: this.form.addRobot,
+              room_config: {
+                game_time: this.roomSettings.gameTimeLimit,
+                countdown: this.roomSettings.countdownTime,
+                games: this.roomSettings.checkList,
+                ranks: this.roomSettings.rankList,
+                need_win: (this.roomSettings.format + 1) / 2,
+                difficulty: this.roomSettings.difficulty,
+                is_private: this.roomSettings.private,
+                cdTime: this.roomSettings.cdTime,
+              },
               type: 1,
             })
             .then(() => {
@@ -117,7 +129,7 @@ export default defineComponent({
         }
       });
     },
-    onChangeSoloMode(val: boolean) {
+    onChangeSoloMode(val) {
       if (!val) {
         this.form.addRobot = false;
       }

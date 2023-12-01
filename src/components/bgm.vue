@@ -1,5 +1,5 @@
 <template>
-  <audio ref="audio" :src="src" :muted="muted" :volume="volume"></audio>
+  <audio ref="audio" :src="(src as string)" :muted="muted" :volume="volume"></audio>
 </template>
 
 <script lang="ts">

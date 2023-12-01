@@ -64,3 +64,23 @@ export interface UserData {
 }
 
 export type Constructor<T> = new (...args: any[]) => T;
+
+export const enum Role {
+  HOST = 0,
+  PLAYER = 1,
+  WATHCER = 2,
+}
+
+export const enum BingoType {
+  STANDARD = 1,
+  BP = 2,
+  LINK = 3,
+}
+
+export const enum BpStatus {
+  IS_A_BAN = 0,
+  IS_A_PICK = 1,
+  IS_B_BAN = 2,
+  IS_B_PICK = 3,
+  SELECT_OPEN_EX = 4,
+}

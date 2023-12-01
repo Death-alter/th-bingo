@@ -97,7 +97,7 @@
                 <el-form-item label="倒计时：">
                   <el-input-number
                     class="input-number"
-                    v-model="roomSettings.countDownTime"
+                    v-model="roomSettings.countdownTime"
                     :min="0"
                     size="small"
                     controls-position="right"
@@ -129,7 +129,14 @@
                     @change="onFormatChange"
                   />
                 </el-form-item>
-                <el-form-item label="题目：">
+                <el-form-item label="作品BP：">
+                  <el-checkbox
+                    v-model="roomSettings.gamebp"
+                    @change="synchroRoomSettings"
+                    style="margin-right: 0"
+                  ></el-checkbox>
+                </el-form-item>
+                <el-form-item label="题目：" v-if="!roomSettings.gamebp">
                   <el-checkbox-group
                     v-model="roomSettings.checkList"
                     style="text-align: left"
@@ -141,7 +148,7 @@
                     }}</el-checkbox>
                   </el-checkbox-group>
                 </el-form-item>
-                <el-form-item label="符卡来源：">
+                <el-form-item label="符卡来源：" v-if="!roomSettings.gamebp">
                   <el-checkbox-group
                     v-model="roomSettings.rankList"
                     style="text-align: left"
@@ -284,9 +291,10 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ref } from "vue";
+import { defineComponent, computed, ref, reactive, watch, onMounted, nextTick } from "vue";
 import { DefaultData } from "@/types";
 import { useStore } from "vuex";
+import { useRouter } from "vue-router";
 import {
   ElTabs,
   ElTabPane,
@@ -312,42 +320,6 @@ import Storage from "@/utils/Storage";
 
 export default defineComponent({
   name: "InfoWinfow",
-  data() {
-    return {
-      tabIndex: 0,
-      showNameInput: false,
-      showTypeInput: false,
-      userName: "",
-      roomType: 1,
-      gameList: config.gameOptionList,
-      rankList: config.rankList,
-      difficultyList: config.difficultyList,
-      predefineColors: config.predefineColors,
-      gameTypeList: config.gameTypeList,
-      roomSettings: {
-        gameTimeLimit: 60,
-        countDownTime: 180,
-        cdTime: 30,
-        format: 1,
-        checkList: ["6", "7", "8", "10", "11", "12", "13", "14", "15", "16", "17", "18"],
-        rankList: ["L", "EX"],
-        difficulty: 3,
-        private: false,
-        bgmMuted: false,
-        confirmDelay: 5,
-        playerA: {
-          color: "hsl(16, 100%, 50%)",
-          delay: 5,
-          changeCardCount: 2,
-        },
-        playerB: {
-          color: "hsl(210, 100%, 56%)",
-          delay: 5,
-          changeCardCount: 2,
-        },
-      },
-    };
-  },
   components: {
     ElTabs,
     ElTabPane,
@@ -369,123 +341,76 @@ export default defineComponent({
   computed: {},
   setup() {
     const store = useStore();
+    const router = useRouter();
     const scrollbar = ref<InstanceType<typeof ElScrollbar>>();
-    return {
-      userData: computed(() => store.getters.userData),
-      roomData: computed(() => store.getters.roomData),
-      gameData: computed(() => store.getters.gameData),
-      inRoom: computed(() => store.getters.inRoom),
-      isHost: computed(() => store.getters.isHost),
-      isWatcher: computed(() => store.getters.isWatcher),
-      isPlayer: computed(() => store.getters.isPlayer),
-      isPlayerA: computed(() => store.getters.isPlayerA),
-      soloMode: computed(() => store.getters.soloMode),
-      inGame: computed(() => store.getters.inGame),
-      logList: computed(() => store.getters.logList),
-      scrollbar,
-      gameTypeList: computed(() => {
-        if (store.getters.soloMode) {
-          const list = [...config.gameTypeList];
-          list.splice(1, 1);
-          return list;
-        } else {
-          return config.gameTypeList;
-        }
-      }),
-    };
-  },
-  mounted() {
-    this.userName = this.userData && this.userData.userName;
-    this.roomType = this.roomData && this.roomData.type;
-    const savedSettings = Storage.local.get("roomSettings");
-    if (savedSettings) {
-      this.roomSettings = {
-        gameTimeLimit:
-          (this.roomType ? savedSettings.gameTimeLimit[this.roomType] : savedSettings.gameTimeLimit[1]) ||
-          this.roomSettings.gameTimeLimit,
-        countDownTime:
-          (this.roomType ? savedSettings.countDownTime[this.roomType] : savedSettings.countDownTime[1]) ||
-          this.roomSettings.countDownTime,
-        cdTime: savedSettings.cdTime || this.roomSettings.cdTime,
-        format: savedSettings.format || this.roomSettings.format,
-        rankList: savedSettings.rankList || this.roomSettings.rankList,
-        difficulty: savedSettings.difficulty || this.roomSettings.difficulty,
-        private: savedSettings.private != null ? savedSettings.private : this.roomSettings.private,
-        checkList: savedSettings.checkList || this.roomSettings.checkList,
-        playerA: savedSettings.playerA || this.roomSettings.playerA,
-        playerB: savedSettings.playerB || this.roomSettings.playerA,
-        bgmMuted: savedSettings.bgmMuted != null ? savedSettings.bgmMuted : this.roomSettings.bgmMuted,
-        confirmDelay: savedSettings.confirmDelay != null ? savedSettings.confirmDelay : this.roomSettings.confirmDelay,
-      };
-    } else if (this.roomType) {
-      for (let item of this.gameTypeList) {
-        if (item.type === this.roomType) {
-          this.roomSettings.gameTimeLimit = item.timeLimit;
-          this.roomSettings.countDownTime = item.countdown;
-          break;
-        }
-      }
-    }
-    console.log(savedSettings);
-    this.$store.commit("modify_room_settings", this.roomSettings);
-  },
-  watch: {
-    userData(val) {
-      this.userName = val.userName;
-    },
-    roomData(val) {
-      if (this.roomType !== val.type) {
-        this.roomType = val.type;
-      }
-      if (this.isHost) {
-        const savedSettings = Storage.local.get("roomSettings");
-        if (savedSettings) {
-          this.roomSettings.gameTimeLimit = savedSettings.gameTimeLimit[this.roomType];
-          this.roomSettings.countDownTime = savedSettings.countDownTime[this.roomType];
-        } else {
-          for (let item of this.gameTypeList) {
-            if (item.type === this.roomType) {
-              this.roomSettings.gameTimeLimit = item.timeLimit;
-              this.roomSettings.countDownTime = item.countdown;
-              break;
-            }
-          }
-        }
-      }
-    },
-    inRoom(val) {
-      if (val) {
-        this.tabIndex = 1;
+
+    const tabIndex = ref(0);
+    const showNameInput = ref(false);
+    const showTypeInput = ref(false);
+    const userName = ref("");
+    const roomType = ref(1);
+    const gameList = config.gameOptionList;
+    const rankList = config.rankList;
+    const difficultyList = config.difficultyList;
+    const predefineColors = config.predefineColors;
+    const gameTypeList = computed(() => {
+      if (store.getters.soloMode) {
+        const list = [...config.gameTypeList];
+        list.splice(1, 1);
+        return list;
       } else {
-        this.tabIndex = 0;
+        return config.gameTypeList;
       }
-    },
-    inGame(val) {
-      if (val) {
-        this.tabIndex = 2;
-      }
-    },
-    logList() {
-      this.$nextTick(() => {
-        this.scrollbar?.setScrollTop(this.scrollbar?.wrap$?.offsetHeight as number);
-      });
-    },
-  },
-  methods: {
-    logout() {
-      if (this.inRoom) {
-        this.$store.dispatch("leave_room").then(() => {
-          this.$store.commit("remove_user_data");
+    });
+    const roomSettings = reactive({
+      gameTimeLimit: gameTypeList.value[0].timeLimit,
+      countdownTime: gameTypeList.value[0].countdown,
+      cdTime: 30,
+      format: 1,
+      checkList: ["6", "7", "8", "10", "11", "12", "13", "14", "15", "16", "17", "18"],
+      rankList: ["L", "EX"],
+      difficulty: 3,
+      private: false,
+      bgmMuted: false,
+      gamebp: false,
+      confirmDelay: 5,
+      playerA: {
+        color: "hsl(16, 100%, 50%)",
+        delay: 5,
+        changeCardCount: 2,
+      },
+      playerB: {
+        color: "hsl(210, 100%, 56%)",
+        delay: 5,
+        changeCardCount: 2,
+      },
+    });
+    const userData = computed(() => store.getters.userData);
+    const roomData = computed(() => store.getters.roomData);
+    const gameData = computed(() => store.getters.gameData);
+    const inRoom = computed(() => store.getters.inRoom);
+    const isHost = computed(() => store.getters.isHost);
+    const isWatcher = computed(() => store.getters.isWatcher);
+    const isPlayer = computed(() => store.getters.isPlayer);
+    const isPlayerA = computed(() => store.getters.isPlayerA);
+    const soloMode = computed(() => store.getters.soloMode);
+    const inGame = computed(() => store.getters.inGame);
+    const logList = computed(() => store.getters.logList);
+
+    const logout = () => {
+      if (!inRoom.value) {
+        store.dispatch("leave_room").then(() => {
+          store.commit("remove_user_data");
           ws.closeConnection();
-          this.$router.push("/login");
+          router.push("/login");
         });
       } else {
-        this.$store.commit("remove_user_data");
+        store.commit("remove_user_data");
         ws.closeConnection();
-        this.$router.push("/login");
+        router.push("/login");
       }
-    },
-    getRoomTypeText(type: number) {
+    };
+    const getRoomTypeText = (type: number) => {
       switch (type) {
         case 1:
           return "bingo 标准赛";
@@ -496,15 +421,15 @@ export default defineComponent({
         default:
           return "未选择比赛类型";
       }
-    },
-    leaveRoom() {
-      this.$store.dispatch("leave_room").then(() => {
-        this.$router.push("/");
+    };
+    const leaveRoom = () => {
+      store.dispatch("leave_room").then(() => {
+        router.push("/");
       });
-    },
-    copyPassword() {
+    };
+    const copyPassword = () => {
       navigator.clipboard
-        .writeText(this.roomData.rid)
+        .writeText(roomData.value.rid)
         .then(() => {
           ElMessage({
             message: "已复制密码到剪切板",
@@ -517,48 +442,48 @@ export default defineComponent({
             type: "error",
           });
         });
-    },
-    editName() {
-      if (this.showNameInput === false) {
-        this.showNameInput = true;
+    };
+    const editName = () => {
+      if (showNameInput.value === false) {
+        showNameInput.value = true;
       } else {
-        if (this.userName !== this.userData.userName) {
-          const data = { ...this.userData };
-          data.userName = this.userName;
-          if (this.inRoom) {
-            this.$store.dispatch("update_name", { name: this.userName }).then(() => {
-              this.$store.commit("set_user_data", data);
+        if (userName.value !== userData.value.userName) {
+          const data = { ...userData.value };
+          data.userName = userName.value;
+          if (inRoom.value) {
+            store.dispatch("update_name", { name: userName.value }).then(() => {
+              store.commit("set_user_data", data);
             });
           } else {
-            this.$store.commit("set_user_data", data);
+            store.commit("set_user_data", data);
           }
         }
-        this.showNameInput = false;
+        showNameInput.value = false;
       }
-    },
-    editType() {
-      if (this.showTypeInput === false) {
-        this.showTypeInput = true;
+    };
+    const editType = () => {
+      if (showTypeInput.value === false) {
+        showTypeInput.value = true;
       } else {
-        if (this.roomType !== this.roomData.type) {
-          this.$store.dispatch("update_room_type", { type: this.roomType }).then(() => {
-            this.showTypeInput = false;
+        if (roomType.value !== roomData.value.type) {
+          store.dispatch("update_room_type", { type: roomType.value }).then(() => {
+            showTypeInput.value = false;
           });
         } else {
-          this.showTypeInput = false;
+          showTypeInput.value = false;
         }
       }
-    },
-    onFormatChange(value: number) {
+    };
+    const synchroRoomSettings = () => {
+      store.commit("modify_room_settings", roomSettings);
+    };
+    const onFormatChange = (value) => {
       if (value % 2 === 0) {
-        this.roomSettings.format++;
+        roomSettings.format++;
       }
-      this.synchroRoomSettings();
-    },
-    synchroRoomSettings() {
-      this.$store.commit("modify_room_settings", this.roomSettings);
-    },
-    getLogStyle(v: DefaultData) {
+      synchroRoomSettings();
+    };
+    const getLogStyle = (v: DefaultData) => {
       const style: DefaultData = {};
       if (v.tag) {
         style.padding = "0 2px";
@@ -578,28 +503,145 @@ export default defineComponent({
         style.color = v.color;
       }
       return style;
-    },
-    getLogText(v: DefaultData) {
+    };
+    const getLogText = (v: DefaultData) => {
       if (v.tag) {
         switch (v.tag) {
           case "playerA":
-            return this.roomData.names[0];
+            return roomData.value.names[0];
           case "playerB":
-            return this.roomData.names[1];
+            return roomData.value.names[1];
           case "spellCard":
-            return this.gameData.spells[v.index].name;
+            return roomData.value.spells[v.index].name;
           default:
         }
       } else {
         return v.text;
       }
-    },
-    standUp() {
-      this.$store.dispatch("stand_up");
-    },
-    sitDown() {
-      this.$store.dispatch("sit_down");
-    },
+    };
+    const standUp = () => {
+      store.dispatch("stand_up");
+    };
+    const sitDown = () => {
+      store.dispatch("sit_down");
+    };
+
+    onMounted(() => {
+      userName.value = userData.value && userData.value.userName;
+      roomType.value = roomData.value && roomData.value.type;
+      const savedSettings = Storage.local.get("roomSettings");
+      if (savedSettings) {
+        if (savedSettings.gameTimeLimit != null && roomType.value) {
+          roomSettings.gameTimeLimit = savedSettings.gameTimeLimit[roomType.value];
+        }
+        if (savedSettings.countdownTime != null && roomType.value) {
+          roomSettings.countdownTime = savedSettings.countdownTime[roomType.value];
+        }
+        if (savedSettings.cdTime != null) roomSettings.cdTime = savedSettings.cdTime;
+        if (savedSettings.format != null) roomSettings.format = savedSettings.format;
+        if (savedSettings.rankList != null) roomSettings.rankList = savedSettings.rankList;
+        if (savedSettings.difficulty != null) roomSettings.difficulty = savedSettings.difficulty;
+        if (savedSettings.private != null) roomSettings.private = savedSettings.private;
+        if (savedSettings.checkList != null) roomSettings.checkList = savedSettings.checkList;
+        if (savedSettings.playerA != null) roomSettings.playerA = savedSettings.playerA;
+        if (savedSettings.playerB != null) roomSettings.playerB = savedSettings.playerB;
+        if (savedSettings.bgmMuted != null) roomSettings.bgmMuted = savedSettings.bgmMuted;
+        if (savedSettings.gamebp != null) roomSettings.gamebp = savedSettings.gamebp;
+        if (savedSettings.confirmDelay != null) roomSettings.confirmDelay = savedSettings.confirmDelay;
+      } else if (roomType.value) {
+        for (let item of gameTypeList.value) {
+          if (item.type === roomType.value) {
+            roomSettings.gameTimeLimit = item.timeLimit;
+            roomSettings.countdownTime = item.countdown;
+            break;
+          }
+        }
+      }
+      store.commit("modify_room_settings", roomSettings);
+    });
+
+    watch(userData, (val) => {
+      userName.value = val.userName;
+    });
+
+    watch(roomData, (val) => {
+      if (roomType.value !== val.type) {
+        roomType.value = val.type;
+      }
+      if (isHost.value) {
+        const savedSettings = Storage.local.get("roomSettings");
+        if (savedSettings) {
+          roomSettings.gameTimeLimit = savedSettings.gameTimeLimit[roomType.value];
+          roomSettings.countdownTime = savedSettings.countdownTime[roomType.value];
+        } else {
+          for (let item of gameTypeList.value) {
+            if (item.type === roomType.value) {
+              roomSettings.gameTimeLimit = item.timeLimit;
+              roomSettings.countdownTime = item.countdown;
+              break;
+            }
+          }
+        }
+      }
+    });
+
+    watch(inRoom, (val) => {
+      if (val) {
+        tabIndex.value = 1;
+      } else {
+        tabIndex.value = 0;
+      }
+    });
+
+    watch(inGame, (val) => {
+      if (val) {
+        tabIndex.value = 2;
+      }
+    });
+
+    watch(logList, (val) => {
+      nextTick(() => {
+        scrollbar.value?.setScrollTop(scrollbar.value?.wrap$?.offsetHeight as number);
+      });
+    });
+
+    return {
+      tabIndex,
+      showNameInput,
+      showTypeInput,
+      userName,
+      roomType,
+      gameList,
+      rankList,
+      difficultyList,
+      predefineColors,
+      gameTypeList,
+      roomSettings,
+      userData,
+      roomData,
+      gameData,
+      inRoom,
+      isHost,
+      isWatcher,
+      isPlayer,
+      isPlayerA,
+      soloMode,
+      inGame,
+      logList,
+      scrollbar,
+      logout,
+      getRoomTypeText,
+      leaveRoom,
+      copyPassword,
+      editName,
+      editType,
+      onFormatChange,
+      synchroRoomSettings,
+      getLogStyle,
+      getLogText,
+      standUp,
+      sitDown,
+    };
   },
 });
 </script>

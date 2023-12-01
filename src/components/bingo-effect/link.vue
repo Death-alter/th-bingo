@@ -112,7 +112,7 @@ export default defineComponent({
   methods: {
     drawLine(tag: string) {
       const listName = "list" + tag;
-      const lineArr = [];
+      const lineArr: number[] = [];
       if (this[listName].length === 1) {
         const position = this.getCenterPosition(this[listName][0]);
         lineArr.push(position.x);
