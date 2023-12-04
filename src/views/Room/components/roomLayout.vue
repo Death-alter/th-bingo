@@ -47,6 +47,7 @@
                       <spell-card-cell
                         :name="item.name"
                         :desc="item.desc"
+                        :level="isBingoStandard ? null : item.star"
                         @click="selectSpellCard(index)"
                         :selected="selectedSpellIndex === index"
                         :status="gameData.status[index]"

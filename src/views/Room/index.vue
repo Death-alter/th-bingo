@@ -75,7 +75,7 @@
         ></count-down>
       </template>
 
-      <template #cell="{ item, index }">
+      <template #cell="{ item, index }" v-if="isBingoLink">
         <spell-card-cell
           :name="item.name"
           :desc="item.desc"
@@ -838,8 +838,7 @@ export default defineComponent({
       }
       return (hour ? format(hour) + "h " : "") + (minute ? format(minute) + "m " : "") + format(second) + "s";
     };
-    const decideLink = (linkData) => {
-    };
+    const decideLink = (linkData) => {};
 
     const startGame = () => {
       if (roomSettings.value.gamebp && !inMatch.value) {
