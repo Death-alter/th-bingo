@@ -168,7 +168,7 @@ export default defineComponent({
     const isWatcher = computed(() => store.getters.userRole.value === Role.WATHCER);
     const isPlayerA = computed(() => store.getters.isPlayerA);
     const isPlayerB = computed(() => store.getters.isPlayerB);
-    const needWin = computed(() => roomData.value.room_config.need_in);
+    const needWin = computed(() => roomData.value.room_config.need_win);
     const spellCardSelected = computed(() => {
       if (store.getters.isPlayerA) {
         return store.getters.playerASelectedIndex !== -1;
@@ -225,7 +225,7 @@ export default defineComponent({
       Mit.on("spell_card_grabbed", () => {
         spellCardGrabbedAudioRef.value?.play();
       });
-      Mit.on("game_phase", () => {
+      Mit.on("game_pause", () => {
         spellCardGrabbedAudioRef.value?.play();
       });
       Mit.on("right_link_start", () => {
@@ -241,7 +241,7 @@ export default defineComponent({
     });
     onUnmounted(() => {
       Mit.off("spell_card_grabbed");
-      Mit.off("game_phase");
+      Mit.off("game_pause");
       Mit.off("right_link_start");
       Mit.off("game_point");
       Mit.off("alter");

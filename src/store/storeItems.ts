@@ -434,7 +434,7 @@ const list: Array<StoreAction | StoreMutation> = [
       obj.total_pause_time = res.total_pause_time || 0;
       obj.time = res.time;
       if (res.pause_begin_ms) {
-        mitt.emit("game_phase");
+        mitt.emit("game_pause");
       }
       return obj;
     },
@@ -499,7 +499,7 @@ const list: Array<StoreAction | StoreMutation> = [
       obj.total_pause_time = newVal.total_pause_time || 0;
       obj.time = newVal.time;
       if (newVal.pause_begin_ms) {
-        mitt.emit("game_phase");
+        mitt.emit("game_pause");
       }
       return obj;
     }) as MutationHandler,

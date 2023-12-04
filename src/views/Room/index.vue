@@ -78,7 +78,7 @@
                 :disabled="selectedSpellIndex < 0 || gamePaused"
                 v-if="!spellCardSelected"
                 :cooldown="roomConfig.cd_time"
-                :startTime="cooldownStartTime"
+                :startTime="selectCooldownStart"
                 :immediate="gamePhase > 1"
                 text="选择符卡"
               ></confirm-select-button>
@@ -87,6 +87,7 @@
                 v-if="spellCardSelected"
                 :disabled="gamePhase < 2 || gamePaused"
                 :cooldown="roomSettings.confirmDelay"
+                :startTime="attainCooldownStart"
                 text="确认收取"
               ></confirm-select-button>
             </template>
@@ -94,7 +95,7 @@
             <template v-if="isBpPhase">
               <el-button
                 type="primary"
-                v-if="banPickInfo.phase !== 11"
+                v-if="banPickInfo.phase < 11"
                 :disabled="!(isPlayerA && playerACanBP) && !(isPlayerB && playerBCanBP)"
                 @click="playerBanPick"
                 >确定</el-button
@@ -106,7 +107,7 @@
 
           <template v-if="soloMode && isPlayerA">
             <el-button type="primary" v-if="!inGame && !isBpPhase" @click="startGame">开始比赛</el-button>
-            <el-button type="primary" v-if="isBpPhase" @click="drawSpellCard">抽取符卡</el-button>
+            <el-button type="primary" v-if="banPickInfo.phase === 9999" @click="drawSpellCard">抽取符卡</el-button>
           </template>
         </template>
 
@@ -159,6 +160,7 @@ import GameBp from "@/components/game-bp.vue";
 import ConfirmSelectButton from "@/components/button-with-cooldown.vue";
 import { ElButton, ElMessageBox, ElRadioGroup, ElRadio } from "element-plus";
 import Mit from "@/mitt";
+import Storage from "@/utils/Storage";
 import GameTime from "@/utils/GameTime";
 
 export default defineComponent({
@@ -230,7 +232,7 @@ export default defineComponent({
       }
       return false;
     });
-    const cooldownStartTime = computed(() => {
+    const selectCooldownStart = computed(() => {
       const lastGetTime = store.getters.gameData.last_get_time;
       if (isPlayerA.value) {
         return lastGetTime[0];
@@ -329,6 +331,11 @@ export default defineComponent({
     const selectedSpellIndex = ref(-1);
     const winFlag = ref(0);
     const bpCode = ref("");
+    const attainCooldownStart = ref(0);
+    const cd = Storage.local.get("attainCooldownStart");
+    if (cd) {
+      attainCooldownStart.value = cd;
+    }
 
     //standard
     const oldSumArr = ref<number[]>([]);
@@ -466,6 +473,9 @@ export default defineComponent({
           selectedSpellIndex.value = -1;
         });
       }
+      const time = GameTime.getServerTime(new Date().getTime());
+      attainCooldownStart.value = time;
+      Storage.local.set("attainCooldownStart", time);
     };
     const confirmAttained = () => {
       if (isPlayerA.value) {
@@ -499,7 +509,18 @@ export default defineComponent({
         }
       } else if (gamePhase.value === 2) {
         if (isOwner.value) {
-          store.dispatch("set_phase", { phase: 0 });
+          let countA = 0;
+          let countB = 0;
+          for (let item of gameData.value.status) {
+            if (item === 5) {
+              countA += item;
+            } else if (item === 7) {
+              countB += item;
+            }
+          }
+          if (countA !== countB) {
+            store.dispatch("set_phase", { phase: 0 });
+          }
         }
       }
     };
@@ -662,7 +683,14 @@ export default defineComponent({
             confirmWinner();
           }
           if (!soloMode.value) {
-            layoutRef.value?.showAlert("已满足胜利条件，等待房主判断", "red");
+            layoutRef.value?.showAlert("已满足胜利条件，等待房主判断胜负", "red");
+          }
+        }
+
+        if (GameTime.timeout > 0 && countA !== countB) {
+          layoutRef.value?.showAlert("游戏时间到，等待房主判断胜负", "red");
+          if (isOwner.value && gamePhase.value !== 0) {
+            store.dispatch("set_phase", { phase: 0 });
           }
         }
       }
@@ -742,7 +770,8 @@ export default defineComponent({
       gamePhase,
       timeMistake,
       spellCardSelected,
-      cooldownStartTime,
+      selectCooldownStart,
+      attainCooldownStart,
       menu,
       selectedSpellIndex,
       winFlag,
