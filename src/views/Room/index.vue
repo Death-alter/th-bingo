@@ -714,7 +714,7 @@ export default defineComponent({
     const linkStartTime = ref(0);
     const confirmed = ref(false);
     const countdownMode = computed(() => {
-      if (gamePhase.value > 1) {
+      if (isBingoLink.value && gamePhase.value > 1) {
         return "stopwatch";
       }
       return "countdown";

@@ -113,7 +113,11 @@ export default defineComponent({
         if (value < 0) {
           return;
         }
-        value = Math.ceil(value / 1000);
+        if (props.mode === "stopwatch") {
+          value = Math.floor(value / 1000);
+        } else {
+          value = Math.ceil(value / 1000);
+        }
         second.value = value % 60;
         if (remaining.value >= 3600000) {
           hour.value = Math.floor(value / 3600);
