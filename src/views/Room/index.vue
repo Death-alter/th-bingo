@@ -473,7 +473,7 @@ export default defineComponent({
           selectedSpellIndex.value = -1;
         });
       }
-      const time = GameTime.getServerTime(new Date().getTime());
+      const time = GameTime.current;
       attainCooldownStart.value = time;
       Storage.local.set("attainCooldownStart", time);
     };

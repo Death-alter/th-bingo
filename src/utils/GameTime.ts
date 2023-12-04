@@ -58,4 +58,17 @@ export default abstract class {
     }
     return this.passed;
   }
+
+  static get timeout(): number {
+    const timeout = this.main - this.duration;
+    if (timeout < 0) {
+      return 0;
+    } else {
+      return timeout;
+    }
+  }
+
+  static getServerTime(time: number): number {
+    return time + this.mistake;
+  }
 }
