@@ -360,9 +360,26 @@ export default defineComponent({
     const rankList = config.rankList;
     const difficultyList = config.difficultyList;
     const predefineColors = config.predefineColors;
+
+    const userData = computed(() => store.getters.userData);
+    const roomData = computed(() => store.getters.roomData);
+    const gameData = computed(() => store.getters.gameData);
+    const inRoom = computed(() => store.getters.inRoom);
+    const isHost = computed(() => store.getters.isHost);
+    const isWatcher = computed(() => store.getters.isWatcher);
+    const isPlayer = computed(() => store.getters.isPlayer);
+    const isPlayerA = computed(() => store.getters.isPlayerA);
+    const soloMode = computed(() => store.getters.soloMode);
+    const inGame = computed(() => store.getters.inGame);
+    const inMatch = computed(() => store.getters.inMatch);
+    const logList = computed(() => store.getters.logList);
     const gameTypeList = computed(() => {
       const list = [...config.gameTypeList];
-      list.splice(1, 2);
+      if (soloMode.value) {
+        list.splice(1, 2);
+      } else {
+        list.splice(1, 1);
+      }
       return list;
     });
     const roomSettings = reactive({
@@ -388,18 +405,6 @@ export default defineComponent({
         changeCardCount: 2,
       },
     });
-    const userData = computed(() => store.getters.userData);
-    const roomData = computed(() => store.getters.roomData);
-    const gameData = computed(() => store.getters.gameData);
-    const inRoom = computed(() => store.getters.inRoom);
-    const isHost = computed(() => store.getters.isHost);
-    const isWatcher = computed(() => store.getters.isWatcher);
-    const isPlayer = computed(() => store.getters.isPlayer);
-    const isPlayerA = computed(() => store.getters.isPlayerA);
-    const soloMode = computed(() => store.getters.soloMode);
-    const inGame = computed(() => store.getters.inGame);
-    const inMatch = computed(() => store.getters.inMatch);
-    const logList = computed(() => store.getters.logList);
 
     const logout = () => {
       if (!inRoom.value) {

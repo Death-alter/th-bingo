@@ -56,7 +56,7 @@ const config = {
       const score = state.roomData.data?.score;
       if (!score) return false;
       const totalScore = score[0] + score[1];
-      if (totalScore > 0 || state.banPickInfo.data?.phase != null || !!state.roomData.data?.started) {
+      if (totalScore > 0 || state.banPickInfo.data?.phase > 0 || !!state.roomData.data?.started) {
         return true;
       } else {
         return false;

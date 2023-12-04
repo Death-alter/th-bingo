@@ -43,14 +43,16 @@
               <div class="bingo-items">
                 <template v-if="gameData.spells">
                   <div class="spell-card" v-for="(item, index) in gameData.spells" :key="index">
-                    <spell-card-cell
-                      :name="item.name"
-                      :desc="item.desc"
-                      @click="selectSpellCard(index)"
-                      :selected="selectedSpellIndex === index"
-                      :status="gameData.status[index]"
-                      :index="index"
-                    ></spell-card-cell>
+                    <slot name="cell" :item="item" :index="index">
+                      <spell-card-cell
+                        :name="item.name"
+                        :desc="item.desc"
+                        @click="selectSpellCard(index)"
+                        :selected="selectedSpellIndex === index"
+                        :status="gameData.status[index]"
+                        :index="index"
+                      ></spell-card-cell>
+                    </slot>
                   </div>
                 </template>
               </div>
@@ -126,7 +128,7 @@ import SpellCardCell from "@/components/spell-card-cell.vue";
 import RightClickMenu from "@/components/right-click-menu.vue";
 import GameAlert from "./gameAlert.vue";
 import { ElRow, ElCol } from "element-plus";
-import { Role } from "@/types/index";
+import { Role, BingoType } from "@/types/index";
 import bgm from "@/components/bgm.vue";
 import Mit from "@/mitt";
 import GameTime from "@/utils/GameTime";
@@ -149,6 +151,10 @@ export default defineComponent({
       type: Number,
       required: true,
     },
+    multiple: {
+      type: Boolean,
+      default: false,
+    },
   },
   emits: ["update:selectedSpellIndex"],
   setup(props, context) {
@@ -168,6 +174,9 @@ export default defineComponent({
     const isWatcher = computed(() => store.getters.userRole.value === Role.WATHCER);
     const isPlayerA = computed(() => store.getters.isPlayerA);
     const isPlayerB = computed(() => store.getters.isPlayerB);
+    const isBingoStandard = computed(() => store.getters.roomData.type === BingoType.STANDARD);
+    const isBingoBp = computed(() => store.getters.roomData.type === BingoType.BP);
+    const isBingoLink = computed(() => store.getters.roomData.type === BingoType.LINK);
     const needWin = computed(() => roomData.value.room_config.need_win);
     const spellCardSelected = computed(() => {
       if (store.getters.isPlayerA) {
@@ -189,15 +198,22 @@ export default defineComponent({
       if (isWatcher.value) {
         return;
       }
+
       if (props.selectedSpellIndex === index) {
         setSelectedSpellIndex(-1);
-      } else if (!spellCardSelected.value) {
-        if (
-          gameData.value.status[index] === 0 ||
-          (isPlayerB.value && gameData.value.status[index] === 1) ||
-          (isPlayerB.value && gameData.value.status[index] === 3)
-        )
-          setSelectedSpellIndex(index);
+      } else {
+        if (props.multiple) {
+          if (gameData.value.status[index] === 0) setSelectedSpellIndex(index);
+        } else {
+          if (
+            !spellCardSelected.value &&
+            (gameData.value.status[index] === 0 ||
+              (isPlayerB.value && gameData.value.status[index] === 1) ||
+              (isPlayerA.value && gameData.value.status[index] === 3))
+          ) {
+            setSelectedSpellIndex(index);
+          }
+        }
       }
     };
     const onMenuClick = ({ event, target, item }: any) => {
@@ -283,6 +299,9 @@ export default defineComponent({
       isPlayerA,
       isPlayerB,
       isWatcher,
+      isBingoStandard,
+      isBingoBp,
+      isBingoLink,
       needWin,
       needWinArr: computed(() => new Array(needWin.value)),
       muted: computed(() => store.getters.roomSettings.bgmMuted),
