@@ -225,8 +225,8 @@ export default defineComponent({
     };
     const stopBGM = () => {
       turn1CountdownAudioRef.value.stop();
-      turn1CountdownAudioRef.value.stop();
-      turn1CountdownAudioRef.value.stop();
+      turn2CountdownAudioRef.value.stop();
+      turn3CountdownAudioRef.value.stop();
     };
     const showAlert = (text?: string, color?: string) => {
       gameAlertRef.value.show(text, color);

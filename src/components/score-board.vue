@@ -19,7 +19,9 @@
           'font-size': size + 'px',
         }"
       >
-        {{ score }}
+        <slot name="score">
+          {{ score }}
+        </slot>
       </div>
       <div class="score-board-number-btn" v-if="manual">
         <el-button

@@ -377,8 +377,6 @@ export default defineComponent({
       const list = [...config.gameTypeList];
       if (soloMode.value) {
         list.splice(1, 2);
-      } else {
-        list.splice(1, 1);
       }
       return list;
     });

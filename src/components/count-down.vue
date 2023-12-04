@@ -30,6 +30,10 @@ export default defineComponent({
       type: Number,
       default: 14,
     },
+    startTime: {
+      type: Number,
+      default: 0,
+    },
   },
   emits: ["complete"],
   setup(props, context) {
@@ -66,9 +70,19 @@ export default defineComponent({
           }, 1000);
         }
       } else if (props.mode === "stopwatch") {
-        remaining.value = GameTime.main;
-        timer.value = window.setInterval(() => {
+        if (!props.startTime) {
           remaining.value = GameTime.main;
+        } else {
+          remaining.value = GameTime.current - props.startTime;
+        }
+
+        timer.value = window.setInterval(() => {
+          if (!props.startTime) {
+            remaining.value = GameTime.main;
+          } else {
+            remaining.value = GameTime.current - props.startTime;
+          }
+
           if (remaining.value <= 0) {
             stop();
             context.emit("complete");

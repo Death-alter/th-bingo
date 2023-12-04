@@ -561,8 +561,10 @@ export default defineComponent({
     },
     confirmWinner() {
       this.$store.dispatch("stop_game", { winner: this.winFlag < 0 ? 0 : 1 }).then(() => {
-        this.winFlag = 0;
-        this.countdown.reset();
+        this.$store.dispatch("set_phase", { phase: 0 }).then(() => {
+          this.winFlag = 0;
+          this.countdown.reset();
+        });
       });
     },
     onMenuClick({ event, target, item }: any) {
@@ -650,7 +652,6 @@ export default defineComponent({
     z-index: 100;
   }
 }
-
 
 .count-down-wrap {
   font-size: 30px;

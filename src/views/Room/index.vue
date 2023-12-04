@@ -17,6 +17,10 @@
             <div class="spell-card-score-text">得分</div>
             <div class="spell-card-score-text">{{ timeFormat(spendTimeA) }}</div>
           </template>
+
+          <template #score v-if="isBingoLink">
+            {{ playerAScore * 2 + (spendTimeScore > 0 ? " + " + spendTimeScore.toFixed(1) : "") }}
+          </template>
         </score-board>
 
         <el-button
@@ -46,6 +50,9 @@
             <div class="spell-card-score-text">得分</div>
             <div class="spell-card-score-text">{{ timeFormat(spendTimeB) }}</div>
           </template>
+          <template #score v-if="isBingoLink">
+            {{ playerBScore * 2 + (spendTimeScore < 0 ? "+" + (-spendTimeScore).toFixed(1) : "") }}
+          </template>
         </score-board>
         <el-button
           class="alert-button"
@@ -59,9 +66,7 @@
       </template>
 
       <template #extra>
-        <div class="bingo-effect" v-if="isBingoLink">
-          <bingo-link-effect :route-a="routeA" :route-b="routeB" />
-        </div>
+        <bingo-link-effect :route-a="routeA" :route-b="routeB" v-if="isBingoLink" />
         <game-bp v-if="isBpPhase" v-model="bpCode"></game-bp>
       </template>
 
@@ -69,6 +74,7 @@
         <count-down
           ref="countdownRef"
           :size="30"
+          :start-time="linkStartTime"
           :mode="countdownMode"
           @complete="onCountDownComplete"
           v-show="inGame"
@@ -142,6 +148,15 @@
                 >{{ bingoBpPhase ? (isMyTurn ? "禁用符卡" : "等待对手禁用符卡") : "等待房主操作" }}</el-button
               >
             </template>
+            <template v-if="isBingoLink">
+              <el-button
+                type="primary"
+                @click="confirmSelect"
+                :disabled="gamePaused || !routeComplete"
+                v-if="(gamePhase === 1 || !confirmed) && !(gamePhase > 1 && routeComplete)"
+                >{{ confirmed ? "取消确认" : "确认路线" }}</el-button
+              >
+            </template>
           </template>
 
           <template v-if="isBpPhase">
@@ -157,19 +172,18 @@
           </template>
         </template>
 
-        <template v-if="isBingoBp">
-          <el-button size="small" @click="resetRoom" :disabled="inGame">重置房间</el-button>
-          <el-button size="small" @click="nextRound" :disabled="gamePhase !== 2 || gameData.ban_pick !== 2"
-            >进入下轮</el-button
-          >
+        <template v-if="isBingoLink">
+          <template v-if="soloMode && isPlayerA">
+            <el-button type="primary" v-if="gamePhase > 1 && winFlag === 0 && routeComplete" @click="stopGame"
+              >结束比赛</el-button
+            >
+          </template>
         </template>
-
-        <template v-if="isBingoLink"> </template>
       </template>
 
       <template #button-left-1>
         <template v-if="!soloMode && isHost">
-          <template v-if="isBingoStandard || !inGame">
+          <template v-if="!isBingoStandard || !inGame">
             <el-button size="small" :disabled="inGame" @click="resetRoom">重置房间</el-button>
           </template>
           <template v-else>
@@ -187,7 +201,7 @@
       </template>
 
       <template #button-right-1>
-        <template v-if="(!soloMode && isHost) || (soloMode && isPlayerA)">
+        <template v-if="isOwner">
           <template v-if="isBingoStandard">
             <el-button size="small" :disabled="gamePhase !== 2" v-if="gamePaused" @click="resumeGame">
               继续比赛
@@ -211,7 +225,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, h, ref, computed, watch, nextTick, onMounted } from "vue";
+import { defineComponent, h, ref, computed, watch, nextTick, onMounted, onUnmounted } from "vue";
 import { useStore } from "vuex";
 import { Role, BingoType, BpStatus } from "@/types";
 import RoomLayout from "./components/roomLayout.vue";
@@ -284,7 +298,24 @@ export default defineComponent({
     );
     const playerASelectedIndex = computed(() => store.getters.playerASelectedIndex);
     const playerBSelectedIndex = computed(() => store.getters.playerBSelectedIndex);
-    const gamePaused = computed(() => store.getters.gamePaused);
+    const gamePaused = computed(() => {
+      if (isBingoLink.value) {
+        if (gameData.value.link_data) {
+          const link_data = gameData.value.link_data;
+          if (gamePhase.value === 2 && link_data.start_ms_a && link_data.end_ms_a) {
+            return true;
+          } else if (gamePhase.value === 3 && link_data.start_ms_b && link_data.end_ms_b) {
+            return true;
+          } else {
+            return false;
+          }
+        } else {
+          return false;
+        }
+      } else {
+        return store.getters.gamePaused;
+      }
+    });
     const gamePhase = computed(() => store.getters.gameData.phase || 0);
     const timeMistake = computed(() => store.getters.heartBeat.timeMistake);
     const spellCardSelected = computed(() => {
@@ -680,9 +711,10 @@ export default defineComponent({
     const routeB = ref<number[]>([]);
     const spendTimeA = ref(0);
     const spendTimeB = ref(0);
+    const linkStartTime = ref(0);
     const confirmed = ref(false);
     const countdownMode = computed(() => {
-      if (isBingoLink.value && gamePhase.value > 1) {
+      if (gamePhase.value > 1) {
         return "stopwatch";
       }
       return "countdown";
@@ -772,17 +804,19 @@ export default defineComponent({
       });
     };
     const selectSpellCardLink = (index: number) => {
+      let linkList;
+      let status;
       let tag: string;
       if (isPlayerA.value) {
         tag = "A";
+        linkList = [...routeA.value];
       } else if (isPlayerB.value) {
         tag = "B";
+        linkList = [...routeB.value];
       } else {
         tag = "";
         return;
       }
-      let status;
-      const linkList = this["route" + tag];
       if (index === linkList[linkList.length - 1]) {
         status = 0;
       } else {
@@ -838,7 +872,79 @@ export default defineComponent({
       }
       return (hour ? format(hour) + "h " : "") + (minute ? format(minute) + "m " : "") + format(second) + "s";
     };
-    const decideLink = (linkData) => {};
+    const decideLink = (value) => {
+      if (value.link_data) {
+        if (value.link_data.link_idx_a) {
+          if (!isPlayerB.value || value.phase !== 1) {
+            routeA.value = value.link_data.link_idx_a;
+          } else {
+            routeA.value = [0];
+          }
+        }
+        if (value.link_data.link_idx_b) {
+          if (!isPlayerA.value || value.phase !== 1) {
+            routeB.value = value.link_data.link_idx_b;
+          } else {
+            routeB.value = [4];
+          }
+        }
+
+        if (value.phase === 2 && value.link_data.start_ms_a) {
+          linkStartTime.value = value.link_data.start_ms_a;
+          if (!gamePaused.value) {
+            nextTick(() => {
+              countdownRef.value?.start();
+            });
+          }
+        } else if (value.phase >= 3) {
+          spendTimeA.value = value.link_data.end_ms_a - value.link_data.start_ms_a;
+          let sum = 0;
+          for (let item of routeA.value) {
+            sum += value.spells[item].star;
+          }
+          playerAScore.value = sum;
+          if (value.phase === 4) {
+            spendTimeB.value = value.link_data.end_ms_b - value.link_data.start_ms_b;
+            countdownRef.value?.stop();
+            let sum = 0;
+            for (let item of routeB.value) {
+              sum += value.spells[item].star;
+            }
+            playerBScore.value = sum;
+            layoutRef.value?.showAlert("比赛已结束，等待房主操作", "red");
+            confirmed.value = false;
+            if (playerAScore.value * 2 + spendTimeScore.value > playerBScore.value * 2) {
+              winFlag.value = -1;
+            } else {
+              winFlag.value = 1;
+            }
+          } else {
+            if (!gamePaused.value && value.link_data.start_ms_b) {
+              linkStartTime.value = value.link_data.start_ms_b;
+              nextTick(() => {
+                countdownRef.value?.start();
+              });
+            } else {
+              countdownRef.value?.stop();
+            }
+          }
+        }
+
+        nextTick(() => {
+          nextTick(() => {
+            if (routeComplete.value && value.phase > 1) {
+              confirmed.value = true;
+              availableIndexList.value = [];
+            } else {
+              getAvailableIndexList();
+            }
+          });
+        });
+
+        delete value.link_data.link_idx_a;
+        delete value.link_data.link_idx_b;
+      }
+    };
 
     const startGame = () => {
       if (roomSettings.value.gamebp && !inMatch.value) {
@@ -932,25 +1038,37 @@ export default defineComponent({
           if ((checked.value as number) < 0) {
             store.dispatch("stop_game", { winner: -1 }).then(() => {
               store.dispatch("set_phase", { phase: 0 });
+              linkStartTime.value = 0;
             });
           } else {
             store.dispatch("stop_game", { winner: checked.value }).then(() => {
               store.dispatch("set_phase", { phase: 0 });
+              linkStartTime.value = 0;
             });
           }
         })
         .catch(() => {});
     };
     const pauseGame = () => {
-      store.dispatch("pause", { pause: true });
+      if (isBingoLink.value) {
+        store.dispatch("link_time", { whose: gamePhase.value > 2 ? 1 : 0, event: 2 });
+      } else {
+        store.dispatch("pause", { pause: true });
+      }
     };
     const resumeGame = () => {
-      store.dispatch("pause", { pause: false });
+      if (isBingoLink.value) {
+        store.dispatch("link_time", { whose: gamePhase.value > 2 ? 1 : 0, event: 1 });
+      } else {
+        store.dispatch("pause", { pause: false });
+      }
     };
     const confirmWinner = () => {
       store.dispatch("stop_game", { winner: winFlag.value < 0 ? 0 : 1 }).then(() => {
-        winFlag.value = 0;
-        countdownRef.value?.stop();
+        store.dispatch("set_phase", { phase: 0 }).then(() => {
+          winFlag.value = 0;
+          countdownRef.value?.stop();
+        });
       });
     };
     const confirmSelect = () => {
@@ -1000,27 +1118,43 @@ export default defineComponent({
       });
     };
     const onCountDownComplete = () => {
-      if (gamePhase.value === 1) {
-        if (isOwner.value) {
-          store.dispatch("set_phase", { phase: 2 }).then(() => {
-            countdownRef.value?.start();
-          });
-        } else {
-          store.dispatch("get_spells");
-        }
-      } else if (gamePhase.value === 2) {
-        if (isOwner.value) {
-          let countA = 0;
-          let countB = 0;
-          for (let item of gameData.value.status) {
-            if (item === 5) {
-              countA += item;
-            } else if (item === 7) {
-              countB += item;
-            }
+      if (isBingoLink.value) {
+        if (gamePhase.value === 1) {
+          if (routeComplete.value) {
+            availableIndexList.value = [];
+            confirmed.value = true;
           }
-          if (countA !== countB) {
-            store.dispatch("set_phase", { phase: 0 });
+          if (isOwner.value) {
+            store.dispatch("set_phase", { phase: 2 }).then(() => {
+              store.dispatch("link_time", { whose: 0, event: 1 }).then(() => {
+                countdownRef.value?.start();
+              });
+            });
+          }
+        }
+      } else {
+        if (gamePhase.value === 1) {
+          if (isOwner.value) {
+            store.dispatch("set_phase", { phase: 2 }).then(() => {
+              countdownRef.value?.start();
+            });
+          } else {
+            store.dispatch("get_spells");
+          }
+        } else if (gamePhase.value === 2) {
+          if (isOwner.value) {
+            let countA = 0;
+            let countB = 0;
+            for (let item of gameData.value.status) {
+              if (item === 5) {
+                countA += item;
+              } else if (item === 7) {
+                countB += item;
+              }
+            }
+            if (countA !== countB) {
+              store.dispatch("set_phase", { phase: 0 });
+            }
           }
         }
       }
@@ -1075,8 +1209,41 @@ export default defineComponent({
         layoutRef.value?.hideAlert();
       }
 
-      if (isBingoLink.value && !isHost.value) {
-        getAvailableIndexList();
+      if (isBingoLink.value) {
+        Mit.on("A_link_change", (index) => {
+          if (isHost.value || isWatcher.value) {
+            if (!(gamePhase.value === 2)) {
+              link("A", index as number);
+            }
+          } else if (gamePhase.value > 1) {
+            link("A", index as number);
+          }
+        });
+        Mit.on("B_link_change", (index) => {
+          if (isHost.value || isWatcher.value) {
+            if (!(gamePhase.value === 2)) {
+              link("B", index as number);
+            }
+          } else if (gamePhase.value > 1) {
+            link("B", index as number);
+          }
+        });
+        if (!isHost.value) {
+          getAvailableIndexList();
+        }
+      }
+    });
+
+    onUnmounted(() => {
+      if (isBingoLink.value) {
+        Mit.off("A_link_change");
+        Mit.off("B_link_change");
+      }
+    });
+
+    watch(gamePhase, (newVal, oldVal) => {
+      if (oldVal === 2 && newVal === 3) {
+        Mit.emit("right_link_start");
       }
     });
 
@@ -1089,18 +1256,29 @@ export default defineComponent({
           });
           store.commit("clear_ban_pick_info");
         } else {
-          if (isHost.value && newVal.phase < 2) {
-            store.dispatch("set_phase", { phase: 2 });
-          }
-          nextTick(() => {
-            countdownRef.value?.start();
-            if (newVal.pause_begin_ms) {
-              countdownRef.value?.pause();
+          if (isBingoLink.value) {
+            if (!newVal.link_data.start_ms_a && newVal.phase !== 2) {
+              store.dispatch("set_phase", { phase: 2 }).then(() => {
+                store.dispatch("link_time", { whose: 0, event: 1 }).then(() => {
+                  countdownRef.value?.start();
+                });
+              });
             }
-          });
+          } else {
+            if (isHost.value && newVal.phase < 2) {
+              store.dispatch("set_phase", { phase: 2 });
+            }
+            nextTick(() => {
+              countdownRef.value?.start();
+              if (newVal.pause_begin_ms) {
+                countdownRef.value?.pause();
+              }
+            });
+          }
         }
       } else {
         store.commit("change_game_state", false);
+        availableIndexList.value = [];
       }
 
       if (newVal.phase === 2 && oldVal.phase === 1 && !isHost.value) {
@@ -1115,8 +1293,12 @@ export default defineComponent({
         if (isBingoBp.value) {
           decideBp(status);
         }
-        if (isBingoLink.value) {
-          decideLink(status);
+      }
+
+      if (isBingoLink.value) {
+        winFlag.value = 0;
+        if (newVal.link_data) {
+          decideLink(newVal);
         }
       }
     });
@@ -1227,10 +1409,12 @@ export default defineComponent({
       routeB,
       spendTimeA,
       spendTimeB,
+      linkStartTime,
       availableIndexList,
       routeComplete,
       countdownMode,
       spendTimeScore,
+      confirmed,
       startGame,
       drawSpellCard,
       stopGame,
@@ -1265,5 +1449,10 @@ export default defineComponent({
   left: 0;
   pointer-events: none;
   z-index: 99;
+}
+
+.spell-card-score-text {
+  font-size: 12px;
+  height: 16px;
 }
 </style>
