@@ -1185,9 +1185,23 @@ export default defineComponent({
       });
     };
     const playerBanPick = () => {
-      store.dispatch("ban_pick", {
-        selection: bpCode.value || "",
-      });
+      if (!bpCode.value) {
+        ElMessageBox.confirm("你没有选择作品，是否确认不选择？", "提示", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning",
+        })
+          .then(() => {
+            store.dispatch("ban_pick", {
+              selection: "",
+            });
+          })
+          .catch(() => {});
+      } else {
+        store.dispatch("ban_pick", {
+          selection: bpCode.value,
+        });
+      }
     };
     const confirmOpenEX = (flag: boolean) => {
       if (flag) {

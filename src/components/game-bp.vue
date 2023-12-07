@@ -35,13 +35,13 @@
           <div class="title">选择作品</div>
           <div class="selected-game-list A-selected">
             <div class="game-item" v-for="(game, index) in ASelectedList" :key="index">
-              {{ game === "EX" ? game : `TH${game}` }}
+              {{ getGameText(game) }}
             </div>
           </div>
           <div class="title">禁用作品</div>
           <div class="selected-game-list banned">
             <div class="game-item" v-for="(game, index) in ABannedList" :key="index">
-              {{ game === "EX" ? game : `TH${game}` }}
+              {{ getGameText(game) }}
             </div>
           </div>
         </el-col>
@@ -49,13 +49,13 @@
           <div class="title">选择作品</div>
           <div class="selected-game-list B-selected">
             <div class="game-item" v-for="(game, index) in BSelectedList" :key="index">
-              {{ game === "EX" ? game : `TH${game}` }}
+              {{ getGameText(game) }}
             </div>
           </div>
           <div class="title">禁用作品</div>
           <div class="selected-game-list banned">
             <div class="game-item" v-for="(game, index) in BBannedList" :key="index">
-              {{ game === "EX" ? game : `TH${game}` }}
+              {{ getGameText(game) }}
             </div>
           </div>
         </el-col>
@@ -169,6 +169,26 @@ export default defineComponent({
       return "";
     });
 
+    const selectGame = (code: string) => {
+      if (phase.value > 99) return;
+      const list = [...ASelectedList.value, ...BSelectedList.value, ...ABannedList.value, ...BBannedList.value];
+      if (list.includes(code)) return;
+      if (props.modelValue === code) {
+        context.emit("update:modelValue", "");
+      } else {
+        context.emit("update:modelValue", code);
+      }
+    };
+    const getGameText = (code: string) => {
+      if (!code) {
+        return "—";
+      } else if (code === "EX") {
+        return "EX";
+      } else {
+        return `TH${code}`;
+      }
+    };
+
     watch(
       () => store.getters.banPickInfo,
       (newVal, oldVal) => {
@@ -202,17 +222,6 @@ export default defineComponent({
       { immediate: true }
     );
 
-    const selectGame = (code: string) => {
-      if (phase.value > 99) return;
-      const list = [...ASelectedList.value, ...BSelectedList.value, ...ABannedList.value, ...BBannedList.value];
-      if (list.includes(code)) return;
-      if (props.modelValue === code) {
-        context.emit("update:modelValue", "");
-      } else {
-        context.emit("update:modelValue", code);
-      }
-    };
-
     return {
       gameList,
       ASelectedList,
@@ -229,6 +238,7 @@ export default defineComponent({
       openEX,
       availableGameList,
       selectGame,
+      getGameText,
     };
   },
 });
