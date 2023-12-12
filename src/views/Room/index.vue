@@ -1133,7 +1133,7 @@ export default defineComponent({
             });
           }
         }
-      } else if (isBingoBp) {
+      } else if (isBingoBp.value) {
         return;
       } else {
         if (gamePhase.value === 1) {
