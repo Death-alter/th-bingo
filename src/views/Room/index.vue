@@ -72,6 +72,7 @@
 
       <template #widget>
         <count-down
+          v-if="!isBingoBp || gamePhase < 2"
           ref="countdownRef"
           :size="30"
           :start-time="linkStartTime"
@@ -1132,6 +1133,8 @@ export default defineComponent({
             });
           }
         }
+      } else if (isBingoBp) {
+        return;
       } else {
         if (gamePhase.value === 1) {
           if (isOwner.value) {
