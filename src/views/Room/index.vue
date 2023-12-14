@@ -609,6 +609,11 @@ export default defineComponent({
       }
 
       if (GameTime.timeout > 0 && countA !== countB) {
+        if (countA > countB) {
+          winFlag.value = -14;
+        } else {
+          winFlag.value = 14;
+        }
         if (!isHost.value) layoutRef.value?.showAlert("游戏时间到，等待房主判断胜负", "red");
         if (isOwner.value && gamePhase.value !== 0) {
           store.dispatch("set_phase", { phase: 0 });
@@ -1282,7 +1287,6 @@ export default defineComponent({
         } else {
           if (isBingoLink.value) {
             if (!newVal.link_data.start_ms_a && newVal.phase !== 2) {
-              console.log(1);
               store.dispatch("set_phase", { phase: 2 }).then(() => {
                 store.dispatch("link_time", { whose: 0, event: 1 }).then(() => {
                   countdownRef.value?.start();
