@@ -21,6 +21,10 @@ export default abstract class {
     return store.getters.gameData.pause_begin_ms || 0;
   }
 
+  static get pauseEnd(): number {
+    return store.getters.gameData.pause_end_ms || 0;
+  }
+
   static get totalPause(): number {
     return store.getters.gameData.total_pause_time || 0;
   }
@@ -72,3 +76,7 @@ export default abstract class {
     return time + this.mistake;
   }
 }
+
+// start_time:游戏开始的时间
+// total_pause_time:总共暂停时间
+// 

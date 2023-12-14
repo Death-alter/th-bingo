@@ -542,13 +542,13 @@ export default defineComponent({
 
     onMounted(() => {
       userName.value = userData.value && userData.value.userName;
-      roomType.value = roomData.value && roomData.value.type;
+      if (roomData.value?.type) roomType.value = roomData.value.type;
       const savedSettings = Storage.local.get("roomSettings");
       if (savedSettings) {
-        if (savedSettings.gameTimeLimit != null && roomType.value) {
+        if (savedSettings.gameTimeLimit != null) {
           roomSettings.gameTimeLimit = savedSettings.gameTimeLimit[roomType.value];
         }
-        if (savedSettings.countdownTime != null && roomType.value) {
+        if (savedSettings.countdownTime != null) {
           roomSettings.countdownTime = savedSettings.countdownTime[roomType.value];
         }
         if (savedSettings.cdTime != null) roomSettings.cdTime = savedSettings.cdTime;
@@ -562,7 +562,7 @@ export default defineComponent({
         if (savedSettings.bgmMuted != null) roomSettings.bgmMuted = savedSettings.bgmMuted;
         if (savedSettings.gamebp != null) roomSettings.gamebp = savedSettings.gamebp;
         if (savedSettings.confirmDelay != null) roomSettings.confirmDelay = savedSettings.confirmDelay;
-      } else if (roomType.value) {
+      } else if (roomType.value != null) {
         for (let item of gameTypeList.value) {
           if (item.type === roomType.value) {
             roomSettings.gameTimeLimit = item.timeLimit;

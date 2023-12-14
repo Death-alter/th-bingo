@@ -695,6 +695,7 @@ const list: Array<StoreAction | StoreMutation> = [
         settings.countdownTime = countdownTime;
       }
       Storage.local.set("roomSettings", settings);
+      console.log(newVal)
       return newVal;
     }) as MutationHandler,
   },

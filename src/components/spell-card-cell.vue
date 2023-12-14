@@ -75,22 +75,23 @@ export default defineComponent({
       default: "",
     },
   },
-  setup() {
+  setup(props, context) {
     const store = useStore();
+
+    const onClick = () => {
+      if (!props.disabled) {
+        context.emit("click");
+      }
+    };
+
     return {
       roomSettings: computed(() => store.getters.roomSettings),
       isPlayerA: computed(() => store.getters.isPlayerA),
       isPlayerB: computed(() => store.getters.isPlayerB),
+      onClick,
     };
   },
   emits: ["click"],
-  methods: {
-    onClick() {
-      if (!this.disabled) {
-        this.$emit("click");
-      }
-    },
-  },
 });
 </script>
 

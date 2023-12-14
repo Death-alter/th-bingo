@@ -1,39 +1,36 @@
 <template>
   <div class="bingo-effect">
-    <konva-stage ref="stage" :config="stageConfig">
-      <konva-layer ref="layer"></konva-layer>
+    <konva-stage ref="stageRef" :config="stageConfig">
+      <konva-layer ref="layerRef"></konva-layer>
     </konva-stage>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, onMounted } from "vue";
 import Konva from "konva";
 
 export default defineComponent({
   name: "BingoEffect",
-  data() {
-    return {
-      stageConfig: { width: 300, height: 300 },
-      stageNode: null as any,
-      layerNode: null as any,
-    };
-  },
   setup() {
-    const stage = ref();
-    const layer = ref();
+    const stageConfig = { width: 300, height: 300 };
+    const stageNode = ref<HTMLElement>();
+    const layerNode = ref<HTMLElement>();
+    const stageRef = ref();
+    const layerRef = ref();
+
+    onMounted(() => {
+      stageNode.value = stageRef.value.getNode();
+      layerNode.value = layerRef.value.getNode();
+    });
 
     return {
-      stage,
-      layer,
+      stageConfig,
+      stageNode,
+      layerNode,
+      stageRef,
+      layerRef,
     };
-  },
-  mounted() {
-    this.stageNode = this.stage.getNode();
-    this.layerNode = this.layer.getNode();
-  },
-  methods: {
-    link() {},
   },
 });
 </script>

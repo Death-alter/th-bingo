@@ -330,6 +330,7 @@ export default defineComponent({
     });
     const selectCooldownStart = computed(() => {
       const lastGetTime = store.getters.gameData.last_get_time;
+      console.log(lastGetTime);
       if (isPlayerA.value) {
         return lastGetTime[0];
       } else if (isPlayerB.value) {
@@ -1092,7 +1093,7 @@ export default defineComponent({
             selectedSpellIndex.value = -1;
           });
         }
-        const time = GameTime.current;
+        const time = GameTime.passed;
         attainCooldownStart.value = time;
         Storage.local.set("attainCooldownStart", time);
       }
@@ -1102,14 +1103,14 @@ export default defineComponent({
         store.dispatch("update_spell", { idx: playerASelectedIndex.value, status: 5 });
         store.commit("set_last_get_time", {
           index: 0,
-          time: new Date().getTime() + timeMistake.value,
+          time: GameTime.passed,
         });
       }
       if (isPlayerB.value) {
         store.dispatch("update_spell", { idx: playerBSelectedIndex.value, status: 7 });
         store.commit("set_last_get_time", {
           index: 1,
-          time: new Date().getTime() + timeMistake.value,
+          time: GameTime.passed,
         });
       }
     };

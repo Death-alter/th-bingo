@@ -1,6 +1,6 @@
 <template>
   <div class="right-click-menu-wrap">
-    <div ref="innerElement" class="right-click-menu-inner">
+    <div ref="innerElementRef" class="right-click-menu-inner">
       <slot></slot>
     </div>
     <div class="right-click-menu" v-show="showMenu" :style="{ left: left + 'px', top: top + 'px' }">
@@ -22,24 +22,10 @@
   </div>
 </template>
 <script lang="ts">
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, watch, onMounted } from "vue";
 
 export default defineComponent({
   name: "RightClickMenu",
-  data() {
-    return {
-      showMenu: false,
-      left: 0,
-      top: 0,
-      targetElement: null,
-      timer: 0,
-    };
-  },
-  emits: ["click"],
-  setup() {
-    const innerElement = ref();
-    return { innerElement };
-  },
   props: {
     menuData: {
       type: Array,
@@ -50,85 +36,107 @@ export default defineComponent({
       default: false,
     },
   },
-  mounted() {
-    if (!this.disabled) {
-      this.enableRightClick();
-    }
-  },
-  watch: {
-    disabled: {
-      handler(val) {
-        if (val) {
-          this.disableRightClick();
-        } else {
-          this.enableRightClick();
-        }
-      },
-      immediate: true,
-    },
-  },
-  methods: {
-    onMenuItemClick(e: any, item: any) {
-      this.$emit("click", { event: e, target: this.targetElement, item });
-      this.showMenu = false;
+  emits: ["click"],
+  setup(props, context) {
+    const innerElementRef = ref();
+    const showMenu = ref(false);
+    const left = ref(0);
+    const top = ref(0);
+    const targetElement = ref<HTMLElement>();
+    const timer = ref(0);
+
+    const onMenuItemClick = (e: any, item: any) => {
       e.stopPropagation();
-    },
-    enableRightClick() {
-      if (this.innerElement) {
-        this.innerElement.oncontextmenu = (e: any) => {
+      if (!targetElement.value) return;
+      context.emit("click", { event: e, target: targetElement.value, item });
+      showMenu.value = false;
+    };
+    const enableRightClick = () => {
+      if (innerElementRef.value) {
+        innerElementRef.value.oncontextmenu = (e: any) => {
           e.preventDefault();
           return false;
         };
-        this.innerElement.addEventListener("mouseup", this.onMouseUp);
-        this.innerElement.addEventListener("touchstart", this.onTouchStart);
+        innerElementRef.value.addEventListener("mouseup", onMouseUp);
+        innerElementRef.value.addEventListener("touchstart", onTouchStart);
       }
-    },
-    disableRightClick() {
-      if (this.innerElement) {
-        this.innerElement.oncontextmenu = null;
-        this.innerElement.removeEventListener("mouseup", this.onMouseUp);
-        this.innerElement.removeEventListener("touchstart", this.onTouchStart);
+    };
+    const disableRightClick = () => {
+      if (innerElementRef.value) {
+        innerElementRef.value.oncontextmenu = null;
+        innerElementRef.value.removeEventListener("mouseup", onMouseUp);
+        innerElementRef.value.removeEventListener("touchstart", onTouchStart);
       }
-    },
-    onMouseUp(e: any) {
+    };
+    const hideMenu = () => {
+      showMenu.value = false;
+      document.removeEventListener("click", hideMenu);
+    };
+    const onMouseUp = (e: any) => {
       if (e.button === 2) {
-        this.showMenu = true;
-        this.left = e.offsetX + e.target.offsetLeft + 10;
-        this.top = e.offsetY + e.target.offsetTop;
-        this.targetElement = e.target;
+        showMenu.value = true;
+        left.value = e.offsetX + e.target.offsetLeft + 10;
+        top.value = e.offsetY + e.target.offsetTop;
+        targetElement.value = e.target;
       }
-      const hideMenu = () => {
-        this.showMenu = false;
-        document.removeEventListener("click", hideMenu);
-      };
       document.addEventListener("click", hideMenu);
-    },
-    onTouchStart(e: any) {
+    };
+    const onTouchStart = (e: any) => {
       if (e.touches.length === 1) {
         let flag = false;
-        this.timer = window.setTimeout(() => {
+        timer.value = window.setTimeout(() => {
           flag = true;
-          this.showMenu = true;
-          this.left = e.touches[0].pageX - e.target.offsetParent.getBoundingClientRect().left + 10;
-          this.top = e.touches[0].pageY - e.target.offsetParent.getBoundingClientRect().top;
-          this.targetElement = e.target;
-
-          const hideMenu = () => {
-            this.showMenu = false;
-            document.removeEventListener("click", hideMenu);
-          };
+          showMenu.value = true;
+          left.value = e.touches[0].pageX - e.target.offsetParent.getBoundingClientRect().left + 10;
+          top.value = e.touches[0].pageY - e.target.offsetParent.getBoundingClientRect().top;
+          targetElement.value = e.target;
           document.addEventListener("click", hideMenu);
         }, 500);
         const onTouchEnd = () => {
           if (!flag) {
-            window.clearInterval(this.timer);
-            this.timer = 0;
+            window.clearInterval(timer.value);
+            timer.value = 0;
           }
-          this.innerElement.removeEventListener("touchend", onTouchEnd);
+          innerElementRef.value.removeEventListener("touchend", onTouchEnd);
         };
-        this.innerElement.addEventListener("touchend", onTouchEnd);
+        innerElementRef.value.addEventListener("touchend", onTouchEnd);
       }
-    },
+    };
+
+    watch(
+      () => props.disabled,
+      (val) => {
+        if (val) {
+          disableRightClick();
+        } else {
+          enableRightClick();
+        }
+      },
+      {
+        immediate: true,
+      }
+    );
+
+    onMounted(() => {
+      if (!props.disabled) {
+        enableRightClick();
+      }
+    });
+
+    return {
+      innerElementRef,
+      showMenu,
+      left,
+      top,
+      targetElement,
+      timer,
+      onMenuItemClick,
+      enableRightClick,
+      disableRightClick,
+      hideMenu,
+      onMouseUp,
+      onTouchStart,
+    };
   },
 });
 </script>

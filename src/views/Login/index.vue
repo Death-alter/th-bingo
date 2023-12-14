@@ -12,30 +12,36 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, ref } from "vue";
+import { useRouter } from "vue-router";
+import { useStore } from "vuex";
 import { ElInput, ElButton } from "element-plus";
 import { Md5 } from "ts-md5";
 import Storage from "@/utils/Storage";
 
 export default defineComponent({
   name: "Login",
-  data() {
-    return {
-      userName: "",
-    };
-  },
   components: { ElInput, ElButton },
-  methods: {
-    login() {
+  setup() {
+    const router = useRouter();
+    const store = useStore();
+    const userName = ref("");
+
+    const login = () => {
       if (!Storage.local.has("userData")) {
         Storage.local.set("userData", {
-          userName: this.userName,
-          token: Md5.hashStr(this.userName + new Date().getTime()),
+          userName: userName.value,
+          token: Md5.hashStr(userName.value + new Date().getTime()),
         });
-        this.$store.commit("get_user_data");
+        store.commit("get_user_data");
       }
-      this.$router.push("/");
-    },
+      router.push("/");
+    };
+
+    return {
+      userName,
+      login,
+    };
   },
 });
 </script>

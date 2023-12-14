@@ -1,7 +1,6 @@
 import { createGetter, createAsyncMutations, createSyncMutation, createAction } from "./utils";
 import storeItems from "./storeItems";
 import { MutationHandler, ActionHandler, VuexState, Role, BpStatus } from "@/types";
-import { fa } from "element-plus/es/locale";
 
 const config = {
   state: {},
@@ -123,7 +122,5 @@ for (const item of storeItems) {
     );
   }
 }
-
-console.log(config);
 
 export default config;

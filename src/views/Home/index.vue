@@ -30,43 +30,14 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ref } from "vue";
+import { defineComponent, computed, ref, reactive } from "vue";
 import { ElInput, ElButton, ElForm, ElFormItem, ElCheckbox } from "element-plus";
 import { useStore } from "vuex";
+import { useRouter } from "vue-router";
 import type { FormInstance } from "element-plus";
 
 export default defineComponent({
   name: "Home",
-  data() {
-    return {
-      form: {
-        roomPassword: "",
-        soloMode: false,
-        addRobot: false,
-      },
-      rules: {
-        roomPassword: [
-          { required: true, message: "请输入密码", trigger: "blur" },
-          {
-            min: 4,
-            max: 16,
-            message: "密码长度应为4-16个数字",
-            trigger: "blur",
-          },
-          {
-            validator: (rule: any, value: any, callback: any) => {
-              if (/\D/.test(value)) {
-                callback(new Error("密码只能使用数字"));
-              } else {
-                callback();
-              }
-            },
-            trigger: "blur",
-          },
-        ],
-      },
-    };
-  },
   components: {
     ElInput,
     ElButton,
@@ -76,64 +47,96 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
+    const router = useRouter();
     const formRef = ref<FormInstance>();
     const roomSettings = computed(() => store.getters.roomSettings);
-
-    return {
-      formRef,
-      userData: computed(() => store.getters.userData),
-      roomSettings,
+    const userData = computed(() => store.getters.userData);
+    const form = reactive({
+      roomPassword: "",
+      soloMode: false,
+      addRobot: false,
+    });
+    const rules = {
+      roomPassword: [
+        { required: true, message: "请输入密码", trigger: "blur" },
+        {
+          min: 4,
+          max: 16,
+          message: "密码长度应为4-16个数字",
+          trigger: "blur",
+        },
+        {
+          validator: (rule: any, value: any, callback: any) => {
+            if (/\D/.test(value)) {
+              callback(new Error("密码只能使用数字"));
+            } else {
+              callback();
+            }
+          },
+          trigger: "blur",
+        },
+      ],
     };
-  },
-  methods: {
-    createRoom() {
-      if (!this.formRef) return;
-      this.formRef.validate((valid, fields) => {
+
+    const createRoom = () => {
+      if (!formRef.value) return;
+      formRef.value.validate((valid, fields) => {
         if (valid) {
-          this.$store
+          store
             .dispatch("create_room", {
-              name: this.userData.userName,
-              rid: this.form.roomPassword,
-              solo: this.form.soloMode,
-              add_robot: this.form.addRobot,
+              name: userData.value.userName,
+              rid: form.roomPassword,
+              solo: form.soloMode,
+              add_robot: form.addRobot,
               room_config: {
-                game_time: this.roomSettings.gameTimeLimit,
-                countdown: this.roomSettings.countdownTime,
-                games: this.roomSettings.checkList,
-                ranks: this.roomSettings.rankList,
-                need_win: (this.roomSettings.format + 1) / 2,
-                difficulty: this.roomSettings.difficulty,
-                is_private: this.roomSettings.private,
-                cd_time: this.roomSettings.cdTime,
+                game_time: roomSettings.value.gameTimeLimit,
+                countdown: roomSettings.value.countdownTime,
+                games: roomSettings.value.checkList,
+                ranks: roomSettings.value.rankList,
+                need_win: (roomSettings.value.format + 1) / 2,
+                difficulty: roomSettings.value.difficulty,
+                is_private: roomSettings.value.private,
+                cd_time: roomSettings.value.cdTime,
               },
               type: 1,
             })
             .then(() => {
-              this.$router.push(`/room/${this.form.roomPassword}`);
+              router.push(`/room/${form.roomPassword}`);
             });
         }
       });
-    },
-    joinRoom() {
-      if (!this.formRef) return;
-      this.formRef.validate((valid, fields) => {
+    };
+    const joinRoom = () => {
+      if (!formRef.value) return;
+      formRef.value.validate((valid, fields) => {
         if (valid) {
-          this.$store
+          store
             .dispatch("join_room", {
-              name: this.userData.userName,
-              rid: this.form.roomPassword,
+              name: userData.value.userName,
+              rid: form.roomPassword,
             })
             .then(() => {
-              this.$router.push(`/room/${this.form.roomPassword}`);
+              router.push(`/room/${form.roomPassword}`);
             });
         }
       });
-    },
-    onChangeSoloMode(val) {
+    };
+    const onChangeSoloMode = (val) => {
       if (!val) {
-        this.form.addRobot = false;
+        form.addRobot = false;
       }
-    },
+    };
+
+    return {
+      formRef,
+      userData,
+      roomSettings,
+      form,
+      rules,
+      createRoom,
+      joinRoom,
+      onChangeSoloMode,
+    };
   },
 });
 </script>

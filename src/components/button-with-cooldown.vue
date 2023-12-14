@@ -3,8 +3,10 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, ref, onMounted, onUnmounted, computed } from "vue";
+import { useStore } from "vuex";
 import { ElButton } from "element-plus";
+import GameTime from "@/utils/GameTime";
 
 export default defineComponent({
   name: "ButtonWithCooldown",
@@ -32,55 +34,74 @@ export default defineComponent({
     },
     startTime: {
       type: Number,
+      required: true,
     },
     immediate: {
       type: Boolean,
       default: true,
     },
   },
-  mounted() {
-    this.label = this.text;
-    if (this.immediate) {
-      this.cooling();
-    }
-  },
-  unmounted() {
-    this.locked = false;
-  },
-  methods: {
-    cooling() {
-      if (this.cooldown > 0) {
-        let second: number;
-        if (this.startTime == null) {
-          second = this.cooldown;
-        } else {
-          const time = new Date().getTime() + this.$store.getters.heartBeat.timeMistake - this.startTime;
-          second = this.cooldown - Math.floor(time / 1000);
-          if (second < 0) second = 0;
-        }
+  setup(props, context) {
+    const store = useStore();
+
+    const label = ref("");
+    const locked = ref(false);
+    const timer = ref(0);
+    const gamePaused = computed(() => store.getters.gamePaused);
+
+    const getSecond = () => {
+      let second;
+      console.log(props.startTime);
+      if (props.startTime === 0) {
+        return 0;
+      } else {
+        const time = GameTime.passed - props.startTime;
+        second = props.cooldown - Math.floor(time / 1000);
+        if (second < 0) second = 0;
+      }
+      return second;
+    };
+
+    const cooling = () => {
+      if (props.cooldown > 0) {
+        const second = getSecond();
         if (second > 0) {
-          this.locked = true;
-          this.label = `${second}秒后可` + this.text;
-          if (this.timer) window.clearInterval(this.timer);
-          this.timer = window.setInterval(() => {
-            if (!this.startTime) {
-              --second;
-            } else {
-              const time = new Date().getTime() + this.$store.getters.heartBeat.timeMistake - this.startTime;
-              second = this.cooldown - Math.floor(time / 1000);
-            }
+          locked.value = true;
+          label.value = `${second}秒后可` + props.text;
+          if (timer.value) window.clearInterval(timer.value);
+          timer.value = window.setInterval(() => {
+            const second = getSecond();
             if (second <= 0) {
-              this.label = this.text;
-              window.clearInterval(this.timer);
-              this.timer = 0;
-              this.locked = false;
+              label.value = props.text;
+              window.clearInterval(timer.value);
+              timer.value = 0;
+              locked.value = false;
             } else {
-              this.label = `${second}秒后可` + this.text;
+              label.value = `${second}秒后可` + props.text;
             }
           }, 1000);
         }
       }
-    },
+    };
+
+    onMounted(() => {
+      label.value = props.text;
+      if (props.immediate) {
+        cooling();
+      }
+    });
+    onUnmounted(() => {
+      locked.value = false;
+    });
+
+    return {
+      label,
+      locked,
+      timer,
+      gamePaused,
+      getSecond,
+      cooling,
+    };
   },
 });
 </script>
