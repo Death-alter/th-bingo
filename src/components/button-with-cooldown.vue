@@ -51,7 +51,6 @@ export default defineComponent({
 
     const getSecond = () => {
       let second;
-      console.log(props.startTime);
       if (props.startTime === 0) {
         return 0;
       } else {

@@ -330,7 +330,6 @@ export default defineComponent({
     });
     const selectCooldownStart = computed(() => {
       const lastGetTime = store.getters.gameData.last_get_time;
-      console.log(lastGetTime);
       if (isPlayerA.value) {
         return lastGetTime[0];
       } else if (isPlayerB.value) {
@@ -597,17 +596,20 @@ export default defineComponent({
       if (countB >= 13) {
         winFlag.value = 13;
       }
-      if (winFlag.value !== 0) {
-        if (soloMode.value && isPlayerA.value) {
-          confirmWinner();
-        }
-        if (!soloMode.value) {
+
+      if (soloMode.value && isPlayerA.value && winFlag.value !== 0) {
+        confirmWinner();
+      }
+      if (!soloMode.value && !isHost.value) {
+        if (winFlag.value !== 0) {
           layoutRef.value?.showAlert("已满足胜利条件，等待房主判断胜负", "red");
+        } else {
+          layoutRef.value?.hideAlert();
         }
       }
 
       if (GameTime.timeout > 0 && countA !== countB) {
-        layoutRef.value?.showAlert("游戏时间到，等待房主判断胜负", "red");
+        if (!isHost.value) layoutRef.value?.showAlert("游戏时间到，等待房主判断胜负", "red");
         if (isOwner.value && gamePhase.value !== 0) {
           store.dispatch("set_phase", { phase: 0 });
         }
@@ -695,12 +697,16 @@ export default defineComponent({
           winFlag.value = 25;
         }
       }
-      if (winFlag.value !== 0) {
-        layoutRef.value?.showAlert("已满足胜利条件，等待房主判断胜负", "red");
-      }
 
+      if (!isHost.value) {
+        if (winFlag.value !== 0) {
+          layoutRef.value?.showAlert("已满足胜利条件，等待房主判断胜负", "red");
+        } else {
+          layoutRef.value?.hideAlert();
+        }
+      }
       if (GameTime.timeout > 0 && scoreA !== scoreB) {
-        layoutRef.value?.showAlert("游戏时间到，等待房主判断胜负", "red");
+        if (!isHost.value) layoutRef.value?.showAlert("游戏时间到，等待房主判断胜负", "red");
         if (isOwner.value && gamePhase.value !== 0) {
           store.dispatch("set_phase", { phase: 0 });
         }
@@ -913,7 +919,7 @@ export default defineComponent({
               sum += value.spells[item].star;
             }
             playerBScore.value = sum;
-            layoutRef.value?.showAlert("比赛已结束，等待房主操作", "red");
+            if (!isHost.value) layoutRef.value?.showAlert("比赛已结束，等待房主操作", "red");
             confirmed.value = false;
             if (playerAScore.value * 2 + spendTimeScore.value > playerBScore.value * 2) {
               winFlag.value = -1;
@@ -1276,6 +1282,7 @@ export default defineComponent({
         } else {
           if (isBingoLink.value) {
             if (!newVal.link_data.start_ms_a && newVal.phase !== 2) {
+              console.log(1);
               store.dispatch("set_phase", { phase: 2 }).then(() => {
                 store.dispatch("link_time", { whose: 0, event: 1 }).then(() => {
                   countdownRef.value?.start();
@@ -1283,7 +1290,7 @@ export default defineComponent({
               });
             }
           } else {
-            if (isHost.value && newVal.phase < 2) {
+            if (isHost.value && newVal.phase === 1) {
               store.dispatch("set_phase", { phase: 2 });
             }
             nextTick(() => {
