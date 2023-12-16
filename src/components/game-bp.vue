@@ -15,7 +15,7 @@
           :key="index"
           @click="selectGame(game.code)"
         >
-          <el-tooltip :content="game.name" placement="top" effect="light">TH{{ game.code }}</el-tooltip>
+          <img class="game-icon" :src="getGameIcon(game.code)" alt="" />
         </div>
         <div
           v-if="phase < 3"
@@ -26,7 +26,7 @@
           }"
           @click="selectGame('EX')"
         >
-          <el-tooltip content="EX" placement="top" effect="light">EX</el-tooltip>
+          <img class="game-icon" :src="getGameIcon('EX')" alt="" />
         </div>
       </div>
       <div class="tooltip-text">{{ tooltipText }}</div>
@@ -35,13 +35,13 @@
           <div class="title">选择作品</div>
           <div class="selected-game-list A-selected">
             <div class="game-item" v-for="(game, index) in ASelectedList" :key="index">
-              {{ getGameText(game) }}
+              <img class="game-icon" :src="getGameIcon(game)" alt="" />
             </div>
           </div>
           <div class="title">禁用作品</div>
           <div class="selected-game-list banned">
             <div class="game-item" v-for="(game, index) in ABannedList" :key="index">
-              {{ getGameText(game) }}
+              <img class="game-icon" :src="getGameIcon(game)" alt="" />
             </div>
           </div>
         </el-col>
@@ -49,13 +49,13 @@
           <div class="title">选择作品</div>
           <div class="selected-game-list B-selected">
             <div class="game-item" v-for="(game, index) in BSelectedList" :key="index">
-              {{ getGameText(game) }}
+              <img class="game-icon" :src="getGameIcon(game)" alt="" />
             </div>
           </div>
           <div class="title">禁用作品</div>
           <div class="selected-game-list banned">
             <div class="game-item" v-for="(game, index) in BBannedList" :key="index">
-              {{ getGameText(game) }}
+              <img class="game-icon" :src="getGameIcon(game)" alt="" />
             </div>
           </div>
         </el-col>
@@ -64,8 +64,12 @@
     <template v-else>
       <div class="top-text">PB已经结束，本局可能出现以下作品</div>
       <div class="game-list">
-        <div class="game-item" v-for="(game, index) in roomConfig.games" :key="index">TH{{ game }}</div>
-        <div v-if="openEX" class="game-item">EX</div>
+        <div class="game-item" v-for="(game, index) in roomConfig.games" :key="index">
+          <img class="game-icon" :src="getGameIcon(game)" alt="" />
+        </div>
+        <div v-if="openEX" class="game-item">
+          <img class="game-icon" :src="getGameIcon('EX')" alt="" />
+        </div>
       </div>
       <div class="bottom-text">{{ isHost ? "请抽取符卡" : "请等待房主抽取符卡" }}</div>
     </template>
@@ -76,7 +80,7 @@
 import { defineComponent, computed, ref, watch } from "vue";
 import { useStore } from "vuex";
 import Config from "@/config";
-import { ElTooltip, ElRow, ElCol } from "element-plus";
+import { ElRow, ElCol } from "element-plus";
 import { BpStatus, Role } from "@/types";
 
 export default defineComponent({
@@ -84,7 +88,6 @@ export default defineComponent({
   components: {
     ElRow,
     ElCol,
-    ElTooltip,
   },
   props: {
     modelValue: {
@@ -179,13 +182,12 @@ export default defineComponent({
         context.emit("update:modelValue", code);
       }
     };
-    const getGameText = (code: string) => {
-      if (!code) {
-        return "—";
-      } else if (code === "EX") {
-        return "EX";
+    const getGameIcon = (code: string) => {
+      if (code === "EX") {
+        return require("@/assets/image/game/ex.png");
       } else {
-        return `TH${code}`;
+        if (code.length === 1) code = "0" + code;
+        return require(`@/assets/image/game/th${code}.png`);
       }
     };
 
@@ -238,7 +240,7 @@ export default defineComponent({
       openEX,
       availableGameList,
       selectGame,
-      getGameText,
+      getGameIcon,
     };
   },
 });
@@ -280,7 +282,7 @@ export default defineComponent({
     border: 4px solid #000;
     margin: 10px 20px;
     line-height: 48px;
-
+    position: relative;
     user-select: none;
     font-size: 18px;
 
@@ -298,16 +300,31 @@ export default defineComponent({
     &.A-selected.B-selected {
       border-image: linear-gradient(to right, var(--A-color), var(--B-color)) 4;
       background-image: linear-gradient(to right, var(--A-color), var(--B-color));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+
+      &::after {
+        display: block;
+        content: "";
+        opacity: 0.6;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        background-image: linear-gradient(to right, var(--A-color), var(--B-color));
+      }
     }
 
     &.banned {
       color: gray;
       border-color: gray;
-      opacity: 0.5;
+      opacity: 0.8;
       cursor: not-allowed;
       position: relative;
+
+      .game-icon {
+        -webkit-filter: grayscale(50%); /* Chrome, Safari, Opera */
+        filter: grayscale(100%);
+      }
     }
 
     &.banned::after {
@@ -336,6 +353,10 @@ export default defineComponent({
     font-weight: 600;
   }
 
+  .game-icon {
+    width: 100%;
+  }
+
   .selected-game-list {
     display: flex;
     justify-content: center;
@@ -357,7 +378,6 @@ export default defineComponent({
 
     &.banned {
       .game-item {
-        color: gray;
         border-color: gray;
       }
     }
