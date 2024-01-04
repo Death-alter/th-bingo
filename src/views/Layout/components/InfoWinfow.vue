@@ -141,6 +141,14 @@
                     style="margin-right: 0"
                   ></el-checkbox>
                 </el-form-item>
+                <el-form-item label="全局BP：" v-if="roomSettings.gamebp">
+                  <el-checkbox
+                    v-model="roomSettings.matchbp"
+                    :disabled="inGame"
+                    @change="synchroRoomSettings"
+                    style="margin-right: 0"
+                  ></el-checkbox>
+                </el-form-item>
                 <el-form-item label="题目：" v-if="!roomSettings.gamebp">
                   <el-checkbox-group
                     v-model="roomSettings.checkList"
@@ -391,6 +399,7 @@ export default defineComponent({
       private: false,
       bgmMuted: false,
       gamebp: false,
+      matchbp: false,
       confirmDelay: 5,
       playerA: {
         color: "hsl(16, 100%, 50%)",
@@ -561,6 +570,7 @@ export default defineComponent({
         if (savedSettings.playerB != null) roomSettings.playerB = savedSettings.playerB;
         if (savedSettings.bgmMuted != null) roomSettings.bgmMuted = savedSettings.bgmMuted;
         if (savedSettings.gamebp != null) roomSettings.gamebp = savedSettings.gamebp;
+        if (savedSettings.matchbp != null) roomSettings.matchbp = savedSettings.matchbp;
         if (savedSettings.confirmDelay != null) roomSettings.confirmDelay = savedSettings.confirmDelay;
       } else if (roomType.value != null) {
         for (let item of gameTypeList.value) {

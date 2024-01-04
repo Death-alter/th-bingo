@@ -277,6 +277,7 @@ export default defineComponent({
     const isBingoBp = computed(() => store.getters.roomData.type === BingoType.BP);
     const isBingoLink = computed(() => store.getters.roomData.type === BingoType.LINK);
     const inGame = computed(() => store.getters.inGame);
+    const inMatch = computed(() => store.getters.inMatch);
     const isBpPhase = computed(
       () =>
         store.getters.banPickInfo.phase &&
@@ -954,7 +955,7 @@ export default defineComponent({
     };
 
     const startGame = () => {
-      if (roomSettings.value.gamebp) {
+      if (roomSettings.value.gamebp && (!roomSettings.value.matchbp || !inMatch.value)) {
         store.dispatch("start_ban_pick", {
           who_first: 0,
         });
@@ -1408,6 +1409,7 @@ export default defineComponent({
       isBingoLink,
       soloMode,
       inGame,
+      inMatch,
       bpStatus,
       isBpPhase,
       playerASelectedIndex,
