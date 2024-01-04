@@ -137,7 +137,7 @@
               <el-button
                 type="primary"
                 @click="confirmSelect"
-                :disabled="!isMyTurn || !bingoBpPhase"
+                :disabled="!isMyTurn || !bingoBpPhase || selectedSpellIndex < 0"
                 v-if="!gameData.ban_pick"
                 >{{ bingoBpPhase ? (isMyTurn ? "选择符卡" : "等待对手选择符卡") : "等待房主操作" }}</el-button
               >
@@ -145,7 +145,7 @@
                 type="primary"
                 @click="confirmBan"
                 v-if="gameData.ban_pick"
-                :disabled="!isMyTurn || !bingoBpPhase"
+                :disabled="!isMyTurn || !bingoBpPhase || selectedSpellIndex < 0"
                 >{{ bingoBpPhase ? (isMyTurn ? "禁用符卡" : "等待对手禁用符卡") : "等待房主操作" }}</el-button
               >
             </template>
@@ -277,7 +277,6 @@ export default defineComponent({
     const isBingoBp = computed(() => store.getters.roomData.type === BingoType.BP);
     const isBingoLink = computed(() => store.getters.roomData.type === BingoType.LINK);
     const inGame = computed(() => store.getters.inGame);
-    const inMatch = computed(() => store.getters.inMatch);
     const isBpPhase = computed(
       () =>
         store.getters.banPickInfo.phase &&
@@ -632,6 +631,7 @@ export default defineComponent({
       store.dispatch("next_round");
     };
     const confirmBan = () => {
+      if (selectedSpellIndex.value === -1) return;
       store.dispatch("update_spell", { idx: selectedSpellIndex.value, status: -1 }).then(() => {
         selectedSpellIndex.value = -1;
       });
@@ -708,12 +708,6 @@ export default defineComponent({
           layoutRef.value?.showAlert("已满足胜利条件，等待房主判断胜负", "red");
         } else {
           layoutRef.value?.hideAlert();
-        }
-      }
-      if (GameTime.timeout > 0 && scoreA !== scoreB) {
-        if (!isHost.value) layoutRef.value?.showAlert("游戏时间到，等待房主判断胜负", "red");
-        if (isOwner.value && gamePhase.value !== 0) {
-          store.dispatch("set_phase", { phase: 0 });
         }
       }
     };
@@ -960,7 +954,7 @@ export default defineComponent({
     };
 
     const startGame = () => {
-      if (roomSettings.value.gamebp && !inMatch.value) {
+      if (roomSettings.value.gamebp) {
         store.dispatch("start_ban_pick", {
           who_first: 0,
         });
@@ -1085,6 +1079,7 @@ export default defineComponent({
       });
     };
     const confirmSelect = () => {
+      if (selectedSpellIndex.value === -1) return;
       if (isBingoLink.value) {
         if (!confirmed.value) {
           availableIndexList.value = [];
@@ -1413,7 +1408,6 @@ export default defineComponent({
       isBingoLink,
       soloMode,
       inGame,
-      inMatch,
       bpStatus,
       isBpPhase,
       playerASelectedIndex,
