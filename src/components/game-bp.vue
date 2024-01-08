@@ -197,24 +197,28 @@ export default defineComponent({
         ABannedList.value = newVal.a_ban;
         BBannedList.value = newVal.b_ban;
         if (isHost.value) {
-          ASelectedList.value = newVal.a_pick;
-          BSelectedList.value = newVal.b_pick;
+          ASelectedList.value = newVal.a_pick || [];
+          BSelectedList.value = newVal.b_pick || [];
         }
         if (isPlayer.value) {
           if (isPlayerA.value) {
-            ASelectedList.value = newVal.a_pick;
-            if (newVal.phase > 4) {
-              BSelectedList.value = newVal.b_pick;
-            } else if (newVal.b_pick && newVal.b_pick[0] === "EX") {
+            ASelectedList.value = newVal.a_pick || [];
+            if (newVal.phase <= 2) {
+              BSelectedList.value = [];
+            } else if (newVal.phase <= 4 && newVal.b_pick && newVal.b_pick[0] === "EX") {
               BSelectedList.value = ["EX"];
+            } else {
+              BSelectedList.value = newVal.b_pick || [];
             }
           }
           if (isPlayerB.value) {
-            BSelectedList.value = newVal.b_pick;
-            if (newVal.phase > 4) {
-              ASelectedList.value = newVal.a_pick;
-            } else if (newVal.a_pick && newVal.a_pick[0] === "EX") {
+            BSelectedList.value = newVal.b_pick || [];
+            if (newVal.phase <= 2) {
+              ASelectedList.value = [];
+            } else if (newVal.phase <= 4 && newVal.a_pick && newVal.a_pick[0] === "EX") {
               ASelectedList.value = ["EX"];
+            } else {
+              ASelectedList.value = newVal.a_pick || [];
             }
           }
         }
