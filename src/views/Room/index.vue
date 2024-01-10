@@ -338,8 +338,8 @@ export default defineComponent({
         return 0;
       }
     });
-    const menu = computed<{ label: string; value: number; tag?: string }[]>(() => {
-      let data: { label: string; value: number; tag?: string }[] = [];
+    const menu = computed<{ label: string; value: number; tag?: string; is_reset?: boolean }[]>(() => {
+      let data: { label: string; value: number; tag?: string; is_reset?: boolean }[] = [];
       switch (roomData.value.type) {
         case BingoType.STANDARD:
           if (soloMode.value) {
@@ -420,10 +420,16 @@ export default defineComponent({
               {
                 label: "收取失败",
                 value: 0,
+                is_reset: false,
               },
               {
                 label: "禁用",
                 value: -1,
+              },
+              {
+                label: "置空",
+                value: 0,
+                is_reset: true,
               },
               {
                 label: "左侧玩家选择",

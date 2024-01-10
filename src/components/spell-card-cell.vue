@@ -31,6 +31,8 @@
         {{ desc }}
       </div>
       <div class="name">{{ name }}</div>
+      <div class="fail-count-a" v-if="failCountA && status < 5">失败：{{ failCountA }}</div>
+      <div class="fail-count-b" v-if="failCountB && status < 5">失败：{{ failCountB }}</div>
       <!-- <div class="game-name"></div> -->
     </div>
   </div>
@@ -73,6 +75,14 @@ export default defineComponent({
     desc: {
       type: String,
       default: "",
+    },
+    failCountA: {
+      type: Number,
+      default: 0,
+    },
+    failCountB: {
+      type: Number,
+      default: 0,
     },
   },
   setup(props, context) {
@@ -154,6 +164,22 @@ export default defineComponent({
       word-break: break-all;
       white-space: "pre-wrap";
       font-size: 14px;
+    }
+
+    .fail-count-a {
+      position: absolute;
+      top: 0;
+      right: 0;
+      font-size: 12px;
+      color: var(--A-color);
+    }
+
+    .fail-count-b {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      font-size: 12px;
+      color: var(--B-color);
     }
   }
 

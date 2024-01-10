@@ -547,26 +547,35 @@ const list: Array<StoreAction | StoreMutation> = [
     wsName: "update_spell",
     default: {},
     dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams, trigger): DefaultData => {
+      const newVal = { ...data };
       if (res.ban_pick !== undefined) {
-        data.ban_pick = res.ban_pick;
+        newVal.ban_pick = res.ban_pick;
       }
       if (res.whose_turn !== undefined) {
-        data.whose_turn = res.whose_turn;
+        newVal.whose_turn = res.whose_turn;
       }
-      logSpellCard(params.status, data.status[params.idx], params.idx, store.getters.userData.userName);
+      if (store.getters.roomData.type === 2 && res.status === 0 && !res.is_reset) {
+        if (data.status[res.idx] === 1) {
+          store.commit("update_fail_count", { player: "A", index: res.idx });
+        } else if (data.status[res.idx] === 3) {
+          store.commit("update_fail_count", { player: "B", index: res.idx });
+        }
+      }
+
+      logSpellCard(params.status, newVal.status[params.idx], params.idx, store.getters.userData.userName);
       let num = 0;
-      for (const item of data.status) {
+      for (const item of newVal.status) {
         if (item === (store.getters.isPlayerA ? 7 : 5)) {
           num++;
         }
       }
       if (num >= 5 || store.getters.gameData.phase === 1) {
-        data.status[params.idx] = params.status;
+        newVal.status[params.idx] = params.status;
       } else {
-        data.status[params.idx] = res.status;
+        newVal.status[params.idx] = res.status;
       }
 
-      return { ...data };
+      return newVal;
     },
   },
   {
@@ -629,6 +638,14 @@ const list: Array<StoreAction | StoreMutation> = [
             if (newVal.whose_turn !== undefined) {
               oldVal.whose_turn = newVal.whose_turn;
             }
+            if (newVal.status === 0 && !newVal.is_reset) {
+              if (oldVal.gameData.status[index] === 1) {
+                store.commit("update_fail_count", { player: "A", index });
+              } else if (oldVal.gameData.status[index] === 3) {
+                store.commit("update_fail_count", { player: "B", index });
+              }
+            }
+            console.log(newVal);
             setData();
             break;
           case 3:
@@ -695,7 +712,6 @@ const list: Array<StoreAction | StoreMutation> = [
         settings.countdownTime = countdownTime;
       }
       Storage.local.set("roomSettings", settings);
-      console.log(newVal)
       return newVal;
     }) as MutationHandler,
   },
@@ -750,6 +766,20 @@ const list: Array<StoreAction | StoreMutation> = [
     dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
       const data = { ...oldVal };
       data.last_get_time[newVal.index] = newVal.time;
+      return data;
+    }) as MutationHandler,
+  },
+  {
+    name: "gameData",
+    mutationName: "update_fail_count",
+    default: {},
+    dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
+      const data = { ...oldVal };
+      if (newVal.player === "A") {
+        data.bp_data.spell_failed_count_a[newVal.index]++;
+      } else if (newVal.player === "B") {
+        data.bp_data.spell_failed_count_b[newVal.index]++;
+      }
       return data;
     }) as MutationHandler,
   },

@@ -48,6 +48,8 @@
                         :name="item.name"
                         :desc="item.desc"
                         :level="isBingoStandard ? null : item.star"
+                        :failCountA="gameData.bp_data && gameData.bp_data.spell_failed_count_a[index]"
+                        :failCountB="gameData.bp_data && gameData.bp_data.spell_failed_count_b[index]"
                         @click="selectSpellCard(index)"
                         :selected="selectedSpellIndex === index"
                         :status="gameData.status[index]"
@@ -220,7 +222,9 @@ export default defineComponent({
     const onMenuClick = ({ event, target, item }: any) => {
       const index = target.getAttribute("index");
       if (index !== null) {
-        store.dispatch("update_spell", { idx: parseInt(index), status: item.value });
+        const data: any = { idx: parseInt(index), status: item.value };
+        if (item.is_reset) data.is_reset = true;
+        store.dispatch("update_spell", data);
       }
     };
     const stopBGM = () => {

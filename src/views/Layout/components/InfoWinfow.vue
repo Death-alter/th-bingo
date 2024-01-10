@@ -9,7 +9,7 @@
                 <el-form-item label="用户名：">
                   <div class="label-with-button">
                     <div class="userName">
-                      <el-input v-if="showNameInput" v-model="userName"></el-input>
+                      <el-input v-if="showNameInput" v-model="userName" @keydown.enter="editName"></el-input>
                       <span v-else>{{ userData.userName }}</span>
                     </div>
                     <el-button link type="primary" @click="editName">{{ showNameInput ? "确认" : "修改" }}</el-button>
@@ -414,7 +414,7 @@ export default defineComponent({
     });
 
     const logout = () => {
-      if (!inRoom.value) {
+      if (inRoom.value) {
         store.dispatch("leave_room").then(() => {
           store.commit("remove_user_data");
           ws.closeConnection();
