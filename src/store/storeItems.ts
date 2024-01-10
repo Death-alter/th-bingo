@@ -639,13 +639,12 @@ const list: Array<StoreAction | StoreMutation> = [
               oldVal.whose_turn = newVal.whose_turn;
             }
             if (newVal.status === 0 && !newVal.is_reset) {
-              if (oldVal.gameData.status[index] === 1) {
+              if (oldVal.status[index] === 1) {
                 store.commit("update_fail_count", { player: "A", index });
-              } else if (oldVal.gameData.status[index] === 3) {
+              } else if (oldVal.status[index] === 3) {
                 store.commit("update_fail_count", { player: "B", index });
               }
             }
-            console.log(newVal);
             setData();
             break;
           case 3:
