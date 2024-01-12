@@ -196,11 +196,10 @@ export default defineComponent({
       (newVal, oldVal) => {
         ABannedList.value = newVal.a_ban;
         BBannedList.value = newVal.b_ban;
-        if (isHost.value) {
+        if (!isPlayer.value) {
           ASelectedList.value = newVal.a_pick || [];
           BSelectedList.value = newVal.b_pick || [];
-        }
-        if (isPlayer.value) {
+        } else {
           if (isPlayerA.value) {
             ASelectedList.value = newVal.a_pick || [];
             if (newVal.phase <= 2) {
