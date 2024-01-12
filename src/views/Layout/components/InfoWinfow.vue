@@ -463,6 +463,13 @@ export default defineComponent({
       if (showNameInput.value === false) {
         showNameInput.value = true;
       } else {
+        if (userName.value === "训练用毛玉") {
+          ElMessage({
+            type: "error",
+            message: "不能使用这个名字",
+          });
+          return;
+        }
         if (userName.value !== userData.value.userName) {
           const data = { ...userData.value };
           data.userName = userName.value;

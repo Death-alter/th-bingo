@@ -18,6 +18,7 @@ import { useStore } from "vuex";
 import { ElInput, ElButton } from "element-plus";
 import { Md5 } from "ts-md5";
 import Storage from "@/utils/Storage";
+import { ElMessage } from "element-plus";
 
 export default defineComponent({
   name: "Login",
@@ -28,6 +29,13 @@ export default defineComponent({
     const userName = ref("");
 
     const login = () => {
+      if (userName.value === "训练用毛玉") {
+        ElMessage({
+          type: "error",
+          message: "不能使用这个名字",
+        });
+        return;
+      }
       if (!Storage.local.has("userData")) {
         Storage.local.set("userData", {
           userName: userName.value,
