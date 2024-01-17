@@ -113,14 +113,16 @@ export class MaoYu {
     let countB = 0;
     for (let i = 0; i < status.length; i++) {
       if (status[i] === 5) ++countA;
-      if (status[i] === 7) ++countA;
+      if (status[i] === 7) ++countB;
     }
 
     if (countA === 0) {
       if (countB === 0) {
         return 0;
+      } else if (countB < 3) {
+        return 8;
       } else if (countB < 4) {
-        return 10;
+        return 15;
       } else {
         return 30;
       }
@@ -164,7 +166,7 @@ export class MaoYu {
 
   getTimeWeights() {
     const arr: number[] = [];
-    for (let item of this.spellCardList) {
+    for (const item of this.spellCardList) {
       let offset = item.time * 0.12;
       if (offset > 6) offset = 6;
       let time = getNumberInNormalDistribution(item.time + offset * 0.6, offset);
@@ -176,12 +178,22 @@ export class MaoYu {
 
   gameStart() {
     this.gameStarted = true;
-    this.selectSpellCard();
-    this.getSpellCard();
+    setTimeout(() => {
+      this.selectSpellCard();
+      if (GameTime.main > 0) {
+        console.log(1);
+        this.getSpellCard();
+      }
+    }, 1000);
+
+    Mit.on("ai_standby_finish", (data: any) => {
+      console.log(1);
+      this.getSpellCard();
+    });
+
     Mit.on("ai_spell_change", (data: any) => {
       const oldStatus = this.spellCardList[data.index].status;
       this.spellCardList[data.index].status = data.status;
-      console.log(oldStatus, data.status);
       if (oldStatus === 3 && data.status === 7) {
         this.onGetSpellCardSuccess();
       }
@@ -192,7 +204,10 @@ export class MaoYu {
   }
 
   gameOver() {
+    console.log("game_over");
     clearInterval(this.timer);
+    this.selectedSepllCardIndex = -1;
+    this.timer = 0;
     Mit.off("ai_spell_change", (data: any) => {
       this.spellCardList[data.index] = data.status;
     });
@@ -202,6 +217,7 @@ export class MaoYu {
   }
 
   selectSpellCard() {
+    if (!this.gameStarted) return;
     let index = -1;
     let max = -999;
 
@@ -222,14 +238,15 @@ export class MaoYu {
   }
 
   getSpellCard() {
+    if (!this.gameStarted || this.selectedSepllCardIndex === -1) return;
     const index = this.selectedSepllCardIndex;
     const startTime = new Date().getTime();
     const time = this.spellCardList[index].time;
     const endTime = startTime + time * 1000;
     this.timer = setInterval(() => {
       const currentTime = new Date().getTime();
+      console.log(currentTime);
       if (currentTime <= endTime) {
-        console.log(currentTime);
         const r = Math.random();
         if (r > getSpellRate[index]) {
           clearInterval(this.timer);
@@ -237,7 +254,9 @@ export class MaoYu {
           this.onFailToGetSpellCard();
         }
       } else {
-        store.dispatch("update_spell", { idx: index, status: 7, control_robot: true });
+        store.dispatch("update_spell", { idx: index, status: 7, control_robot: true }).then(() => {
+          this.selectedSepllCardIndex = -1;
+        });
         clearInterval(this.timer);
       }
     }, 1000);
@@ -249,13 +268,29 @@ export class MaoYu {
     this.getSpellCard();
   }
 
-  changeCard() {}
+  changeCard(index) {
+    const arr = [...store.getters.roomData.change_card_count];
+    if (arr[1] > 0) {
+      --arr[1];
+      store.dispatch("update_spell", { idx: this.selectedSepllCardIndex, status: 0, control_robot: true }).then(() => {
+        clearInterval(this.timer);
+        this.timer = 0;
+        this.selectedSepllCardIndex = index;
+        store.dispatch("update_spell", { idx: index, status: 3, control_robot: true }).then(() => {
+          this.getSpellCard();
+        });
+      });
+      store.dispatch("change_card_count", {
+        cnt: arr,
+      });
+    }
+  }
 
   onGetSpellCardSuccess() {
-    setTimeout(() => {
+    this.timer = setTimeout(() => {
       this.selectSpellCard();
       this.getSpellCard();
-    }, 1000);
+    }, 30000);
   }
 
   onSpellCardGrabbed() {}

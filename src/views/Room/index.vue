@@ -615,7 +615,7 @@ export default defineComponent({
       }
 
       if (soloMode.value && isPlayerA.value && winFlag.value !== 0) {
-        if (trainingMode) Mit.emit("ai_game_over");
+        if (trainingMode.value) Mit.emit("ai_game_over");
         confirmWinner();
       }
       if (!soloMode.value && !isHost.value) {
@@ -636,7 +636,7 @@ export default defineComponent({
         if (isOwner.value && gamePhase.value !== 0) {
           store.dispatch("set_phase", { phase: 0 });
         }
-        if (trainingMode) Mit.emit("ai_game_over");
+        if (trainingMode.value) Mit.emit("ai_game_over");
       }
     };
 
@@ -1065,11 +1065,13 @@ export default defineComponent({
           if ((checked.value as number) < 0) {
             store.dispatch("stop_game", { winner: -1 }).then(() => {
               store.dispatch("set_phase", { phase: 0 });
+              if (trainingMode.value) Mit.emit("ai_game_over");
               linkStartTime.value = 0;
             });
           } else {
             store.dispatch("stop_game", { winner: checked.value }).then(() => {
               store.dispatch("set_phase", { phase: 0 });
+              if (trainingMode.value) Mit.emit("ai_game_over");
               linkStartTime.value = 0;
             });
           }
@@ -1170,6 +1172,9 @@ export default defineComponent({
             });
           } else {
             store.dispatch("get_spells");
+          }
+          if (trainingMode.value) {
+            Mit.emit("ai_standby_finish");
           }
         } else if (gamePhase.value === 2) {
           if (isOwner.value) {
