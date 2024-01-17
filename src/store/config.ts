@@ -28,7 +28,7 @@ const config = {
       }
     },
     soloMode: (state: VuexState) => !state.roomData.data?.host,
-    trianingMode: (state: VuexState) => !state.roomData.data?.host && state.roomData.data?.names[1] === "训练用毛玉",
+    trainingMode: (state: VuexState) => !state.roomData.data?.host && state.roomData.data?.names[1] === "训练用毛玉",
     playerASelectedIndex: (state: VuexState) =>
       (() => {
         if (state.gameData.data?.status) {

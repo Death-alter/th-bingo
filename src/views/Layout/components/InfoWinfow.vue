@@ -82,7 +82,7 @@
                     }}</el-button>
                   </div>
                 </el-form-item>
-                <el-form-item label="比赛时长：" v-if="roomType === 1">
+                <el-form-item label="比赛时长：" v-if="roomData.type === 1">
                   <el-input-number
                     class="input-number"
                     v-model="roomSettings.gameTimeLimit"
@@ -394,6 +394,10 @@ export default defineComponent({
       cdTime: 30,
       format: 1,
       checkList: ["6", "7", "8", "10", "11", "12", "13", "14", "15", "16", "17", "18"],
+      debugSpells: [
+        324, 549, 131, 172, 180, 191, 315, 325, 174, 548, 309, 188, 545, 168, 144, 119, 152, 116, 529, 127, 123, 146,
+        313, 124, 112,
+      ],
       rankList: ["L", "EX"],
       difficulty: 3,
       private: false,
@@ -595,11 +599,11 @@ export default defineComponent({
       userName.value = val.userName;
     });
 
-    watch(roomData, (val) => {
+    watch(roomData, (val, oldVal) => {
       if (roomType.value !== val.type) {
         roomType.value = val.type;
       }
-      if (isHost.value) {
+      if (oldVal.type !== val.type && isHost.value) {
         const savedSettings = Storage.local.get("roomSettings");
         if (savedSettings) {
           roomSettings.gameTimeLimit = savedSettings.gameTimeLimit[roomType.value];
@@ -613,6 +617,9 @@ export default defineComponent({
             }
           }
         }
+        store.dispatch("update_room_config", {
+          room_config: { game_time: roomSettings.gameTimeLimit, countdown: roomSettings.countdownTime },
+        });
       }
     });
 

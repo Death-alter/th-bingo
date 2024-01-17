@@ -64,15 +64,22 @@ router.beforeEach(async (to, from, next) => {
       });
       await ws.createConnection();
       await store.dispatch("login", { token: userData.token });
-      if (/^\/room/.test(to.path) && to.params.rid && !store.getters.roomData.rid) {
-        try {
-          await store.dispatch("join_room", {
-            name: store.getters.userData.userName,
-            rid: to.params.rid,
-          });
-        } catch (e) {
-          next("/");
+      if (store.getters.roomData.rid) {
+        if (!/^\/room/.test(to.path)) {
+          next(`/room/${store.getters.roomData.rid}`);
           return;
+        }
+      } else {
+        if (/^\/room/.test(to.path) && to.params.rid) {
+          try {
+            await store.dispatch("join_room", {
+              name: store.getters.userData.userName,
+              rid: to.params.rid,
+            });
+          } catch (e) {
+            next("/");
+            return;
+          }
         }
       }
       ws.on("reconnect", () => {

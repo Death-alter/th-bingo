@@ -84,3 +84,13 @@ export const enum BpStatus {
   IS_B_PICK = 3,
   SELECT_OPEN_EX = 4,
 }
+
+export interface SpellCardInfo {
+  desc: string;
+  game: string;
+  id: number;
+  index: number;
+  name: string;
+  rank: string;
+  star: number;
+}

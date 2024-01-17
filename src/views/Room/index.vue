@@ -240,6 +240,7 @@ import { ElButton, ElMessageBox, ElRadioGroup, ElRadio } from "element-plus";
 import Mit from "@/mitt";
 import Storage from "@/utils/Storage";
 import GameTime from "@/utils/GameTime";
+import { useRouter } from "vue-router";
 
 export default defineComponent({
   name: "Room",
@@ -255,6 +256,7 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
+    const router = useRouter();
     const countdownRef = ref<InstanceType<typeof CountDown>>();
     const layoutRef = ref<InstanceType<typeof RoomLayout>>();
 
@@ -264,6 +266,7 @@ export default defineComponent({
     const roomConfig = computed(() => store.getters.roomData.room_config);
     const banPickInfo = computed(() => store.getters.banPickInfo);
     const soloMode = computed(() => store.getters.soloMode);
+    const trainingMode = computed(() => store.getters.trainingMode);
     const userRole = computed(() => store.getters.userRole);
     const isHost = computed(() => store.getters.userRole === Role.HOST);
     const isPlayer = computed(() => store.getters.userRole === Role.PLAYER);
@@ -522,6 +525,11 @@ export default defineComponent({
     const cd = Storage.local.get("attainCooldownStart");
     if (cd) {
       attainCooldownStart.value = cd;
+    }
+
+    //单人训练
+    if (trainingMode.value && router.currentRoute.value.query.debug) {
+      store.dispatch("set_debug_spells", { spells: roomSettings.value.debugSpells });
     }
 
     //standard
@@ -1414,6 +1422,7 @@ export default defineComponent({
       isBingoBp,
       isBingoLink,
       soloMode,
+      trainingMode,
       inGame,
       inMatch,
       bpStatus,

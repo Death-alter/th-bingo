@@ -205,9 +205,9 @@ const list: Array<StoreAction | StoreMutation> = [
     default: {},
     dataHandler: {
       replied: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
-        if (res) {
-          router.push(`/room/${res.rid}`);
-        }
+        // if (res && router.currentRoute.value.path === "/") {
+        //   router.push(`/room/${res.rid}`);
+        // }
         return res;
       },
       error: (res: DefaultData, data: DefaultData, params: RequestParams) => {
@@ -807,6 +807,15 @@ const list: Array<StoreAction | StoreMutation> = [
     dataHandler: ((newVal: DefaultData, oldVal: DefaultData): DefaultData => {
       return {};
     }) as MutationHandler,
+  },
+  {
+    name: "debugSpells",
+    actionName: "set_debug_spells",
+    wsName: "set_debug_spells",
+    default: [],
+    dataHandler: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
+      return params.spells;
+    },
   },
 ];
 
