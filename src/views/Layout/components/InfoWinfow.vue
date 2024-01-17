@@ -25,8 +25,8 @@
               <el-form label-width="90px">
                 <el-form-item label="房间密码：">
                   <div class="label-with-button">
-                    <span>******</span>
-                    <el-button link type="primary" @click="copyPassword">复制</el-button>
+                    <span>{{ roomData.rid }}</span>
+                    <!-- <el-button link type="primary" @click="copyPassword">复制</el-button> -->
                   </div>
                 </el-form-item>
                 <el-form-item label="房间规则：">

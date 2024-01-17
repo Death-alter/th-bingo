@@ -241,6 +241,7 @@ import Mit from "@/mitt";
 import Storage from "@/utils/Storage";
 import GameTime from "@/utils/GameTime";
 import { useRouter } from "vue-router";
+import { MaoYu } from "@/utils/AI";
 
 export default defineComponent({
   name: "Room",
@@ -528,8 +529,10 @@ export default defineComponent({
     }
 
     //单人训练
+    let maoyu;
     if (trainingMode.value && router.currentRoute.value.query.debug) {
       store.dispatch("set_debug_spells", { spells: roomSettings.value.debugSpells });
+      maoyu = new MaoYu({ difficulty: "L" });
     }
 
     //standard
@@ -612,6 +615,7 @@ export default defineComponent({
       }
 
       if (soloMode.value && isPlayerA.value && winFlag.value !== 0) {
+        if (trainingMode) Mit.emit("ai_game_over");
         confirmWinner();
       }
       if (!soloMode.value && !isHost.value) {
@@ -632,6 +636,7 @@ export default defineComponent({
         if (isOwner.value && gamePhase.value !== 0) {
           store.dispatch("set_phase", { phase: 0 });
         }
+        if (trainingMode) Mit.emit("ai_game_over");
       }
     };
 
@@ -1288,6 +1293,11 @@ export default defineComponent({
 
     watch(gameData, (newVal, oldVal) => {
       if (newVal.start_time) {
+        if (trainingMode.value && router.currentRoute.value.query.debug && !oldVal.start_time) {
+          maoyu.init(gameData.value.spells, gameData.value.status);
+          maoyu.gameStart();
+        }
+
         const isStandByPhase = GameTime.main <= 0;
         if (isStandByPhase) {
           nextTick(() => {

@@ -575,6 +575,9 @@ const list: Array<StoreAction | StoreMutation> = [
         newVal.status[params.idx] = res.status;
       }
 
+      if (store.getters.trainingMode) {
+        mitt.emit("ai_spell_change", { index: params.idx, status: res.status });
+      }
       return newVal;
     },
   },
