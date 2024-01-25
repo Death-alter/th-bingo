@@ -137,7 +137,9 @@ export class WS {
           for (const callback of this.eventList.error) {
             callback("error", {}, "", this);
           }
-          this.reconnect();
+          if (this.state !== WebSocket.OPEN) {
+            this.reconnect();
+          }
           console.log(error);
           reject(error);
         };

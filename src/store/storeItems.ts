@@ -205,9 +205,6 @@ const list: Array<StoreAction | StoreMutation> = [
     default: {},
     dataHandler: {
       replied: (res: DefaultData, data: DefaultData, params: RequestParams): DefaultData => {
-        // if (res && router.currentRoute.value.path === "/") {
-        //   router.push(`/room/${res.rid}`);
-        // }
         return res;
       },
       error: (res: DefaultData, data: DefaultData, params: RequestParams) => {
@@ -378,13 +375,19 @@ const list: Array<StoreAction | StoreMutation> = [
       }
       if (num >= 5 || res.phase === 1) {
         if (store.getters.isPlayerA) {
-          res.status.forEach((item: number, index: number) => {
-            if (item === 2) {
-              res.status[index] = item - 1;
-            } else if (item === 3) {
-              res.status[index] = 0;
-            }
-          });
+          if (store.getters.trainingMode) {
+            res.status.forEach((item: number, index: number) => {
+              res.status[index] = item;
+            });
+          } else {
+            res.status.forEach((item: number, index: number) => {
+              if (item === 2) {
+                res.status[index] = item - 1;
+              } else if (item === 3) {
+                res.status[index] = 0;
+              }
+            });
+          }
         }
         if (store.getters.isPlayerB) {
           res.status.forEach((item: number, index: number) => {
@@ -562,22 +565,13 @@ const list: Array<StoreAction | StoreMutation> = [
         }
       }
 
-      logSpellCard(params.status, newVal.status[params.idx], params.idx, store.getters.userData.userName);
-      let num = 0;
-      for (const item of newVal.status) {
-        if (item === (store.getters.isPlayerA ? 7 : 5)) {
-          num++;
-        }
-      }
-      if (num >= 5 || store.getters.gameData.phase === 1) {
-        newVal.status[params.idx] = params.status;
+      if (store.getters.trainingMode && params.control_robot) {
+        logSpellCard(params.status, newVal.status[params.idx], params.idx, "训练用毛玉");
       } else {
-        newVal.status[params.idx] = res.status;
+        logSpellCard(params.status, newVal.status[params.idx], params.idx, store.getters.userData.userName);
       }
 
-      if (store.getters.trainingMode) {
-        mitt.emit("ai_spell_change", { index: params.idx, status: res.status });
-      }
+      newVal.status[params.idx] = res.status;
       return newVal;
     },
   },

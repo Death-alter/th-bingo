@@ -268,6 +268,7 @@ export default defineComponent({
     const banPickInfo = computed(() => store.getters.banPickInfo);
     const soloMode = computed(() => store.getters.soloMode);
     const trainingMode = computed(() => store.getters.trainingMode);
+    const isDebug = computed(() => router.currentRoute.value.query.debug);
     const userRole = computed(() => store.getters.userRole);
     const isHost = computed(() => store.getters.userRole === Role.HOST);
     const isPlayer = computed(() => store.getters.userRole === Role.PLAYER);
@@ -530,8 +531,8 @@ export default defineComponent({
 
     //单人训练
     let maoyu;
-    if (trainingMode.value && router.currentRoute.value.query.debug) {
-      store.dispatch("set_debug_spells", { spells: roomSettings.value.debugSpells });
+    if (trainingMode.value && isDebug.value) {
+      if (!inGame.value) store.dispatch("set_debug_spells", { spells: roomSettings.value.debugSpells });
       maoyu = new MaoYu({ difficulty: "L" });
     }
 
@@ -1298,7 +1299,7 @@ export default defineComponent({
 
     watch(gameData, (newVal, oldVal) => {
       if (newVal.start_time) {
-        if (trainingMode.value && router.currentRoute.value.query.debug && !oldVal.start_time) {
+        if (trainingMode.value && isDebug.value && !oldVal.start_time) {
           maoyu.init(gameData.value.spells, gameData.value.status);
           maoyu.gameStart();
         }
@@ -1319,7 +1320,7 @@ export default defineComponent({
               });
             }
           } else {
-            if (isHost.value && newVal.phase === 1) {
+            if (isOwner.value && newVal.phase === 1) {
               store.dispatch("set_phase", { phase: 2 });
             }
             nextTick(() => {
@@ -1402,9 +1403,15 @@ export default defineComponent({
       if (newVal) {
         layoutRef.value?.showAlert("游戏已暂停", "#000");
         countdownRef.value?.pause();
+        if (trainingMode.value && isDebug.value) {
+          Mit.emit("ai_game_phase");
+        }
       } else {
         layoutRef.value?.hideAlert();
         countdownRef.value?.start();
+        if (trainingMode.value && isDebug.value) {
+          Mit.emit("ai_game_resume");
+        }
       }
     });
 

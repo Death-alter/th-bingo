@@ -2,12 +2,21 @@ import GameTime from "./GameTime";
 import Mit from "@/mitt";
 import store from "@/store";
 import { SpellCardInfo } from "@/types";
+import Storage from "./Storage";
 
 export const enum AIDifficulty {
   // E = 0,
   // N = 1,
   // H = 2,
   L = 3,
+}
+
+export const enum AIStatus {
+  UNINITIALIZED = 0,
+  INITIALIZED = 1,
+  WAITING = 2,
+  PLAYING = 3,
+  PAUSED = 4,
 }
 
 interface SpellListItem {
@@ -47,7 +56,9 @@ export class MaoYu {
   private timeWeight: number[] = [];
   private gameStarted = false;
   private timer: number = 0;
+  private cdTimer: number = 0;
   private selectedSepllCardIndex = -1;
+  private status: AIStatus = AIStatus.UNINITIALIZED;
 
   private spellCardList: SpellListItem[] = [];
 
@@ -65,11 +76,11 @@ export class MaoYu {
       if (i % 6 === 0) {
         arr[i] += this.diagonalWeight[0];
       }
-      if (i % 4 === 0) {
+      if (i !== 0 && i !== 24 && i % 4 === 0) {
         arr[i] += this.diagonalWeight[1];
       }
       if (this.spellCardList[i].status === 1) {
-        arr[i] -= 10;
+        arr[i] -= 5;
       }
     }
     return arr;
@@ -104,6 +115,7 @@ export class MaoYu {
     this.diagonalWeight[0] = this.getDiagonalWeight(0);
     this.diagonalWeight[1] = this.getDiagonalWeight(1);
     this.timeWeight = this.getTimeWeights();
+    this.status = AIStatus.INITIALIZED;
     console.log(this.rowWeight, this.colWeight, this.diagonalWeight, this.timeWeight);
     console.log(this.weights);
   }
@@ -177,34 +189,56 @@ export class MaoYu {
   }
 
   gameStart() {
+    if (this.status === AIStatus.UNINITIALIZED) return;
     this.gameStarted = true;
-    setTimeout(() => {
-      this.selectSpellCard();
-      if (GameTime.main > 0) {
-        console.log(1);
-        this.getSpellCard();
-      }
-    }, 1000);
 
     Mit.on("ai_standby_finish", (data: any) => {
-      console.log(1);
       this.getSpellCard();
     });
-
-    Mit.on("ai_spell_change", (data: any) => {
-      const oldStatus = this.spellCardList[data.index].status;
-      this.spellCardList[data.index].status = data.status;
-      if (oldStatus === 3 && data.status === 7) {
-        this.onGetSpellCardSuccess();
-      }
+    Mit.on("ai_game_phase", (data: any) => {
+      this.gamePause();
+    });
+    Mit.on("ai_game_resume", (data: any) => {
+      this.gameReseum();
     });
     Mit.on("ai_game_over", (data: any) => {
       this.gameOver();
     });
+
+    if (!store.getters.gamePaused) {
+      setTimeout(() => {
+        if (this.selectedSepllCardIndex === -1) this.selectSpellCard();
+        if (GameTime.main > 0) {
+          this.getSpellCard();
+        }
+      }, 1000);
+    }
+  }
+
+  gamePause() {
+    if (!this.gameStarted) return;
+    clearInterval(this.timer);
+    this.timer = 0;
+    clearInterval(this.cdTimer);
+    this.cdTimer = 0;
+    this.status = AIStatus.PAUSED;
+  }
+
+  async gameReseum() {
+    if (!this.gameStarted) return;
+    const currentSpell = Storage.local.get("ai-current-spell-card");
+    if (currentSpell && currentSpell.index !== -1) {
+      this.status = AIStatus.PLAYING;
+      this.selectedSepllCardIndex = currentSpell.index;
+      this.getSpellCard();
+    } else {
+      this.status = AIStatus.WAITING;
+      await this.onGetSpellCardSuccess();
+    }
   }
 
   gameOver() {
-    console.log("game_over");
+    if (!this.gameStarted) return;
     clearInterval(this.timer);
     this.selectedSepllCardIndex = -1;
     this.timer = 0;
@@ -214,6 +248,7 @@ export class MaoYu {
     Mit.off("ai_game_over", (data: any) => {
       this.gameOver();
     });
+    this.status = AIStatus.INITIALIZED;
   }
 
   selectSpellCard() {
@@ -231,40 +266,69 @@ export class MaoYu {
       index = i;
       max = this.weights[i];
     }
-    if (this.selectedSepllCardIndex !== index) {
+    if (this.selectedSepllCardIndex == -1) {
       this.selectedSepllCardIndex = index;
-      store.dispatch("update_spell", { idx: index, status: 3, control_robot: true });
+      if (this.spellCardList[index].status === 1) {
+        store.dispatch("update_spell", { idx: index, status: 2, control_robot: true });
+      } else {
+        store.dispatch("update_spell", { idx: index, status: 3, control_robot: true });
+      }
+      console.log("AI选择符卡" + index);
     }
   }
 
   getSpellCard() {
-    if (!this.gameStarted || this.selectedSepllCardIndex === -1) return;
-    const index = this.selectedSepllCardIndex;
-    const startTime = new Date().getTime();
-    const time = this.spellCardList[index].time;
-    const endTime = startTime + time * 1000;
-    this.timer = setInterval(() => {
-      const currentTime = new Date().getTime();
-      console.log(currentTime);
-      if (currentTime <= endTime) {
-        const r = Math.random();
-        if (r > getSpellRate[index]) {
+    if (this.timer !== 0) return;
+    return new Promise((resolve, reject) => {
+      if (!this.gameStarted || this.selectedSepllCardIndex === -1) return;
+      const index = this.selectedSepllCardIndex;
+      const startTime = GameTime.current;
+      const time = this.spellCardList[index].time;
+      const currentSpell = Storage.local.get("ai-current-spell-card");
+      let endTime;
+      if (currentSpell && currentSpell.index === index) {
+        endTime = startTime + currentSpell.remainder;
+      } else {
+        endTime = startTime + time * 1000;
+      }
+      this.timer = setInterval(() => {
+        const currentTime = GameTime.current;
+        if (currentTime <= endTime) {
+          const r = Math.random();
+          const remainder = endTime - currentTime;
+          console.log(`AI收取符卡中，剩余${Math.floor(remainder / 1000)}秒`);
+          Storage.local.set("ai-current-spell-card", {
+            index,
+            remainder,
+          });
+          if (r > getSpellRate[index]) {
+            clearInterval(this.timer);
+            this.timer = 0;
+            reject(index);
+          }
+        } else {
           clearInterval(this.timer);
           this.timer = 0;
-          this.onFailToGetSpellCard();
+          store.dispatch("update_spell", { idx: index, status: 7, control_robot: true }).then(() => {
+            this.spellCardList[index].status = 7;
+            this.selectedSepllCardIndex = -1;
+            Storage.local.remove("ai-current-spell-card");
+            store.commit("set_last_get_time", {
+              index: 1,
+              time: GameTime.passed,
+            });
+            this.onGetSpellCardSuccess();
+            resolve(index);
+          });
         }
-      } else {
-        store.dispatch("update_spell", { idx: index, status: 7, control_robot: true }).then(() => {
-          this.selectedSepllCardIndex = -1;
-        });
-        clearInterval(this.timer);
-      }
-    }, 1000);
+      }, 1000);
+    });
   }
 
   passSecond() {}
 
   onFailToGetSpellCard() {
+    this.selectSpellCard();
     this.getSpellCard();
   }
 
@@ -286,11 +350,26 @@ export class MaoYu {
     }
   }
 
-  onGetSpellCardSuccess() {
-    this.timer = setTimeout(() => {
-      this.selectSpellCard();
-      this.getSpellCard();
-    }, 30000);
+  async onGetSpellCardSuccess() {
+    await this.waitForCoolDown();
+    this.selectSpellCard();
+    this.getSpellCard();
+  }
+
+  async waitForCoolDown() {
+    return new Promise((resolve, reject) => {
+      const cdStartTime = store.getters.gameData.last_get_time[1];
+      const cdRemainder = store.getters.roomData.room_config.cd_time * 1000 - GameTime.passed + cdStartTime;
+      this.status = AIStatus.WAITING;
+      console.log(`AI等待收取cd中，cd为${Math.ceil(cdRemainder / 1000)}秒`);
+      this.cdTimer = setTimeout(
+        () => {
+          console.log("cd结束，AI开始行动");
+          resolve(null);
+        },
+        cdRemainder > 0 ? cdRemainder : 0
+      );
+    });
   }
 
   onSpellCardGrabbed() {}
