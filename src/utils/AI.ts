@@ -64,6 +64,7 @@ export class MaoYu {
 
   get weights() {
     const arr = new Array(25);
+    let onFiagonal = 99;
     for (let i = 0; i < 25; i++) {
       if (this.spellCardList[i].status === 5 || this.spellCardList[i].status === 7) {
         arr[i] = null;
@@ -75,12 +76,18 @@ export class MaoYu {
         this.rowWeight[rowId] + this.colWeight[colId] - this.timeWeight[i] + 50 - this.spellCardList[i].level * 5;
       if (i % 6 === 0) {
         arr[i] += this.diagonalWeight[0];
+        onFiagonal = 0;
       }
       if (i !== 0 && i !== 24 && i % 4 === 0) {
         arr[i] += this.diagonalWeight[1];
+        onFiagonal = 1;
       }
       if (this.spellCardList[i].status === 1) {
-        arr[i] -= 5;
+        if (this.rowWeight[rowId] == 30 || this.colWeight[colId] === 30 || this.diagonalWeight[onFiagonal] === 30) {
+          arr[i] = 15;
+        } else {
+          arr[i] -= 5;
+        }
       }
     }
     return arr;
@@ -108,12 +115,7 @@ export class MaoYu {
         this.selectedSepllCardIndex = i;
       }
     }
-    for (let i = 0; i < 5; i++) {
-      this.rowWeight[i] = this.getRowWeight(i);
-      this.colWeight[i] = this.getColWeight(i);
-    }
-    this.diagonalWeight[0] = this.getDiagonalWeight(0);
-    this.diagonalWeight[1] = this.getDiagonalWeight(1);
+    this.refreshLineWeights();
     this.timeWeight = this.getTimeWeights();
     this.status = AIStatus.INITIALIZED;
     console.log(this.rowWeight, this.colWeight, this.diagonalWeight, this.timeWeight);
@@ -136,7 +138,7 @@ export class MaoYu {
       } else if (countB < 4) {
         return 15;
       } else {
-        return 30;
+        return 25;
       }
     } else if (countA < 3) {
       return -2;
@@ -176,6 +178,15 @@ export class MaoYu {
     return 0;
   }
 
+  refreshLineWeights() {
+    for (let i = 0; i < 5; i++) {
+      this.rowWeight[i] = this.getRowWeight(i);
+      this.colWeight[i] = this.getColWeight(i);
+    }
+    this.diagonalWeight[0] = this.getDiagonalWeight(0);
+    this.diagonalWeight[1] = this.getDiagonalWeight(1);
+  }
+
   getTimeWeights() {
     const arr: number[] = [];
     for (const item of this.spellCardList) {
@@ -194,6 +205,14 @@ export class MaoYu {
 
     Mit.on("ai_standby_finish", (data: any) => {
       this.getSpellCard();
+    });
+    Mit.on("ai_spell_status_change", (data: any) => {
+      const oldStatus = this.spellCardList[data.index].status;
+      this.spellCardList[data.index].status = data.status;
+      this.refreshLineWeights();
+      if (data.status === 5 && (oldStatus === 2 || oldStatus === 3)) {
+        this.onSpellCardGrabbed();
+      }
     });
     Mit.on("ai_game_phase", (data: any) => {
       this.gamePause();
@@ -242,12 +261,11 @@ export class MaoYu {
     clearInterval(this.timer);
     this.selectedSepllCardIndex = -1;
     this.timer = 0;
-    Mit.off("ai_spell_change", (data: any) => {
-      this.spellCardList[data.index] = data.status;
-    });
-    Mit.off("ai_game_over", (data: any) => {
-      this.gameOver();
-    });
+    Mit.off("ai_standby_finish");
+    Mit.off("ai_spell_status_change");
+    Mit.off("ai_game_phase");
+    Mit.off("ai_game_resume");
+    Mit.off("ai_game_over");
     this.status = AIStatus.INITIALIZED;
   }
 
@@ -268,11 +286,7 @@ export class MaoYu {
     }
     if (this.selectedSepllCardIndex == -1) {
       this.selectedSepllCardIndex = index;
-      if (this.spellCardList[index].status === 1) {
-        store.dispatch("update_spell", { idx: index, status: 2, control_robot: true });
-      } else {
-        store.dispatch("update_spell", { idx: index, status: 3, control_robot: true });
-      }
+      store.dispatch("update_spell", { idx: index, status: 3, control_robot: true });
       console.log("AI选择符卡" + index);
     }
   }
@@ -373,5 +387,14 @@ export class MaoYu {
     });
   }
 
-  onSpellCardGrabbed() {}
+  onSpellCardGrabbed() {
+    clearInterval(this.timer);
+    this.timer = 0;
+    this.selectedSepllCardIndex = -1;
+    console.log("AI符卡被抢，正在重新选择");
+    setTimeout(() => {
+      this.selectSpellCard();
+      this.getSpellCard();
+    }, 1000);
+  }
 }
