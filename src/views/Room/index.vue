@@ -532,7 +532,7 @@ export default defineComponent({
     //单人训练
     let maoyu;
     if (trainingMode.value && isDebug.value) {
-      if (!inGame.value) store.dispatch("set_debug_spells", { spells: roomSettings.value.debugSpells });
+      store.dispatch("set_debug_spells", { spells: roomSettings.value.debugSpells });
       maoyu = new MaoYu({ difficulty: "L" });
     }
 

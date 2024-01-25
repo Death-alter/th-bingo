@@ -291,6 +291,7 @@ export class MaoYu {
       } else {
         endTime = startTime + time * 1000;
       }
+      this.status = AIStatus.PLAYING;
       this.timer = setInterval(() => {
         const currentTime = GameTime.current;
         if (currentTime <= endTime) {
