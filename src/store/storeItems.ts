@@ -565,13 +565,32 @@ const list: Array<StoreAction | StoreMutation> = [
         }
       }
 
-      if (store.getters.trainingMode && params.control_robot) {
-        logSpellCard(params.status, newVal.status[params.idx], params.idx, "训练用毛玉");
+      if (store.getters.trainingMode) {
+        if (params.control_robot) {
+          logSpellCard(params.status, newVal.status[params.idx], params.idx, "训练用毛玉");
+        } else {
+          logSpellCard(params.status, newVal.status[params.idx], params.idx, store.getters.userData.userName);
+        }
+        newVal.status[params.idx] = res.status;
       } else {
         logSpellCard(params.status, newVal.status[params.idx], params.idx, store.getters.userData.userName);
+        let num = 0;
+        for (const item of newVal.status) {
+          if (item === (store.getters.isPlayerA ? 7 : 5)) {
+            num++;
+          }
+        }
+        if (num >= 5 || store.getters.gameData.phase === 1) {
+          newVal.status[params.idx] = params.status;
+        } else {
+          newVal.status[params.idx] = res.status;
+        }
+
+        if (store.getters.trainingMode) {
+          mitt.emit("ai_spell_change", { index: params.idx, status: res.status });
+        }
       }
 
-      newVal.status[params.idx] = res.status;
       mitt.emit("ai_spell_status_change", { index: params.idx, status: res.status });
       return newVal;
     },
@@ -621,7 +640,13 @@ const list: Array<StoreAction | StoreMutation> = [
                 }
               }
               if (num >= 5 || store.getters.gameData.phase === 1) {
-                if (newStatus === 0 || newStatus === 5 || newStatus === 7) {
+                if (
+                  newStatus === 0 ||
+                  newStatus === 5 ||
+                  newStatus === 7 ||
+                  (newStatus === 1 && store.getters.isPlayerA) ||
+                  (newStatus === 3 && store.getters.isPlayerB)
+                ) {
                   setData();
                 }
               } else {
