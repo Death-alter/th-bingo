@@ -576,7 +576,7 @@ const list: Array<StoreAction | StoreMutation> = [
         logSpellCard(params.status, newVal.status[params.idx], params.idx, store.getters.userData.userName);
         let num = 0;
         for (const item of newVal.status) {
-          if (item === (store.getters.isPlayerA ? 7 : 5)) {
+          if (item === 7 || item === 5) {
             num++;
           }
         }
@@ -635,7 +635,7 @@ const list: Array<StoreAction | StoreMutation> = [
             } else {
               let num = 0;
               for (const item of oldVal.status) {
-                if (item === (store.getters.isPlayerA ? 7 : 5)) {
+                if (item === 7 || item === 5) {
                   num++;
                 }
               }
