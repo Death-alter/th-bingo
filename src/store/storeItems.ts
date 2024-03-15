@@ -576,11 +576,17 @@ const list: Array<StoreAction | StoreMutation> = [
         logSpellCard(params.status, newVal.status[params.idx], params.idx, store.getters.userData.userName);
         let num = 0;
         for (const item of newVal.status) {
-          if (item === 7 || item === 5) {
-            num++;
+          if (store.getters.roomData.room_config.reserved_type === 0) {
+            if (item === (store.getters.isPlayerA ? 7 : 5)) {
+              num++;
+            }
+          } else {
+            if (item === 7 || item === 5) {
+              num++;
+            }
           }
         }
-        if (num >= 5 || store.getters.gameData.phase === 1) {
+        if (num >= 5) {
           newVal.status[params.idx] = params.status;
         } else {
           newVal.status[params.idx] = res.status;
@@ -635,11 +641,17 @@ const list: Array<StoreAction | StoreMutation> = [
             } else {
               let num = 0;
               for (const item of oldVal.status) {
-                if (item === 7 || item === 5) {
-                  num++;
+                if (store.getters.roomData.room_config.reserved_type === 0) {
+                  if (item === (store.getters.isPlayerA ? 7 : 5)) {
+                    num++;
+                  }
+                } else {
+                  if (item === 7 || item === 5) {
+                    num++;
+                  }
                 }
               }
-              if (num >= 5 || store.getters.gameData.phase === 1) {
+              if (num >= 5) {
                 if (
                   newStatus === 0 ||
                   newStatus === 5 ||

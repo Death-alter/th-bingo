@@ -156,7 +156,7 @@ export default defineComponent({
     },
     multiple: {
       type: Boolean,
-      default: false,
+      default: true,
     },
   },
   emits: ["update:selectedSpellIndex"],
@@ -205,7 +205,7 @@ export default defineComponent({
       if (props.selectedSpellIndex === index) {
         setSelectedSpellIndex(-1);
       } else {
-        if (props.multiple) {
+        if (!props.multiple) {
           if (gameData.value.status[index] === 0) setSelectedSpellIndex(index);
         } else {
           if (

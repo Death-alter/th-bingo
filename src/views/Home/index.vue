@@ -97,6 +97,7 @@ export default defineComponent({
                 difficulty: roomSettings.value.difficulty,
                 is_private: roomSettings.value.private,
                 cd_time: roomSettings.value.cdTime,
+                reserved_type: roomSettings.value.reservedType,
               },
               type: 1,
             })

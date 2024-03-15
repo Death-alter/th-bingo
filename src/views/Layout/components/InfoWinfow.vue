@@ -183,6 +183,17 @@
                     }}</el-radio>
                   </el-radio-group>
                 </el-form-item>
+                <el-form-item label="bingo规则：">
+                  <el-radio-group
+                    v-model="roomSettings.reservedType"
+                    style="text-align: left"
+                    :disabled="inGame"
+                    @change="updateRoomConfig($event, 'reserved_type')"
+                  >
+                    <el-radio :label="0">个人赛</el-radio>
+                    <el-radio :label="1">团队赛</el-radio>
+                  </el-radio-group>
+                </el-form-item>
                 <el-form-item label="禁用推送：">
                   <el-checkbox
                     v-model="roomSettings.private"
@@ -400,6 +411,7 @@ export default defineComponent({
       ],
       rankList: ["L", "EX"],
       difficulty: 3,
+      reservedType: 0,
       private: false,
       bgmMuted: false,
       gamebp: false,
@@ -575,6 +587,7 @@ export default defineComponent({
         if (savedSettings.format != null) roomSettings.format = savedSettings.format;
         if (savedSettings.rankList != null) roomSettings.rankList = savedSettings.rankList;
         if (savedSettings.difficulty != null) roomSettings.difficulty = savedSettings.difficulty;
+        if (savedSettings.reservedType != null) roomSettings.reservedType = savedSettings.reservedType;
         if (savedSettings.private != null) roomSettings.private = savedSettings.private;
         if (savedSettings.checkList != null) roomSettings.checkList = savedSettings.checkList;
         if (savedSettings.playerA != null) roomSettings.playerA = savedSettings.playerA;

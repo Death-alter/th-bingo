@@ -1,6 +1,11 @@
 <template>
   <div class="room">
-    <room-layout ref="layoutRef" v-model:selected-spell-index="selectedSpellIndex" :menu="menu" :multiple="isBingoBp">
+    <room-layout
+      ref="layoutRef"
+      v-model:selected-spell-index="selectedSpellIndex"
+      :menu="menu"
+      :multiple="!isBingoBp && !(isBingoStandard && gamePhase === 1)"
+    >
       <template #left>
         <score-board
           class="change-card"
@@ -184,7 +189,7 @@
 
       <template #button-left-1>
         <template v-if="!soloMode && isHost">
-          <template v-if="!isBingoStandard || !inGame">
+          <template v-if="isBingoStandard || !inGame">
             <el-button size="small" :disabled="inGame" @click="resetRoom">重置房间</el-button>
           </template>
           <template v-else>

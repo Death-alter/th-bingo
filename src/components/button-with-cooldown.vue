@@ -34,7 +34,7 @@ export default defineComponent({
     },
     startTime: {
       type: Number,
-      required: true,
+      default: 0,
     },
     immediate: {
       type: Boolean,
