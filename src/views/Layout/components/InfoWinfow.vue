@@ -194,14 +194,6 @@
                     <el-radio :label="1">团队赛</el-radio>
                   </el-radio-group>
                 </el-form-item>
-                <el-form-item label="禁用推送：">
-                  <el-checkbox
-                    v-model="roomSettings.private"
-                    :disabled="inGame"
-                    @change="updateRoomConfig($event, 'is_private')"
-                    style="margin-right: 0"
-                  ></el-checkbox>
-                </el-form-item>
               </el-form>
               <el-divider style="margin: 10px 0"></el-divider>
             </template>
@@ -412,7 +404,6 @@ export default defineComponent({
       rankList: ["L", "EX"],
       difficulty: 3,
       reservedType: 0,
-      private: false,
       bgmMuted: false,
       gamebp: false,
       matchbp: false,
@@ -588,7 +579,6 @@ export default defineComponent({
         if (savedSettings.rankList != null) roomSettings.rankList = savedSettings.rankList;
         if (savedSettings.difficulty != null) roomSettings.difficulty = savedSettings.difficulty;
         if (savedSettings.reservedType != null) roomSettings.reservedType = savedSettings.reservedType;
-        if (savedSettings.private != null) roomSettings.private = savedSettings.private;
         if (savedSettings.checkList != null) roomSettings.checkList = savedSettings.checkList;
         if (savedSettings.playerA != null) roomSettings.playerA = savedSettings.playerA;
         if (savedSettings.playerB != null) roomSettings.playerB = savedSettings.playerB;
