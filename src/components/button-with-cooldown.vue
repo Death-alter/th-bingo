@@ -10,13 +10,6 @@ import GameTime from "@/utils/GameTime";
 
 export default defineComponent({
   name: "ButtonWithCooldown",
-  data() {
-    return {
-      timer: 0,
-      label: "",
-      locked: false,
-    };
-  },
   components: {
     ElButton,
   },

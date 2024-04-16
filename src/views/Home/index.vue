@@ -95,7 +95,6 @@ export default defineComponent({
                 ranks: roomSettings.value.rankList,
                 need_win: (roomSettings.value.format + 1) / 2,
                 difficulty: roomSettings.value.difficulty,
-                is_private: roomSettings.value.private,
                 cd_time: roomSettings.value.cdTime,
                 reserved_type: roomSettings.value.reservedType,
               },

@@ -1006,7 +1006,6 @@ export default defineComponent({
             cd_time: roomSettings.value.cdTime,
             difficulty: roomSettings.value.difficulty,
             need_win: (roomSettings.value.format + 1) / 2,
-            is_private: roomSettings.value.private,
           },
         })
         .then(() => {
@@ -1372,7 +1371,7 @@ export default defineComponent({
       }
       cardCount.value = newVal.change_card_count;
       if (!newVal.started) {
-        if (banPickInfo.value.phase !== 9999) {
+        if (banPickInfo.value.phase !== 9999 && !isBpPhase.value) {
           layoutRef.value?.showAlert("等待房主开始比赛", "#000");
         }
 
