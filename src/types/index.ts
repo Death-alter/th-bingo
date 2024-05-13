@@ -83,6 +83,7 @@ export const enum BpStatus {
   IS_B_BAN = 2,
   IS_B_PICK = 3,
   SELECT_OPEN_EX = 4,
+  BP_FINISH = 5,
 }
 
 export interface SpellCardInfo {

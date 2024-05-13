@@ -209,10 +209,13 @@
       <template #button-right-1>
         <template v-if="isOwner">
           <template v-if="isBingoStandard">
-            <el-button size="small" :disabled="gamePhase !== 2" v-if="gamePaused" @click="resumeGame">
-              继续比赛
-            </el-button>
-            <el-button size="small" :disabled="gamePhase !== 2" v-else @click="pauseGame">暂停比赛</el-button>
+            <template v-if="!isBpPhase">
+              <el-button size="small" :disabled="gamePhase !== 2" v-if="gamePaused" @click="resumeGame">
+                继续比赛
+              </el-button>
+              <el-button size="small" :disabled="gamePhase !== 2" v-else @click="pauseGame">暂停比赛</el-button>
+            </template>
+            <el-button :disabled="bpStatus !== 5" size="small" v-else @click="startBP">重新BP</el-button>
           </template>
           <template v-if="isBingoBp">
             <el-button size="small" @click="nextRound" :disabled="gamePhase !== 2 || gameData.ban_pick !== 2"
@@ -981,9 +984,7 @@ export default defineComponent({
 
     const startGame = () => {
       if (roomSettings.value.gamebp && (!roomSettings.value.matchbp || !inMatch.value)) {
-        store.dispatch("start_ban_pick", {
-          who_first: 0,
-        });
+        startBP();
       } else {
         store.dispatch("start_game").then(() => {
           store.dispatch("change_card_count", {
@@ -997,6 +998,13 @@ export default defineComponent({
         });
       }
     };
+
+    const startBP = () => {
+      store.dispatch("start_ban_pick", {
+        who_first: 0,
+      });
+    };
+
     const drawSpellCard = () => {
       store
         .dispatch("update_room_config", {
@@ -1484,6 +1492,7 @@ export default defineComponent({
       spendTimeScore,
       confirmed,
       startGame,
+      startBP,
       drawSpellCard,
       stopGame,
       pauseGame,

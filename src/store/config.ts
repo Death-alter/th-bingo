@@ -82,6 +82,8 @@ const config = {
           return BpStatus.IS_B_BAN;
         case 11:
           return BpStatus.SELECT_OPEN_EX;
+        case 9999:
+          return BpStatus.BP_FINISH;
       }
     },
   },
