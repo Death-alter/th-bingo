@@ -35,13 +35,13 @@
           <div class="title">选择作品</div>
           <div class="selected-game-list A-selected">
             <div class="game-item" v-for="(game, index) in ASelectedList" :key="index">
-              <img class="game-icon" :src="getGameIcon(game)" alt="" />
+              <img v-if="game" class="game-icon" :src="getGameIcon(game)" alt="" />
             </div>
           </div>
           <div class="title">禁用作品</div>
           <div class="selected-game-list banned">
             <div class="game-item" v-for="(game, index) in ABannedList" :key="index">
-              <img class="game-icon" :src="getGameIcon(game)" alt="" />
+              <img v-if="game" class="game-icon" :src="getGameIcon(game)" alt="" />
             </div>
           </div>
         </el-col>
@@ -49,13 +49,13 @@
           <div class="title">选择作品</div>
           <div class="selected-game-list B-selected">
             <div class="game-item" v-for="(game, index) in BSelectedList" :key="index">
-              <img class="game-icon" :src="getGameIcon(game)" alt="" />
+              <img v-if="game" class="game-icon" :src="getGameIcon(game)" alt="" />
             </div>
           </div>
           <div class="title">禁用作品</div>
           <div class="selected-game-list banned">
             <div class="game-item" v-for="(game, index) in BBannedList" :key="index">
-              <img class="game-icon" :src="getGameIcon(game)" alt="" />
+              <img v-if="game" class="game-icon" :src="getGameIcon(game)" alt="" />
             </div>
           </div>
         </el-col>

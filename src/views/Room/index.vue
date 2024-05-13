@@ -1373,6 +1373,8 @@ export default defineComponent({
       if (!newVal.started) {
         if (banPickInfo.value.phase !== 9999 && !isBpPhase.value) {
           layoutRef.value?.showAlert("等待房主开始比赛", "#000");
+        } else {
+          layoutRef.value?.hideAlert();
         }
 
         playerAScore.value = 0;
