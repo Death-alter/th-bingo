@@ -62,7 +62,7 @@
       </el-row>
     </template>
     <template v-else>
-      <div class="top-text">PB已经结束，本局可能出现以下作品</div>
+      <div class="top-text">BP已经结束，本局可能出现以下作品</div>
       <div class="game-list">
         <div class="game-item" v-for="(game, index) in roomConfig.games" :key="index">
           <img class="game-icon" :src="getGameIcon(game)" alt="" />
