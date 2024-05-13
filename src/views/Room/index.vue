@@ -1257,7 +1257,7 @@ export default defineComponent({
 
     onMounted(() => {
       cardCount.value = roomData.value.change_card_count;
-      if (!inGame.value) {
+      if (!inGame.value && !isBpPhase.value) {
         layoutRef.value?.showAlert("等待房主开始比赛", "#000");
       } else {
         layoutRef.value?.hideAlert();
