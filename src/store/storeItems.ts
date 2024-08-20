@@ -612,9 +612,13 @@ const list: Array<StoreAction | StoreMutation> = [
         const newStatus = newVal.status;
         let oldStatus = oldVal.status[index];
 
-        function setData() {
+        function setData(status?: number) {
           const statusList = store.getters.gameData.status;
-          statusList[index] = newStatus;
+          if (status != null) {
+            statusList[index] = status;
+          } else {
+            statusList[index] = newStatus;
+          }
           logSpellCard(statusList[index], oldStatus, index, trigger);
           const data = { ...oldVal };
           data.status = statusList;
@@ -653,6 +657,11 @@ const list: Array<StoreAction | StoreMutation> = [
               }
               if (num >= 5) {
                 if (
+                  (newStatus === 1 && store.getters.isPlayerB && oldStatus === 3) ||
+                  (newStatus === 3 && store.getters.isPlayerA && oldStatus === 1)
+                ) {
+                  setData(0);
+                } else if (
                   newStatus === 0 ||
                   newStatus === 5 ||
                   newStatus === 7 ||
