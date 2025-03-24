@@ -22,7 +22,7 @@ const difficultyList = [
   {
     name: "随机",
     value: 0,
-  }
+  },
 ];
 
 const gameOptionList = [
@@ -107,7 +107,7 @@ const gameTypeList = [
   },
 ];
 
-class Config {
+abstract class Config {
   public static readonly webSocket = WebSocketConfig;
   public static readonly rankList = rankList;
   public static readonly gameOptionList = gameOptionList;
