@@ -16,7 +16,7 @@ export interface WebSocketPushData {
   data: { [index: string]: any };
 }
 
-export type WebSocketCallBack = { (data?: { [index: string]: any } | null): void };
+export type WebSocketCallBack<T = any> = { (data?: T): void };
 
 export interface HeartBeatOption {
   action: string;
@@ -34,6 +34,7 @@ export enum WebSocketActionType {
   HEART = "heart",
   LOGIN = "login",
   CREATE_ROOM = "create_room",
+  GET_ROOM_CONFIG = "get_room_config",
   UPDATE_ROOM_CONFIG = "update_room_config",
   JOIN_ROOM = "join_room",
   GET_ROOM = "get_room",

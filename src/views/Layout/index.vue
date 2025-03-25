@@ -19,39 +19,25 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, computed } from "vue";
-import { useStore } from "vuex";
+<script lang="ts" setup>
+import { computed } from "vue";
 import InfoWindow from "./components/InfoWinfow.vue";
+import { useRoomStore } from "@/store/RoomStore";
 
-export default defineComponent({
-  name: "Layout",
-  data() {
-    return {};
-  },
-  components: {
-    InfoWindow,
-  },
-  setup() {
-    const store = useStore();
-    return {
-      roomSettings: computed(() => store.getters.roomSettings),
-    };
-  },
-  methods: {
-    getDarkColor(color: string) {
-      const arr = color.match(/\((.*),(.*)%,(.*)%(,(.*))?\)/);
-      if (arr === null) {
-        return "";
-      }
-      if (arr[5]) {
-        return `hsla(${arr[1]},${arr[2]}%,${parseInt(arr[3]) - 20}%,${arr[5]})`;
-      } else {
-        return `hsl(${arr[1]},${arr[2]}%,${parseInt(arr[3]) - 20}%)`;
-      }
-    },
-  },
-});
+const roomStore = useRoomStore();
+const roomSettings = computed(() => roomStore.roomSettings);
+
+const getDarkColor = (color: string) => {
+  const arr = color.match(/\((.*),(.*)%,(.*)%(,(.*))?\)/);
+  if (arr === null) {
+    return "";
+  }
+  if (arr[5]) {
+    return `hsla(${arr[1]},${arr[2]}%,${parseInt(arr[3]) - 20}%,${arr[5]})`;
+  } else {
+    return `hsl(${arr[1]},${arr[2]}%,${parseInt(arr[3]) - 20}%)`;
+  }
+};
 </script>
 
 <style lang="scss" scoped>

@@ -2,42 +2,41 @@
   <div class="login">
     <div class="login-box relative-center">
       <div class="login-box-item">
-        <el-input v-model="userName" placeholder="请输入想要使用的名称"></el-input>
+        <el-input v-model="localStore.username" placeholder="请输入想要使用的名称" @change="onchange"></el-input>
       </div>
       <div class="login-box-item">
-        <el-button type="primary" class="login-btn" :disabled="!userName" @click="login">登 录</el-button>
+        <el-input v-model="localStore.password" placeholder="请输入密码" type="password" show-password></el-input>
+      </div>
+      <div class="login-box-item">
+        <el-button type="primary" class="login-btn" :disabled="!localStore.username" @click="login">登 录</el-button>
       </div>
     </div>
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from "vue";
+<script lang="ts" setup>
 import { ElInput, ElButton } from "element-plus";
-import { Md5 } from "ts-md5";
-import Storage from "@/utils/Storage";
+import { useLocalStore } from "@/store/LocalStore";
+import { useRoomStore } from "@/store/RoomStore";
+import { useRouter } from "vue-router";
+import { nextTick } from "vue";
 
-export default defineComponent({
-  name: "Login",
-  data() {
-    return {
-      userName: "",
-    };
-  },
-  components: { ElInput, ElButton },
-  methods: {
-    login() {
-      if (!Storage.local.has("userData")) {
-        Storage.local.set("userData", {
-          userName: this.userName,
-          token: Md5.hashStr(this.userName + new Date().getTime()),
-        });
-        this.$store.commit("get_user_data");
-      }
-      this.$router.push("/");
-    },
-  },
-});
+const localStore = useLocalStore();
+const roomStore = useRoomStore();
+const router = useRouter();
+
+const login = () => {
+  localStore.login().then((res: { rid: string | null }) => {
+    res.rid && (roomStore.roomId = res.rid);
+    router.push("/");
+  });
+};
+
+const onchange = () => {
+  nextTick(() => {
+    console.log(localStore.username, localStore.password);
+  });
+};
 </script>
 
 <style lang="scss" scoped>
@@ -51,7 +50,7 @@ export default defineComponent({
     border-radius: 5px;
     box-shadow: #00000044 0 0 5px 5px;
     box-sizing: border-box;
-    padding: 20px;
+    padding: 40px 20px 20px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -61,6 +60,7 @@ export default defineComponent({
       display: flex;
       justify-content: center;
       align-items: center;
+      margin-bottom: 15px;
 
       :deep(input) {
         text-align: center;
@@ -71,7 +71,7 @@ export default defineComponent({
       }
 
       .login-btn {
-        margin-top: 50px;
+        margin-top: 20px;
       }
     }
   }

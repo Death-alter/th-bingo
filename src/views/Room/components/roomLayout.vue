@@ -121,7 +121,6 @@
 
 <script lang="ts">
 import { defineComponent, computed, ref, onMounted, onUnmounted, watch } from "vue";
-import { useStore } from "vuex";
 import SpellCardCell from "@/components/spell-card-cell.vue";
 import RightClickMenu from "@/components/right-click-menu.vue";
 import GameAlert from "./gameAlert.vue";
@@ -151,153 +150,153 @@ export default defineComponent({
     },
   },
   emits: ["update:selectedSpellIndex"],
-  setup(props, context) {
-    const store = useStore();
+  // setup(props, context) {
+  //   const store = useStore();
 
-    const volume = ref(0.3);
+  //   const volume = ref(0.3);
 
-    const gameAlertRef = ref();
-    const spellCardGrabbedAudioRef = ref();
-    const gamePointAudioRef = ref();
-    const turn1CountdownAudioRef = ref();
-    const turn2CountdownAudioRef = ref();
-    const turn3CountdownAudioRef = ref();
+  //   const gameAlertRef = ref();
+  //   const spellCardGrabbedAudioRef = ref();
+  //   const gamePointAudioRef = ref();
+  //   const turn1CountdownAudioRef = ref();
+  //   const turn2CountdownAudioRef = ref();
+  //   const turn3CountdownAudioRef = ref();
 
-    const gameData = computed(() => store.getters.gameData);
-    const roomData = computed(() => store.getters.roomData);
-    const isWatcher = computed(() => store.getters.userRole.value === Role.WATHCER);
-    const isPlayerA = computed(() => store.getters.isPlayerA);
-    const isPlayerB = computed(() => store.getters.isPlayerB);
-    const needWin = computed(() => roomData.value.room_config.need_in);
-    const spellCardSelected = computed(() => {
-      if (store.getters.isPlayerA) {
-        return store.getters.playerASelectedIndex !== -1;
-      }
-      if (store.getters.isPlayerB) {
-        return store.getters.playerBSelectedIndex !== -1;
-      }
-      return false;
-    });
-    const BGMpaused = computed(
-      () =>
-        turn1CountdownAudioRef.value.paused &&
-        turn2CountdownAudioRef.value.paused &&
-        turn3CountdownAudioRef.value.paused
-    );
+  //   const gameData = computed(() => store.getters.gameData);
+  //   const roomData = computed(() => store.getters.roomData);
+  //   const isWatcher = computed(() => store.getters.userRole.value === Role.WATHCER);
+  //   const isPlayerA = computed(() => store.getters.isPlayerA);
+  //   const isPlayerB = computed(() => store.getters.isPlayerB);
+  //   const needWin = computed(() => roomData.value.room_config.need_in);
+  //   const spellCardSelected = computed(() => {
+  //     if (store.getters.isPlayerA) {
+  //       return store.getters.playerASelectedIndex !== -1;
+  //     }
+  //     if (store.getters.isPlayerB) {
+  //       return store.getters.playerBSelectedIndex !== -1;
+  //     }
+  //     return false;
+  //   });
+  //   const BGMpaused = computed(
+  //     () =>
+  //       turn1CountdownAudioRef.value.paused &&
+  //       turn2CountdownAudioRef.value.paused &&
+  //       turn3CountdownAudioRef.value.paused
+  //   );
 
-    const selectSpellCard = (index: number) => {
-      if (isWatcher.value) {
-        return;
-      }
-      if (props.selectedSpellIndex === index) {
-        setSelectedSpellIndex(-1);
-      } else if (!spellCardSelected.value) {
-        if (
-          gameData.value.status[index] === 0 ||
-          (isPlayerB.value && gameData.value.status[index] === 1) ||
-          (isPlayerB.value && gameData.value.status[index] === 3)
-        )
-          setSelectedSpellIndex(index);
-      }
-    };
-    const onMenuClick = ({ event, target, item }: any) => {
-      const index = target.getAttribute("index");
-      if (index !== null) {
-        store.dispatch("update_spell", { idx: parseInt(index), status: item.value });
-      }
-    };
-    const stopBGM = () => {
-      turn1CountdownAudioRef.value.stop();
-      turn1CountdownAudioRef.value.stop();
-      turn1CountdownAudioRef.value.stop();
-    };
-    const showAlert = (text?: string, color?: string) => {
-      gameAlertRef.value.show(text, color);
-    };
-    const hideAlert = () => {
-      gameAlertRef.value.hide();
-    };
-    const setSelectedSpellIndex = (value) => {
-      context.emit("update:selectedSpellIndex", value);
-    };
+  //   const selectSpellCard = (index: number) => {
+  //     if (isWatcher.value) {
+  //       return;
+  //     }
+  //     if (props.selectedSpellIndex === index) {
+  //       setSelectedSpellIndex(-1);
+  //     } else if (!spellCardSelected.value) {
+  //       if (
+  //         gameData.value.status[index] === 0 ||
+  //         (isPlayerB.value && gameData.value.status[index] === 1) ||
+  //         (isPlayerB.value && gameData.value.status[index] === 3)
+  //       )
+  //         setSelectedSpellIndex(index);
+  //     }
+  //   };
+  //   const onMenuClick = ({ event, target, item }: any) => {
+  //     const index = target.getAttribute("index");
+  //     if (index !== null) {
+  //       store.dispatch("update_spell", { idx: parseInt(index), status: item.value });
+  //     }
+  //   };
+  //   const stopBGM = () => {
+  //     turn1CountdownAudioRef.value.stop();
+  //     turn1CountdownAudioRef.value.stop();
+  //     turn1CountdownAudioRef.value.stop();
+  //   };
+  //   const showAlert = (text?: string, color?: string) => {
+  //     gameAlertRef.value.show(text, color);
+  //   };
+  //   const hideAlert = () => {
+  //     gameAlertRef.value.hide();
+  //   };
+  //   const setSelectedSpellIndex = (value) => {
+  //     context.emit("update:selectedSpellIndex", value);
+  //   };
 
-    onMounted(() => {
-      Mit.on("spell_card_grabbed", () => {
-        spellCardGrabbedAudioRef.value?.play();
-      });
-      Mit.on("game_phase", () => {
-        spellCardGrabbedAudioRef.value?.play();
-      });
-      Mit.on("right_link_start", () => {
-        spellCardGrabbedAudioRef.value?.play();
-      });
-      Mit.on("game_point", () => {
-        gamePointAudioRef.value?.play();
-      });
-      Mit.on("alter", () => {
-        spellCardGrabbedAudioRef.value?.stop();
-        spellCardGrabbedAudioRef.value?.play();
-      });
-    });
-    onUnmounted(() => {
-      Mit.off("spell_card_grabbed");
-      Mit.off("game_phase");
-      Mit.off("right_link_start");
-      Mit.off("game_point");
-      Mit.off("alter");
-    });
+  //   onMounted(() => {
+  //     Mit.on("spell_card_grabbed", () => {
+  //       spellCardGrabbedAudioRef.value?.play();
+  //     });
+  //     Mit.on("game_phase", () => {
+  //       spellCardGrabbedAudioRef.value?.play();
+  //     });
+  //     Mit.on("right_link_start", () => {
+  //       spellCardGrabbedAudioRef.value?.play();
+  //     });
+  //     Mit.on("game_point", () => {
+  //       gamePointAudioRef.value?.play();
+  //     });
+  //     Mit.on("alter", () => {
+  //       spellCardGrabbedAudioRef.value?.stop();
+  //       spellCardGrabbedAudioRef.value?.play();
+  //     });
+  //   });
+  //   onUnmounted(() => {
+  //     Mit.off("spell_card_grabbed");
+  //     Mit.off("game_phase");
+  //     Mit.off("right_link_start");
+  //     Mit.off("game_point");
+  //     Mit.off("alter");
+  //   });
 
-    watch(gameData, (value) => {
-      if (value.phase === 1 && BGMpaused.value) {
-        const score = roomData.value.score[0] + roomData.value.score[1];
-        switch (score) {
-          case 0:
-            turn1CountdownAudioRef.value.setCurrent(GameTime.passed);
-            turn1CountdownAudioRef.value.play();
-            break;
-          case 1:
-            turn2CountdownAudioRef.value.setCurrent(GameTime.passed);
-            turn2CountdownAudioRef.value.play();
-            break;
-          case 2:
-            turn3CountdownAudioRef.value.setCurrent(GameTime.passed);
-            turn3CountdownAudioRef.value.play();
-            break;
-          default:
-            turn1CountdownAudioRef.value.setCurrent(GameTime.passed);
-            turn1CountdownAudioRef.value.play();
-        }
-      } else {
-        stopBGM();
-      }
-    });
+  //   watch(gameData, (value) => {
+  //     if (value.phase === 1 && BGMpaused.value) {
+  //       const score = roomData.value.score[0] + roomData.value.score[1];
+  //       switch (score) {
+  //         case 0:
+  //           turn1CountdownAudioRef.value.setCurrent(GameTime.passed);
+  //           turn1CountdownAudioRef.value.play();
+  //           break;
+  //         case 1:
+  //           turn2CountdownAudioRef.value.setCurrent(GameTime.passed);
+  //           turn2CountdownAudioRef.value.play();
+  //           break;
+  //         case 2:
+  //           turn3CountdownAudioRef.value.setCurrent(GameTime.passed);
+  //           turn3CountdownAudioRef.value.play();
+  //           break;
+  //         default:
+  //           turn1CountdownAudioRef.value.setCurrent(GameTime.passed);
+  //           turn1CountdownAudioRef.value.play();
+  //       }
+  //     } else {
+  //       stopBGM();
+  //     }
+  //   });
 
-    if (store.getters.roomData.started) {
-      store.dispatch("get_spells");
-    }
+  //   if (store.getters.roomData.started) {
+  //     store.dispatch("get_spells");
+  //   }
 
-    return {
-      volume,
-      gameData,
-      roomData,
-      isPlayerA,
-      isPlayerB,
-      isWatcher,
-      needWin,
-      needWinArr: computed(() => new Array(needWin.value)),
-      muted: computed(() => store.getters.roomSettings.bgmMuted),
-      gameAlertRef,
-      spellCardGrabbedAudioRef,
-      turn1CountdownAudioRef,
-      turn2CountdownAudioRef,
-      turn3CountdownAudioRef,
-      onMenuClick,
-      selectSpellCard,
-      setSelectedSpellIndex,
-      showAlert,
-      hideAlert,
-    };
-  },
+  //   return {
+  //     volume,
+  //     gameData,
+  //     roomData,
+  //     isPlayerA,
+  //     isPlayerB,
+  //     isWatcher,
+  //     needWin,
+  //     needWinArr: computed(() => new Array(needWin.value)),
+  //     muted: computed(() => store.getters.roomSettings.bgmMuted),
+  //     gameAlertRef,
+  //     spellCardGrabbedAudioRef,
+  //     turn1CountdownAudioRef,
+  //     turn2CountdownAudioRef,
+  //     turn3CountdownAudioRef,
+  //     onMenuClick,
+  //     selectSpellCard,
+  //     setSelectedSpellIndex,
+  //     showAlert,
+  //     hideAlert,
+  //   };
+  // },
 });
 </script>
 

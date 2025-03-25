@@ -90,8 +90,6 @@ class Cookie {
   }
 }
 
-export default {
-  local: new LocalStorage(),
-  session: new SessionStorage(),
-  cookie: new Cookie(),
-};
+export const local = new LocalStorage();
+export const session = new SessionStorage();
+export const cookie = new Cookie();

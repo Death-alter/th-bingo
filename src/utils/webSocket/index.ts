@@ -14,6 +14,7 @@ export default abstract class WS {
   protected heartBeatTimeOutTimer = 0;
   protected retryTime = 0;
   protected autoReconnect = true;
+  protected autoSendHeartBeat = false;
 
   public static readonly heartBeatInterval: number = config.webSocket.heartBeatInterval; //单位：秒
   public static readonly retryLimit: number = config.webSocket.maxRetryTimes; //最大重连次数
@@ -39,7 +40,7 @@ export default abstract class WS {
 
   protected abstract heartBeat(): HeartBeatOption | null | undefined;
 
-  protected abstract send(action: string, data: { [index: string]: any } | null): void;
+  abstract send(action: string, data: { [index: string]: any } | null): void;
 
   protected heartBeatOption = this.heartBeat();
 
@@ -73,11 +74,7 @@ export default abstract class WS {
           for (const callback of this.eventList.connect) {
             callback();
           }
-          if (this.heartBeatOption) {
-            this.heartBeatTimer = window.setInterval(() => {
-              this.send(this.heartBeatOption!.action, this.heartBeatOption!.data);
-            }, WS.heartBeatInterval * 1000);
-          }
+          if (this.autoSendHeartBeat) this.startHeartBeat();
           console.log("ws已连接");
           resolve(event);
         };
@@ -91,7 +88,7 @@ export default abstract class WS {
 
         this.ws.onclose = (event) => {
           setTimeout(() => {
-            window.clearInterval(this.heartBeatTimer);
+            this.stopHeartBeat();
             this.ws = null;
             for (const callback of this.eventList.disconnect) {
               callback({});
@@ -134,6 +131,23 @@ export default abstract class WS {
     if (this.ws) {
       this.autoReconnect = false; //手动断开连接不自动重连
       this.ws.close();
+    }
+  }
+
+  startHeartBeat() {
+    if (this.heartBeatOption) {
+      this.heartBeatTimer = window.setInterval(() => {
+        this.send(this.heartBeatOption!.action, this.heartBeatOption!.data);
+      }, WS.heartBeatInterval * 1000);
+    }
+  }
+
+  stopHeartBeat() {
+    if (this.heartBeatTimer) {
+      window.clearInterval(this.heartBeatTimer);
+    }
+    if (this.heartBeatTimeOutTimer) {
+      window.clearTimeout(this.heartBeatTimeOutTimer);
     }
   }
 

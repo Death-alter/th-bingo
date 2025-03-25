@@ -47,91 +47,56 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref, watch } from "vue";
+<script lang="ts" setup>
 import { Minus, Plus } from "@element-plus/icons-vue";
 import { ElButton } from "element-plus";
 
-export default defineComponent({
-  name: "ScoreBoard",
-  components: { ElButton },
-  props: {
-    modelValue: {
-      type: Number,
-      default: 0,
-    },
-    label: {
-      type: String,
-      default: "得分",
-    },
-    max: {
-      type: Number,
-    },
-    min: {
-      type: Number,
-      default: 0,
-    },
-    manual: {
-      type: Boolean,
-      default: false,
-    },
-    step: {
-      type: Number,
-      default: 1,
-    },
-    size: {
-      type: Number,
-      default: 14,
-    },
-    textSize: {
-      type: Number,
-      default: 12,
-    },
-  },
-  emits: ["update:modelValue", "add", "minus"],
-  setup(props, context) {
-    const score = ref(0);
+const score = defineModel<number>({ default: 0, required: true });
+const props = withDefaults(
+  defineProps<{
+    label: string;
+    max: number;
+    min: number;
+    manual: boolean;
+    step: number;
+    size: number;
+    textSize: number;
+  }>(),
+  {
+    label: "得分",
+    min: 0,
+    manual: false,
+    step: 1,
+    size: 14,
+    textSize: 12,
+  }
+);
+const emits = defineEmits(["add", "minus"]);
 
-    watch(
-      () => props.modelValue,
-      (value) => {
-        score.value = value;
-      },
-      { immediate: true }
-    );
-
-    const addScore = () => {
-      if (!props.manual) {
-        score.value += props.step;
-        if (props.max != null && score.value > props.max) {
-          score.value = props.max;
-        }
-        context.emit("update:modelValue", score.value);
-      } else {
-        context.emit("add");
-      }
-    };
-    const minusScore = () => {
-      if (!props.manual) {
-        score.value -= props.step;
-        if (props.min != null && score.value < props.min) {
-          score.value = props.min;
-        }
-        context.emit("update:modelValue", score.value);
-      } else {
-        context.emit("minus");
-      }
-    };
-
-    return {
-      score,
-      Minus,
-      Plus,
-      addScore,
-      minusScore,
-    };
-  },
-});
+const addScore = () => {
+  if (!props.manual) {
+    let v = score.value;
+    v += props.step;
+    if (props.max != null && score.value > props.max) {
+      v = props.max;
+    }
+    score.value = v;
+  } else {
+    emits("add");
+  }
+};
+const minusScore = () => {
+  if (!props.manual) {
+    let v = score.value;
+    v -= props.step;
+    if (props.min != null && score.value < props.min) {
+      v = props.min;
+    }
+    score.value = v;
+  } else {
+    emits("minus");
+  }
+};
 </script>
 
 <style lang="scss" scoped>

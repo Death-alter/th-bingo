@@ -2,27 +2,14 @@
   <router-view />
 </template>
 
-<script lang="ts">
-import { defineComponent } from "vue";
-import { useStore } from "vuex";
-import Storage from "./utils/Storage";
+<script lang="ts" setup>
+import Config from "./config";
+import ws from "@/utils/webSocket/WebSocketBingo";
+import { useLocalStore } from "@/store/LocalStore";
 
-export default defineComponent({
-  setup() {
-    const store = useStore();
-    store.commit("get_user_data");
-    const savedSettings = Storage.local.get("roomSettings");
-    if (savedSettings) {
-      if (!savedSettings.countdownTime) {
-        Storage.local.remove("roomSettings");
-        return;
-      }
-      savedSettings.gameTimeLimit = savedSettings.gameTimeLimit[1];
-      savedSettings.countdownTime = savedSettings.countdownTime[1];
-      store.commit("modify_room_settings", savedSettings);
-    }
-  },
-});
+const localStore = useLocalStore();
+
+ws.createConnection(Config.webSocket.url);
 </script>
 
 <style lang="scss">

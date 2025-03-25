@@ -2,99 +2,75 @@
   <audio ref="audio" :src="(src as string)" :muted="muted" :volume="volume"></audio>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref } from "vue";
+<script lang="ts" setup>
+import { computed, ref } from "vue";
 
-export default defineComponent({
-  name: "CountDown",
-  data() {
-    return {
-      timer: 0,
-    };
-  },
-  props: {
-    startTime: {
-      type: Number,
-    },
-    endTime: {
-      type: Number,
-    },
-    src: {
-      required: true,
-    },
-    loop: {
-      type: Boolean,
-      default: false,
-    },
-    muted: {
-      type: Boolean,
-      default: false,
-    },
-    volume: {
-      type: Number, //0.0 - 1.0
-      default: 1.0,
-    },
-  },
-  setup() {
-    const audio = ref<HTMLAudioElement>();
-
-    return {
-      audio,
-    };
-  },
-  computed: {
-    duration() {
-      const audio = this.audio as HTMLAudioElement;
-      if (this.startTime && this.endTime) {
-        return this.endTime - this.startTime;
-      } else if (this.startTime) {
-        return audio.duration - this.startTime;
-      } else if (this.endTime) {
-        return this.endTime;
-      } else {
-        return 0;
-      }
-    },
-    paused() {
-      const audio = this.audio as HTMLAudioElement;
-      return audio.paused;
-    },
-  },
-  methods: {
-    play() {
-      const audio = this.audio as HTMLAudioElement;
-      if (!audio.paused) return;
-      audio.play();
-      let delay = this.duration || audio.duration;
-      if (audio.currentTime) {
-        delay -= audio.currentTime;
-      }
-      if (this.timer) window.clearTimeout(this.timer);
-      this.timer = window.setTimeout(() => {
-        if (!this.loop) {
-          this.stop();
-        } else {
-          audio.currentTime = this.startTime || 0;
-          this.play();
-        }
-      }, delay * 1000);
-    },
-    pause() {
-      this.audio?.pause();
-      window.clearTimeout(this.timer);
-    },
-    stop() {
-      this.pause();
-      if (this.audio) this.audio.currentTime = this.startTime || 0;
-    },
-    setCurrent(time: number) {
-      const audio = this.audio as HTMLAudioElement;
-      const delay = this.duration || audio.duration;
-      if (time > delay) time %= delay;
-      if (this.audio) this.audio.currentTime = time;
-    },
-  },
+const audio = ref<HTMLAudioElement>();
+const timer = ref(0);
+const duration = computed(() => {
+  if (props.startTime && props.endTime) {
+    return props.endTime - props.startTime;
+  } else if (audio.value && props.startTime) {
+    return audio.value.duration - props.startTime;
+  } else if (props.endTime) {
+    return props.endTime;
+  } else {
+    return 0;
+  }
 });
+
+const props = withDefaults(
+  defineProps<{
+    startTime: number;
+    endTime: number;
+    src: string;
+    loop: boolean;
+    muted: boolean;
+    volume: number;
+  }>(),
+  {
+    src: "",
+    loop: false,
+    muted: false,
+    volume: 1,
+  }
+);
+
+const play = () => {
+  if (!audio.value?.paused) return;
+  audio.value?.play();
+  let delay = duration.value || audio.value.duration;
+  if (audio.value.currentTime) {
+    delay -= audio.value.currentTime;
+  }
+  if (timer.value) window.clearTimeout(timer.value);
+  timer.value = window.setTimeout(() => {
+    if (!props.loop) {
+      stop();
+    } else {
+      audio.value && (audio.value.currentTime = props.startTime || 0);
+      play();
+    }
+  }, delay * 1000);
+};
+
+const pause = () => {
+  audio.value?.pause();
+  window.clearTimeout(timer.value);
+};
+
+const stop = () => {
+  pause();
+  audio.value && (audio.value.currentTime = props.startTime || 0);
+};
+
+const setCurrent = (time: number) => {
+  const delay = duration.value || audio.value?.duration || 0;
+  if (time > delay) time %= delay;
+  audio.value && (audio.value.currentTime = time);
+};
+
+defineExpose([setCurrent]);
 </script>
 
 <style lang="scss" scoped></style>

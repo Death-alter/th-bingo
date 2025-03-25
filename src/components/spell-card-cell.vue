@@ -1,29 +1,8 @@
 <template>
-  <div
-    :class="{
-      'spell-card-cell': true,
-      banned: status === -1,
-      'A-selected': status === 1 || status === 2,
-      'A-attained': status === 5 || status === 6,
-      'B-selected': status === 3 || status === 2,
-      'B-attained': status === 7 || status === 6,
-      'A-local-selected': isPlayerA && selected,
-      'B-local-selected': isPlayerB && selected,
-    }"
-    @click="onClick"
-  >
+  <div :class="cellClass" @click="onClick">
     <div class="spell-card-info">
       <div class="level" v-if="level">
-        <div
-          class="level-icons"
-          :class="{
-            level1: level === 1,
-            level2: level === 2,
-            level3: level === 3,
-            level4: level === 4,
-            level5: level === 5,
-          }"
-        >
+        <div class="level-icons" :class="levelClass">
           <el-icon v-for="(item, index) in new Array(level)" :key="index"><StarFilled /></el-icon>
         </div>
       </div>
@@ -31,67 +10,58 @@
         {{ desc }}
       </div>
       <div class="name">{{ name }}</div>
-      <!-- <div class="game-name"></div> -->
     </div>
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, computed } from "vue";
-import { useStore } from "vuex";
+<script lang="ts" setup>
+import { computed } from "vue";
 import { ElIcon } from "element-plus";
+import { SpellStatus } from "@/types";
+import { useRoomStore } from "@/store/RoomStore";
 
-export default defineComponent({
-  name: "SpellCardCell",
-  data() {
-    return {};
-  },
-  components: {
-    ElIcon,
-  },
-  props: {
-    level: {
-      type: Number,
-      default: 0,
-    },
-    name: {
-      type: String,
-      required: true,
-    },
-    disabled: {
-      type: Boolean,
-      default: false,
-    },
-    status: {
-      type: Number,
-      default: 0,
-    },
-    selected: {
-      type: Boolean,
-      default: false,
-    },
-    desc: {
-      type: String,
-      default: "",
-    },
-  },
-  setup() {
-    const store = useStore();
-    return {
-      roomSettings: computed(() => store.getters.roomSettings),
-      isPlayerA: computed(() => store.getters.isPlayerA),
-      isPlayerB: computed(() => store.getters.isPlayerB),
-    };
-  },
-  emits: ["click"],
-  methods: {
-    onClick() {
-      if (!this.disabled) {
-        this.$emit("click");
-      }
-    },
-  },
-});
+const roomStore = useRoomStore();
+
+const props = withDefaults(
+  defineProps<{
+    level: number;
+    name: string;
+    disabled: boolean;
+    status: number;
+    selected: boolean;
+    desc: string;
+  }>(),
+  {
+    level: 0,
+    name: "",
+    disabled: false,
+    status: 0,
+    selected: false,
+    desc: "",
+  }
+);
+
+const emits = defineEmits(["click"]);
+
+const isPlayerA = computed(() => roomStore.isPlayerA);
+const isPlayerB = computed(() => roomStore.isPlayerB);
+const cellClass = computed(() => ({
+  "spell-card-cell": true,
+  banned: props.status === SpellStatus.BANNED,
+  "A-selected": props.status === SpellStatus.A_SELECTED || props.status === SpellStatus.BOTH_SELECTED,
+  "A-attained": props.status === SpellStatus.A_ATTAINED || props.status === SpellStatus.BOTH_ATTAINED,
+  "B-selected": props.status === SpellStatus.B_SELECTED || props.status === SpellStatus.BOTH_SELECTED,
+  "B-attained": props.status === SpellStatus.B_ATTAINED || props.status === SpellStatus.BOTH_ATTAINED,
+  "A-local-selected": props.selected && isPlayerA,
+  "B-local-selected": props.selected && isPlayerB,
+}));
+const levelClass = computed(() => `level${props.level}`);
+
+const onClick = () => {
+  if (!props.disabled) {
+    emits("click");
+  }
+};
 </script>
 
 <style lang="scss" scoped>

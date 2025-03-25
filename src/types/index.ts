@@ -1,70 +1,3 @@
-//默认对象类型
-export interface Data<T> {
-  [index: string]: T;
-}
-
-export interface DefaultData {
-  [index: string]: any;
-}
-
-export interface RequestParams {
-  [index: string]: any;
-}
-
-export interface StoreData {
-  status?: string;
-  data?: DefaultData | null;
-  error?: any;
-}
-
-export interface VuexState {
-  [index: string]: StoreData;
-}
-
-export interface ActionHandler {
-  (res: DefaultData, data: DefaultData, params: RequestParams | Array<any>, trigger?: string): DefaultData;
-}
-
-export interface MutationHandler {
-  (newVal: any, oldVal: DefaultData, trigger?: string): DefaultData | Promise<DefaultData>;
-}
-
-export interface HandlerList {
-  pending?: ActionHandler;
-  replied?: ActionHandler;
-  received?: ActionHandler;
-  error?: ActionHandler;
-}
-
-interface StoreItem {
-  name: string;
-  default: DefaultData | Array<DefaultData>;
-  dataHandler?: ActionHandler | MutationHandler | HandlerList;
-}
-
-export interface StoreAction extends StoreItem {
-  actionName: string;
-  wsName: string;
-  noParams?: boolean;
-}
-
-export interface StoreMutation extends StoreItem {
-  mutationName: string;
-  wsName?: string;
-}
-
-export interface EventCallback {
-  (event: Event): void;
-}
-
-export interface UserData {
-  name: string;
-  token: string;
-  [index: string]: any;
-}
-
-export type Constructor<T> = new (...args: any[]) => T;
-
 export const enum Role {
   HOST = 0,
   PLAYER = 1,
@@ -83,4 +16,23 @@ export const enum BpStatus {
   IS_B_BAN = 2,
   IS_B_PICK = 3,
   SELECT_OPEN_EX = 4,
+}
+
+export const enum SpellStatus {
+  BANNED = -1,
+  NONE = 0,
+  A_SELECTED = 1,
+  BOTH_SELECTED = 2,
+  B_SELECTED = 3,
+  A_ATTAINED = 5,
+  BOTH_ATTAINED = 6,
+  B_ATTAINED = 7,
+}
+
+export const enum GameStatus {
+  NOT_STARTED = 0,
+  COUNT_DOWN = 1,
+  STARTED = 2,
+  PAUSED = 3,
+  ENDED = 4,
 }

@@ -1,14 +1,18 @@
 import WS from ".";
 import {
-  WebSocketRequestData,
+  WebSocketResponseData,
   WebSocketPushData,
   WebSocketActionType,
   WebSocketCallBack,
   HeartBeatOption,
+  WebSocketPushActionType,
 } from "./types";
 import { v4 } from "uuid";
+import { ElMessage } from "element-plus";
 
 export class WebSocketBingo extends WS {
+  protected autoSendHeartBeat = true;
+  public heartBeatSendTime = 0;
   private eventMap: {
     [index: string]: {
       action: WebSocketActionType;
@@ -18,15 +22,21 @@ export class WebSocketBingo extends WS {
   } = {};
 
   protected onMessage(event, resolve, reject) {
-    let res = JSON.parse(event.data) as WebSocketRequestData | WebSocketPushData;
+    let res = JSON.parse(event.data) as WebSocketResponseData | WebSocketPushData;
     if (res.hasOwnProperty("echo")) {
-      res = <WebSocketRequestData>res;
+      res = <WebSocketResponseData>res;
       const ep = this.eventMap[res.echo];
-      for (const callback of this.eventList[ep.action]) {
-        callback(res.data);
+      if (res.code === 0) {
         ep.resolve(res.data);
-        delete this.eventList[res.echo];
+      } else {
+        ep.reject(res.msg);
       }
+      if (this.eventList[ep.action]) {
+        for (const callback of this.eventList[ep.action]) {
+          callback(res.data);
+        }
+      }
+      delete this.eventMap[res.echo];
     } else {
       res = <WebSocketPushData>res;
       for (const callback of this.eventList[res.push_action]) {
@@ -42,12 +52,8 @@ export class WebSocketBingo extends WS {
     };
   }
 
-  protected send(action: WebSocketActionType, data: { [index: string]: any } | null = null) {
-    return new Promise((resolve, reject) => {
-      if (!this.connected) {
-        reject(new Error("未建立连接，请先调用createConnection()"));
-        return;
-      }
+  send(action: WebSocketActionType, data: { [index: string]: any } | null = null) {
+    return new Promise<any>((resolve, reject) => {
       const f = () => {
         const uuid = v4();
         this.ws?.send(
@@ -59,28 +65,32 @@ export class WebSocketBingo extends WS {
         );
         this.eventMap[uuid] = { action, resolve, reject };
         if (action === WebSocketActionType.HEART && this.heartBeatOption) {
+          this.heartBeatSendTime = new Date().getTime();
           this.heartBeatTimeOutTimer = setTimeout(() => {
             this.reconnect();
           }, WS.timeOutSeconds);
         }
       };
-      if (this.connecting) {
+      if (!this.connected) {
         this.eventStack.push(f);
       } else {
         f();
       }
+    }).catch((e) => {
+      ElMessage.error(e);
+      console.log(e);
     });
   }
 
-  once(action: WebSocketActionType, callback: WebSocketCallBack) {
+  once<T = any>(action: WebSocketActionType, callback: WebSocketCallBack<T>) {
     super.once(action, callback);
   }
 
-  on(action: WebSocketActionType, callback: WebSocketCallBack) {
+  on<T = any>(action: WebSocketActionType | WebSocketPushActionType, callback: WebSocketCallBack<T>) {
     super.on(action, callback);
   }
 
-  off(action: WebSocketActionType, callback?: WebSocketCallBack) {
+  off<T = any>(action: WebSocketActionType, callback?: WebSocketCallBack<T>) {
     super.off(action, callback);
   }
 }
