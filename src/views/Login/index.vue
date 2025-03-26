@@ -27,7 +27,7 @@ const router = useRouter();
 
 const login = () => {
   localStore.login().then((res: { rid: string | null }) => {
-    res.rid && (roomStore.roomId = res.rid);
+    res && res.rid && (roomStore.roomId = res.rid);
     router.push("/");
   });
 };

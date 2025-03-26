@@ -24,9 +24,9 @@ const roomStore = useRoomStore();
 
 const props = withDefaults(
   defineProps<{
-    level: number;
+    level?: number;
     name: string;
-    disabled: boolean;
+    disabled?: boolean;
     status: number;
     selected: boolean;
     desc: string;

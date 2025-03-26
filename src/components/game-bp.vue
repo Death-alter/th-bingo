@@ -15,7 +15,7 @@
           :key="index"
           @click="selectGame(game.code)"
         >
-          <el-tooltip :content="game.name" placement="top" effect="light">TH{{ game.code }}</el-tooltip>
+          <img class="game-icon" :src="getGameIcon(game.code)" alt="" />
         </div>
         <div
           v-if="phase < 3"
@@ -26,7 +26,7 @@
           }"
           @click="selectGame('EX')"
         >
-          <el-tooltip content="EX" placement="top" effect="light">EX</el-tooltip>
+          <img class="game-icon" :src="getGameIcon('EX')" alt="" />
         </div>
       </div>
       <div class="tooltip-text">{{ tooltipText }}</div>
@@ -72,164 +72,107 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, computed, ref, watch } from "vue";
+<script lang="ts" setup>
+import { computed, ref } from "vue";
 import Config from "@/config";
-import { ElTooltip, ElRow, ElCol } from "element-plus";
-import { BpStatus, Role } from "@/types";
+import { ElRow, ElCol } from "element-plus";
+import { BpStatus } from "@/types";
+import { useGameStore } from "@/store/GameStore";
+import { useRoomStore } from "@/store/RoomStore";
 
-export default defineComponent({
-  name: "Room",
-  components: {
-    ElRow,
-    ElCol,
-    ElTooltip,
-  },
-  props: {
-    modelValue: {
-      type: String,
-      default: "",
-    },
-  },
-  emits: ["update:modelValue"],
-  // setup(props, context) {
-  //   const gameList = ref([...Config.gameOptionList]);
-  //   const ASelectedList = ref<string[]>([]);
-  //   const BSelectedList = ref<string[]>([]);
-  //   const ABannedList = ref<string[]>([]);
-  //   const BBannedList = ref<string[]>([]);
-  //   const availableGameList = ref<any>([]);
+const gameStore = useGameStore();
+const roomStore = useRoomStore();
 
-  //   const isPlayerA = computed(() => store.getters.isPlayerA);
-  //   const isPlayerB = computed(() => store.getters.isPlayerB);
-  //   const roomConfig = computed(() => store.getters.roomData.room_config);
-  //   const phase = computed(() => store.getters.banPickInfo.phase);
-  //   const openEX = computed(
-  //     () => store.getters.banPickInfo.a_open_ex === 1 && store.getters.banPickInfo.b_open_ex === 1
-  //   );
-  //   const isPlayer = computed(() => store.getters.userRole === Role.PLAYER);
-  //   const isHost = computed(() => store.getters.userRole === Role.HOST);
-  //   const bpStatus = computed(() => store.getters.bpStatus);
-  //   const tooltipText = computed(() => {
-  //     switch (bpStatus.value) {
-  //       case BpStatus.IS_A_PICK:
-  //         if (isHost.value) {
-  //           return "等待左侧玩家选择一个作品";
-  //         }
-  //         if (isPlayerA.value) {
-  //           return "请选择一个作品";
-  //         }
-  //         if (isPlayerB.value) {
-  //           return "等待对手选择一个作品";
-  //         }
-  //         break;
-  //       case BpStatus.IS_B_PICK:
-  //         if (isHost.value) {
-  //           return "等待右侧玩家选择一个作品";
-  //         }
-  //         if (isPlayerA.value) {
-  //           return "等待对手选择一个作品";
-  //         }
-  //         if (isPlayerB.value) {
-  //           return "请选择一个作品";
-  //         }
-  //         break;
-  //       case BpStatus.IS_A_BAN:
-  //         if (isHost.value) {
-  //           return "等待左侧玩家禁用一个作品";
-  //         }
-  //         if (isPlayerA.value) {
-  //           return "请禁用一个作品";
-  //         }
-  //         if (isPlayerB.value) {
-  //           return "等待对手禁用一个作品";
-  //         }
-  //         break;
-  //       case BpStatus.IS_B_BAN:
-  //         if (isHost.value) {
-  //           return "等待右侧玩家禁用一个作品";
-  //         }
-  //         if (isPlayerA.value) {
-  //           return "等待对手禁用一个作品";
-  //         }
-  //         if (isPlayerB.value) {
-  //           return "请禁用一个作品";
-  //         }
-  //         break;
-  //       case BpStatus.SELECT_OPEN_EX:
-  //         if (isHost.value) {
-  //           return "等待玩家选择是否开启EX";
-  //         }
-  //         if (isPlayerA.value || isPlayerB.value) {
-  //           return "请选择是否开启EX";
-  //         }
-  //     }
-  //     return "";
-  //   });
+const code = defineModel();
+const gameList = ref([...Config.gameOptionList]);
+const ASelectedList = computed(() => gameStore.banPick.a_pick);
+const BSelectedList = computed(() => gameStore.banPick.b_pick);
+const ABannedList = computed(() => gameStore.banPick.a_ban);
+const BBannedList = computed(() => gameStore.banPick.b_ban);
 
-  //   // watch(
-  //   //   () => store.getters.banPickInfo,
-  //   //   (newVal, oldVal) => {
-  //   //     ABannedList.value = newVal.a_ban;
-  //   //     BBannedList.value = newVal.b_ban;
-  //   //     if (isHost.value) {
-  //   //       ASelectedList.value = newVal.a_pick;
-  //   //       BSelectedList.value = newVal.b_pick;
-  //   //     }
-  //   //     if (isPlayer.value) {
-  //   //       if (isPlayerA.value) {
-  //   //         ASelectedList.value = newVal.a_pick;
-  //   //         if (newVal.phase > 4) {
-  //   //           BSelectedList.value = newVal.b_pick;
-  //   //         } else if (newVal.b_pick && newVal.b_pick[0] === "EX") {
-  //   //           BSelectedList.value = ["EX"];
-  //   //         }
-  //   //       }
-  //   //       if (isPlayerB.value) {
-  //   //         BSelectedList.value = newVal.b_pick;
-  //   //         if (newVal.phase > 4) {
-  //   //           ASelectedList.value = newVal.a_pick;
-  //   //         } else if (newVal.a_pick && newVal.a_pick[0] === "EX") {
-  //   //           ASelectedList.value = ["EX"];
-  //   //         }
-  //   //       }
-  //   //     }
-
-  //   //     context.emit("update:modelValue", "");
-  //   //   },
-  //   //   { immediate: true }
-  //   // );
-
-  //   const selectGame = (code: string) => {
-  //     if (phase.value > 99) return;
-  //     const list = [...ASelectedList.value, ...BSelectedList.value, ...ABannedList.value, ...BBannedList.value];
-  //     if (list.includes(code)) return;
-  //     if (props.modelValue === code) {
-  //       context.emit("update:modelValue", "");
-  //     } else {
-  //       context.emit("update:modelValue", code);
-  //     }
-  //   };
-
-  //   return {
-  //     gameList,
-  //     ASelectedList,
-  //     BSelectedList,
-  //     ABannedList,
-  //     BBannedList,
-  //     phase,
-  //     roomConfig,
-  //     bpStatus,
-  //     isPlayerA,
-  //     isPlayerB,
-  //     isHost,
-  //     tooltipText,
-  //     openEX,
-  //     availableGameList,
-  //     selectGame,
-  //   };
-  // },
+const isPlayerA = computed(() => roomStore.isPlayerA);
+const isPlayerB = computed(() => roomStore.isPlayerB);
+const roomConfig = computed(() => roomStore.roomConfig);
+const phase = computed(() => gameStore.phase);
+const openEX = computed(() => gameStore.banPick.a_open_ex === 1 && gameStore.banPick.b_open_ex === 1);
+const isHost = computed(() => roomStore.isHost);
+const bpStatus = computed(() => gameStore.bpStatus);
+const tooltipText = computed(() => {
+  switch (bpStatus.value) {
+    case BpStatus.IS_A_PICK:
+      if (isHost.value) {
+        return "等待左侧玩家选择一个作品";
+      }
+      if (isPlayerA.value) {
+        return "请选择一个作品";
+      }
+      if (isPlayerB.value) {
+        return "等待对手选择一个作品";
+      }
+      break;
+    case BpStatus.IS_B_PICK:
+      if (isHost.value) {
+        return "等待右侧玩家选择一个作品";
+      }
+      if (isPlayerA.value) {
+        return "等待对手选择一个作品";
+      }
+      if (isPlayerB.value) {
+        return "请选择一个作品";
+      }
+      break;
+    case BpStatus.IS_A_BAN:
+      if (isHost.value) {
+        return "等待左侧玩家禁用一个作品";
+      }
+      if (isPlayerA.value) {
+        return "请禁用一个作品";
+      }
+      if (isPlayerB.value) {
+        return "等待对手禁用一个作品";
+      }
+      break;
+    case BpStatus.IS_B_BAN:
+      if (isHost.value) {
+        return "等待右侧玩家禁用一个作品";
+      }
+      if (isPlayerA.value) {
+        return "等待对手禁用一个作品";
+      }
+      if (isPlayerB.value) {
+        return "请禁用一个作品";
+      }
+      break;
+    case BpStatus.SELECT_OPEN_EX:
+      if (isHost.value) {
+        return "等待玩家选择是否开启EX";
+      }
+      if (isPlayerA.value || isPlayerB.value) {
+        return "请选择是否开启EX";
+      }
+  }
+  return "";
 });
+
+const selectGame = (c: string) => {
+  if (phase.value > 99) return;
+  const list = [...ASelectedList.value, ...BSelectedList.value, ...ABannedList.value, ...BBannedList.value];
+  if (list.includes(c)) return;
+  if (code.value) {
+    code.value = "";
+  } else {
+    code.value = c;
+  }
+};
+
+const getGameIcon = (code: string) => {
+  if (code === "EX") {
+    return require("@/assets/image/game/ex.png");
+  } else {
+    if (code.length === 1) code = "0" + code;
+    return require(`@/assets/image/game/th${code}.png`);
+  }
+};
 </script>
 
 <style lang="scss" scoped>

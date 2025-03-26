@@ -28,6 +28,7 @@ export const useRoomStore = defineStore("room", () => {
     return list;
   });
 
+  //本地房间设置
   const roomSettings = reactive({
     type: BingoType.STANDARD,
     gameTimeLimit: gameTypeList.value[0].timeLimit,
@@ -65,9 +66,10 @@ export const useRoomStore = defineStore("room", () => {
     local.set("roomSettings", roomSettings);
   };
 
+  //服务端房间数据
   const roomData = reactive({
     rid: "", // 房间名
-    type: 1, // 1-标准赛，2-BP赛，3-link赛
+    type: BingoType.STANDARD, // 1-标准赛，2-BP赛，3-link赛
     host: "", // 房主的名字
     names: ["", ""], // 玩家名字列表，一定有2个，没有人则对应位置为空
     change_card_count: [1, 2], // 换卡次数，一定有2个，和上面的names一一对应
@@ -77,13 +79,27 @@ export const useRoomStore = defineStore("room", () => {
     last_winner: 1, // 上一场是谁赢，0或1，-1表示没有上一场
   });
 
+  //服务端房间设置
+  const roomConfig = reactive({
+    rid: "", // 房间名
+    type: BingoType.STANDARD, // 1-标准赛，2-BP赛，3-link赛
+    game_time: 30, // 游戏总时间（不含倒计时），单位：分
+    countdown: 5, // 倒计时，单位：秒
+    games: [], // 含有哪些作品
+    ranks: [], // 含有哪些游戏难度，也就是L卡和EX卡
+    need_win: 3, // 需要胜利的局数，例如2表示bo3
+    difficulty: 3, // 难度（影响不同星级的卡的分布），1对应E，2对应N，3对应L，其它对应随机
+    cd_time: 30, // 选卡cd，收卡后要多少秒才能选下一张卡
+    reserved_type: 1, // 纯客户端用的一个类型字段，服务器只负责透传
+  });
+
   const createRoom = () => {
     return ws.send(WebSocketActionType.CREATE_ROOM, {
       room_config: {
         rid: roomId.value,
         type: BingoType.STANDARD,
-        game_time: roomSettings.gameTimeLimit,
-        countdown: roomSettings.countdownTime,
+        game_time: roomSettings.gameTimeLimit && roomSettings.gameTimeLimit[roomSettings.type],
+        countdown: roomSettings.countdownTime && roomSettings.countdownTime[roomSettings.type],
         games: roomSettings.checkList,
         ranks: roomSettings.rankList,
         need_win: (roomSettings.format + 1) / 2,
@@ -96,7 +112,11 @@ export const useRoomStore = defineStore("room", () => {
   };
 
   const getRoomConfig = () => {
-    return ws.send(WebSocketActionType.GET_ROOM_CONFIG, { rid: roomId.value });
+    return ws.send(WebSocketActionType.GET_ROOM_CONFIG, { rid: roomId.value }).then((data) => {
+      for (const i in data) {
+        roomConfig[i] = data[i];
+      }
+    });
   };
 
   const updateRoomConfig = () => {
@@ -104,8 +124,8 @@ export const useRoomStore = defineStore("room", () => {
     return ws.send(WebSocketActionType.UPDATE_ROOM_CONFIG, {
       rid: roomId.value,
       type: roomSettings.type,
-      game_time: roomSettings.gameTimeLimit,
-      countdown: roomSettings.countdownTime,
+      game_time: roomSettings.gameTimeLimit && roomSettings.gameTimeLimit[roomSettings.type],
+      countdown: roomSettings.countdownTime && roomSettings.countdownTime[roomSettings.type],
       games: roomSettings.checkList,
       ranks: roomSettings.rankList,
       need_win: (roomSettings.format + 1) / 2,
@@ -179,6 +199,7 @@ export const useRoomStore = defineStore("room", () => {
     addRobot,
     roomSettings,
     roomData,
+    roomConfig,
     inRoom,
     inGame,
     isPlayer,

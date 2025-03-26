@@ -8,8 +8,8 @@ module.exports = {
     "plugin:vue/vue3-essential",
     "eslint:recommended",
     "@vue/typescript/recommended",
-    "@vue/prettier",
-    "@vue/prettier/@typescript-eslint",
+    // "@vue/prettier",
+    // "@vue/prettier/@typescript-eslint",
     "plugin:prettier/recommended",
   ],
   parserOptions: {
@@ -29,5 +29,7 @@ module.exports = {
     "no-case-declarations": "off",
     "vue/no-parsing-error": "off",
     "no-empty": "off",
+    "no-undef": "off",
+    "vue/multi-word-component-names": "off"
   },
 };

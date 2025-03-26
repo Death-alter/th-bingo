@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import ws from "@/utils/webSocket/WebSocketBingo";
 import { WebSocketActionType } from "@/utils/webSocket/types";
 import { local } from "@/utils/Storage";
@@ -17,25 +17,29 @@ export const useLocalStore = defineStore("local", () => {
   }));
 
   const login = () => {
-    if (!local.has("userData")) {
-      local.set("userData", userData.value);
-    }
-    return ws.send(WebSocketActionType.LOGIN, {
-      name: username.value,
-      pwd: password.value,
-    });
+    return ws
+      .send(WebSocketActionType.LOGIN, {
+        name: username.value,
+        pwd: password.value,
+      })
+      .then((res: any) => {
+        if (!local.has("userData")) {
+          local.set("userData", userData.value);
+        }
+        return res;
+      });
   };
 
   const logout = () => {
-    if (!roomStore.inRoom) {
+    if (roomStore.inRoom) {
       return ws.send(WebSocketActionType.LEAVE_ROOM).then(() => {
         local.remove("userData");
-        ws.closeConnection();
+        ws.reconnect();
       });
     } else {
       return new Promise((reslove, reject) => {
         local.remove("userData");
-        ws.closeConnection();
+        ws.reconnect();
         reslove(null);
       });
     }

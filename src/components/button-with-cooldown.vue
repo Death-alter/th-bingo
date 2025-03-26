@@ -5,9 +5,6 @@
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref } from "vue";
 import { ElButton } from "element-plus";
-import { useLocalStore } from "@/store/LocalStore";
-
-const localStore = useLocalStore();
 
 const timer = ref(0);
 const label = ref("");
@@ -15,17 +12,15 @@ const locked = ref(false);
 
 const props = withDefaults(
   defineProps<{
-    disabled: boolean;
+    disabled?: boolean;
     cooldown: number;
-    text: string;
-    startTime: number;
-    immediate: boolean;
+    text?: string;
+    immediate?: boolean;
   }>(),
   {
     disabled: false,
     cooldown: 0,
     text: "",
-    startTime: 0,
     immediate: true,
   }
 );
@@ -43,32 +38,20 @@ onUnmounted(() => {
 
 const cooling = () => {
   if (props.cooldown > 0) {
-    let second: number;
-    if (props.startTime == null) {
-      second = props.cooldown;
-    } else {
-      const time = new Date().getTime() + localStore.timeMistake - props.startTime;
-      second = props.cooldown - Math.floor(time / 1000);
-      if (second < 0) second = 0;
-    }
-    if (second > 0) {
+    let cooldown = props.cooldown;
+    if (cooldown > 0) {
       locked.value = true;
-      label.value = `${second}秒后可` + props.text;
+      label.value = `${Math.ceil(cooldown / 1000)}秒后可` + props.text;
       if (timer.value) window.clearInterval(timer.value);
       timer.value = window.setInterval(() => {
-        if (!props.startTime) {
-          --second;
-        } else {
-          const time = new Date().getTime() + localStore.timeMistake - props.startTime;
-          second = props.cooldown - Math.floor(time / 1000);
-        }
-        if (second <= 0) {
+        cooldown = cooldown -= 1000;
+        if (cooldown <= 0) {
           label.value = props.text;
           window.clearInterval(timer.value);
           timer.value = 0;
           locked.value = false;
         } else {
-          label.value = `${second}秒后可` + props.text;
+          label.value = `${Math.ceil(cooldown / 1000)}秒后可` + props.text;
         }
       }, 1000);
     }

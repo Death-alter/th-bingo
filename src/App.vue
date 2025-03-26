@@ -5,9 +5,6 @@
 <script lang="ts" setup>
 import Config from "./config";
 import ws from "@/utils/webSocket/WebSocketBingo";
-import { useLocalStore } from "@/store/LocalStore";
-
-const localStore = useLocalStore();
 
 ws.createConnection(Config.webSocket.url);
 </script>
