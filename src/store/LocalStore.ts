@@ -1,14 +1,17 @@
 import { defineStore } from "pinia";
-import { computed, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import ws from "@/utils/webSocket/WebSocketBingo";
 import { WebSocketActionType } from "@/utils/webSocket/types";
 import { local } from "@/utils/Storage";
 import { useRoomStore } from "./RoomStore";
+import { useRouter } from "vue-router";
 
 export const useLocalStore = defineStore("local", () => {
   const roomStore = useRoomStore();
+  const router = useRouter();
 
   //用户数据
+  const online = ref(false);
   const username = ref("");
   const password = ref("");
   const userData = computed(() => ({
@@ -26,6 +29,8 @@ export const useLocalStore = defineStore("local", () => {
         if (!local.has("userData")) {
           local.set("userData", userData.value);
         }
+        res && res.rid && (roomStore.roomId = res.rid);
+        online.value = true;
         return res;
       });
   };
@@ -35,15 +40,31 @@ export const useLocalStore = defineStore("local", () => {
       return ws.send(WebSocketActionType.LEAVE_ROOM).then(() => {
         local.remove("userData");
         ws.reconnect();
+        online.value = false;
       });
     } else {
       return new Promise((reslove, reject) => {
         local.remove("userData");
         ws.reconnect();
+        online.value = false;
         reslove(null);
       });
     }
   };
+
+  watch(online, (flag) => {
+    nextTick(() => {
+      if (flag) {
+        if (roomStore.roomId) {
+          router.push(`/room/${roomStore.roomId}`);
+        } else {
+          router.push("/");
+        }
+      } else {
+        router.push("/login");
+      }
+    });
+  });
 
   const savedUserData = local.get("userData");
   if (savedUserData) {

@@ -71,7 +71,7 @@ export interface GameData {
   link_data: { [index: string]: any } | null; // BP赛相关数据，同push_link_data协议的参数，如果不是BP赛则为null
 }
 
-export interface roomConfig {
+export interface RoomConfig {
   rid: string; // 房间名
   type: BingoType; // 1-标准赛，2-BP赛，3-link赛
   game_time: 30; // 游戏总时间（不含倒计时），单位：分

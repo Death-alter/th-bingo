@@ -34,7 +34,7 @@ const timer = ref(0);
 const props = withDefaults(
   defineProps<{
     menuData: any[];
-    disabled: boolean;
+    disabled?: boolean;
   }>(),
   {
     menuData: () => [],
@@ -42,24 +42,6 @@ const props = withDefaults(
   }
 );
 const emits = defineEmits(["click"]);
-
-onMounted(() => {
-  if (!props.disabled) {
-    enableRightClick();
-  }
-});
-
-watch(
-  () => props.disabled,
-  (val) => {
-    if (val) {
-      disableRightClick();
-    } else {
-      enableRightClick();
-    }
-  },
-  { immediate: true }
-);
 
 const onMenuItemClick = (e: any, item: any) => {
   emits("click", { event: e, target: targetElement.value, item });
@@ -122,6 +104,24 @@ const onTouchStart = (e: any) => {
     innerElement.value.addEventListener("touchend", onTouchEnd);
   }
 };
+
+onMounted(() => {
+  if (!props.disabled) {
+    enableRightClick();
+  }
+});
+
+watch(
+  () => props.disabled,
+  (val) => {
+    if (val) {
+      disableRightClick();
+    } else {
+      enableRightClick();
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <style lang="scss" scoped>

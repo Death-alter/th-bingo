@@ -90,7 +90,7 @@ export class WebSocketBingo extends WS {
     super.on(action, callback);
   }
 
-  off<T = any>(action: WebSocketActionType, callback?: WebSocketCallBack<T>) {
+  off<T = any>(action: WebSocketActionType | WebSocketPushActionType, callback?: WebSocketCallBack<T>) {
     super.off(action, callback);
   }
 }

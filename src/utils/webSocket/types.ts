@@ -54,6 +54,8 @@ export enum WebSocketActionType {
   SELECT_SPELL = "select_spell",
   FINISH_SPELL = "finish_spell",
   UPDATE_SPELL_STATUS = "update_spell_status",
+  START_BAN_PICK = "start_ban_pick",
+  BAN_PICK = "ban_pick",
 }
 
 export enum WebSocketPushActionType {
@@ -69,4 +71,5 @@ export enum WebSocketPushActionType {
   PUSH_UPDATE_CHANGE_CARD_COUNT = "push_update_change_card_count",
   PUSH_PAUSE = "push_pause",
   PUSH_UPDATE_SEPLL_STATUS = "push_update_spell_status",
+  PUSH_BAN_PICK = "push_ban_pick",
 }

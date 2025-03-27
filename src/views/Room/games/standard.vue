@@ -145,7 +145,7 @@ import RightClickMenu from "@/components/right-click-menu.vue";
 import BingoEffect from "@/components/bingo-effect/index.vue";
 import CountDown from "@/components/count-down.vue";
 import ConfirmSelectButton from "@/components/button-with-cooldown.vue";
-import { ElButton, ElMessageBox, ElRadio, ElRadioGroup, ElRow, ElCol } from "element-plus";
+import { ElButton, ElRow, ElCol } from "element-plus";
 import { Minus, Plus } from "@element-plus/icons-vue";
 import { useLocalStore } from "@/store/LocalStore";
 import { useRoomStore } from "@/store/RoomStore";
@@ -200,7 +200,7 @@ const menuData = [
 ];
 
 const timeMistake = computed(() => localStore.timeMistake);
-const roomData = computed(() => roomStore.roomData);
+const roomData = computed(() => roomStore.roomData || {});
 const roomSettings = computed(() => roomStore.roomSettings);
 const inRoom = computed(() => roomStore.inRoom);
 const isHost = computed(() => roomStore.isHost);

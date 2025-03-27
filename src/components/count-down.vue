@@ -103,6 +103,8 @@ watch(
   },
   { immediate: true }
 );
+
+defineExpose({ start, pause, stop });
 </script>
 
 <style lang="scss" scoped>

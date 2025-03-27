@@ -10,7 +10,7 @@
           link
           :icon="Minus"
           @click="minusScore"
-          :disabled="min != null && score <= min"
+          :disabled="(min != null && score <= min) || disabled"
         />
       </div>
       <div
@@ -30,7 +30,7 @@
           link
           :icon="Plus"
           @click="addScore"
-          :disabled="max != null && score >= max"
+          :disabled="(max != null && score >= max) || disabled"
         />
       </div>
     </div>
@@ -51,16 +51,17 @@
 import { Minus, Plus } from "@element-plus/icons-vue";
 import { ElButton } from "element-plus";
 
-const score = defineModel<number>({ default: 0, required: true });
+const score = defineModel<number>({ default: 0 });
 const props = withDefaults(
   defineProps<{
-    label: string;
-    max: number;
-    min: number;
-    manual: boolean;
-    step: number;
-    size: number;
-    textSize: number;
+    label?: string;
+    max?: number;
+    min?: number;
+    manual?: boolean;
+    step?: number;
+    size?: number;
+    textSize?: number;
+    disabled?: boolean;
   }>(),
   {
     label: "得分",
@@ -69,6 +70,7 @@ const props = withDefaults(
     step: 1,
     size: 14,
     textSize: 12,
+    disabled: false,
   }
 );
 const emits = defineEmits(["add", "minus"]);

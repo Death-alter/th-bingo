@@ -17,19 +17,12 @@
 <script lang="ts" setup>
 import { ElInput, ElButton } from "element-plus";
 import { useLocalStore } from "@/store/LocalStore";
-import { useRoomStore } from "@/store/RoomStore";
-import { useRouter } from "vue-router";
 import { nextTick } from "vue";
 
 const localStore = useLocalStore();
-const roomStore = useRoomStore();
-const router = useRouter();
 
 const login = () => {
-  localStore.login().then((res: { rid: string | null }) => {
-    res && res.rid && (roomStore.roomId = res.rid);
-    router.push("/");
-  });
+  localStore.login();
 };
 
 const onchange = () => {

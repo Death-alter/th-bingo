@@ -18,15 +18,16 @@ const duration = computed(() => {
     return 0;
   }
 });
+const paused = computed(() => audio.value?.paused);
 
 const props = withDefaults(
   defineProps<{
-    startTime: number;
-    endTime: number;
+    startTime?: number;
+    endTime?: number;
     src: string;
-    loop: boolean;
-    muted: boolean;
-    volume: number;
+    loop?: boolean;
+    muted?: boolean;
+    volume?: number;
   }>(),
   {
     src: "",
@@ -70,7 +71,7 @@ const setCurrent = (time: number) => {
   audio.value && (audio.value.currentTime = time);
 };
 
-defineExpose([setCurrent]);
+defineExpose({ duration, paused, setCurrent, play, stop });
 </script>
 
 <style lang="scss" scoped></style>

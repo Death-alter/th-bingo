@@ -65,7 +65,7 @@
                 <el-form-item label="规则：">
                   <div class="label-with-button">
                     <div>
-                      <el-select v-if="showTypeInput" v-model="roomStore.roomData.type">
+                      <el-select v-if="showTypeInput" v-model="roomData.type">
                         <el-option
                           v-for="(item, index) in gameTypeList"
                           :key="index"
@@ -80,10 +80,10 @@
                     }}</el-button>
                   </div>
                 </el-form-item>
-                <el-form-item label="比赛时长：" v-if="roomStore.roomData.type !== BingoType.LINK">
+                <el-form-item label="比赛时长：" v-if="roomData.type !== BingoType.LINK">
                   <el-input-number
                     class="input-number"
-                    v-model="roomSettings.gameTimeLimit"
+                    v-model="roomSettings.gameTimeLimit[roomData.type]"
                     :min="10"
                     :max="180"
                     :disabled="inGame"
@@ -96,7 +96,7 @@
                 <el-form-item label="倒计时：">
                   <el-input-number
                     class="input-number"
-                    v-model="roomSettings.countdownTime"
+                    v-model="roomSettings.countdownTime[roomData.type]"
                     :min="0"
                     :disabled="inGame"
                     size="small"
@@ -146,7 +146,7 @@
                     :min="1"
                     @change="updateRoomConfig"
                   >
-                    <el-checkbox v-for="(item, index) in gameList" :label="item.code" :key="index">{{
+                    <el-checkbox v-for="(item, index) in gameList" :value="item.code" :key="index">{{
                       item.name
                     }}</el-checkbox>
                   </el-checkbox-group>
@@ -158,7 +158,7 @@
                     :min="1"
                     @change="updateRoomConfig"
                   >
-                    <el-checkbox v-for="(item, index) in rankList" :label="item" :key="index">{{ item }}</el-checkbox>
+                    <el-checkbox v-for="(item, index) in rankList" :value="item" :key="index">{{ item }}</el-checkbox>
                   </el-checkbox-group>
                 </el-form-item>
                 <el-form-item label="bingo难度：">
@@ -168,7 +168,7 @@
                     :disabled="inGame"
                     @change="updateRoomConfig"
                   >
-                    <el-radio v-for="(item, index) in difficultyList" :label="item.value" :key="index">{{
+                    <el-radio v-for="(item, index) in difficultyList" :value="item.value" :key="index">{{
                       item.name
                     }}</el-radio>
                   </el-radio-group>
@@ -288,7 +288,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, reactive, watch, onMounted, nextTick } from "vue";
+import { computed, ref, watch, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import {
   ElTabs,
@@ -298,7 +298,6 @@ import {
   ElFormItem,
   ElButton,
   ElMessage,
-  ElInput,
   ElSelect,
   ElOption,
   ElCheckboxGroup,
@@ -309,9 +308,7 @@ import {
   ElColorPicker,
   ElScrollbar,
 } from "element-plus";
-import ws from "@/utils/webSocket/WebSocketBingo";
 import Config from "@/config";
-import { local } from "@/utils/Storage";
 import { useRoomStore } from "@/store/RoomStore";
 import { useLocalStore } from "@/store/LocalStore";
 import { useGameStore } from "@/store/GameStore";
@@ -348,9 +345,7 @@ const inGame = computed(() => roomStore.inGame);
 const inMatch = computed(() => gameStore.inMatch);
 
 const logout = () => {
-  localStore.logout().then(() => {
-    router.push("/login");
-  });
+  localStore.logout();
 };
 
 const getRoomTypeText = (type: number) => {

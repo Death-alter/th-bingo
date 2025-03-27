@@ -22,17 +22,18 @@ export const useRoomStore = defineStore("room", () => {
   const isWatcher = computed(() => roomData.watchers.indexOf(localStore.username) !== -1);
   const isHost = computed(() => roomData.host === localStore.username);
 
-  const gameTypeList = computed(() => {
-    const list = [...Config.gameTypeList];
-    list.splice(1, 2);
-    return list;
-  });
+  const gameTimeLimit = {};
+  const countdownTime = {};
+  for (const item of Config.gameTypeList) {
+    gameTimeLimit[item.type] = item.timeLimit;
+    countdownTime[item.type] = item.countdown;
+  }
 
   //本地房间设置
   const roomSettings = reactive({
     type: BingoType.STANDARD,
-    gameTimeLimit: gameTypeList.value[0].timeLimit,
-    countdownTime: gameTypeList.value[0].countdown,
+    gameTimeLimit,
+    countdownTime,
     cdTime: 30,
     format: 1,
     checkList: ["6", "7", "8", "10", "11", "12", "13", "14", "15", "16", "17", "18"],
@@ -66,19 +67,6 @@ export const useRoomStore = defineStore("room", () => {
     local.set("roomSettings", roomSettings);
   };
 
-  //服务端房间数据
-  const roomData = reactive({
-    rid: "", // 房间名
-    type: BingoType.STANDARD, // 1-标准赛，2-BP赛，3-link赛
-    host: "", // 房主的名字
-    names: ["", ""], // 玩家名字列表，一定有2个，没有人则对应位置为空
-    change_card_count: [1, 2], // 换卡次数，一定有2个，和上面的names一一对应
-    started: false, // 是否已经开始
-    score: [1, 2], // 比分，一定有2个，和上面的names一一对应
-    watchers: [] as string[], // 观众名字列表，有几个就是几个
-    last_winner: 1, // 上一场是谁赢，0或1，-1表示没有上一场
-  });
-
   //服务端房间设置
   const roomConfig = reactive({
     rid: "", // 房间名
@@ -92,25 +80,6 @@ export const useRoomStore = defineStore("room", () => {
     cd_time: 30, // 选卡cd，收卡后要多少秒才能选下一张卡
     reserved_type: 1, // 纯客户端用的一个类型字段，服务器只负责透传
   });
-
-  const createRoom = () => {
-    return ws.send(WebSocketActionType.CREATE_ROOM, {
-      room_config: {
-        rid: roomId.value,
-        type: BingoType.STANDARD,
-        game_time: roomSettings.gameTimeLimit && roomSettings.gameTimeLimit[roomSettings.type],
-        countdown: roomSettings.countdownTime && roomSettings.countdownTime[roomSettings.type],
-        games: roomSettings.checkList,
-        ranks: roomSettings.rankList,
-        need_win: (roomSettings.format + 1) / 2,
-        difficulty: roomSettings.difficulty,
-        cd_time: roomSettings.cdTime,
-      },
-      solo: soloMode.value,
-      add_robot: addRobot.value,
-    });
-  };
-
   const getRoomConfig = () => {
     return ws.send(WebSocketActionType.GET_ROOM_CONFIG, { rid: roomId.value }).then((data) => {
       for (const i in data) {
@@ -118,7 +87,6 @@ export const useRoomStore = defineStore("room", () => {
       }
     });
   };
-
   const updateRoomConfig = () => {
     saveRoomSettings();
     return ws.send(WebSocketActionType.UPDATE_ROOM_CONFIG, {
@@ -133,23 +101,64 @@ export const useRoomStore = defineStore("room", () => {
       cd_time: roomSettings.cdTime,
     });
   };
+  ws.on<{ name: string; position: number }>(WebSocketPushActionType.PUSH_UPDATE_ROOM_CONFIG, (data) => {
+    for (const i in data) {
+      roomConfig[i] = data[i];
+    }
+  });
+  watch(roomId, (id) => {
+    if (id) getRoomConfig();
+  });
+
+  //房间数据
+  const roomData = reactive({
+    rid: "", // 房间名
+    type: BingoType.STANDARD, // 1-标准赛，2-BP赛，3-link赛
+    host: "", // 房主的名字
+    names: ["", ""], // 玩家名字列表，一定有2个，没有人则对应位置为空
+    change_card_count: [1, 2], // 换卡次数，一定有2个，和上面的names一一对应
+    started: false, // 是否已经开始
+    score: [1, 2], // 比分，一定有2个，和上面的names一一对应
+    watchers: [] as string[], // 观众名字列表，有几个就是几个
+    last_winner: 1, // 上一场是谁赢，0或1，-1表示没有上一场
+  });
+  const createRoom = () => {
+    return ws
+      .send(WebSocketActionType.CREATE_ROOM, {
+        room_config: {
+          rid: roomId.value,
+          type: BingoType.STANDARD,
+          game_time: roomSettings.gameTimeLimit && roomSettings.gameTimeLimit[roomSettings.type],
+          countdown: roomSettings.countdownTime && roomSettings.countdownTime[roomSettings.type],
+          games: roomSettings.checkList,
+          ranks: roomSettings.rankList,
+          need_win: (roomSettings.format + 1) / 2,
+          difficulty: roomSettings.difficulty,
+          cd_time: roomSettings.cdTime,
+        },
+        solo: soloMode.value,
+        add_robot: addRobot.value,
+      })
+      .then((data) => {
+        for (const i in data) {
+          roomData[i] = data[i];
+        }
+      });
+  };
+  const getRoomData = () => {
+    return ws.send(WebSocketActionType.GET_ROOM, { rid: roomId.value }).then((data) => {
+      for (const i in data) {
+        roomData[i] = data[i];
+      }
+    });
+  };
+  watch(roomId, (id) => {
+    if (id) getRoomData();
+  });
 
   const joinRoom = () => {
     return ws.send(WebSocketActionType.JOIN_ROOM, { rid: roomId.value });
   };
-
-  const leaveRoom = () => {
-    return ws.send(WebSocketActionType.LEAVE_ROOM);
-  };
-
-  const standUp = () => {
-    return ws.send(WebSocketActionType.STAND_UP);
-  };
-
-  const sitDown = () => {
-    return ws.send(WebSocketActionType.SIT_DOWN);
-  };
-
   ws.on<{ name: string; position: number }>(WebSocketPushActionType.PUSH_JOIN_ROOM, (data) => {
     if (data!.position === -1) {
       roomData.names[data!.position] = data!.name;
@@ -158,6 +167,9 @@ export const useRoomStore = defineStore("room", () => {
     }
   });
 
+  const leaveRoom = () => {
+    return ws.send(WebSocketActionType.LEAVE_ROOM);
+  };
   ws.on<{ name: string }>(WebSocketPushActionType.PUSH_LEAVE_ROOM, (data) => {
     for (let i = 0; i < roomData.names.length; i++) {
       if (roomData.names[i] === data!.name) {
@@ -173,6 +185,9 @@ export const useRoomStore = defineStore("room", () => {
     }
   });
 
+  const standUp = () => {
+    return ws.send(WebSocketActionType.STAND_UP);
+  };
   ws.on<{ name: string }>(WebSocketPushActionType.PUSH_STAND_UP, (data) => {
     for (let i = 0; i < roomData.names.length; i++) {
       if (roomData.names[i] === data!.name) {
@@ -183,6 +198,9 @@ export const useRoomStore = defineStore("room", () => {
     }
   });
 
+  const sitDown = () => {
+    return ws.send(WebSocketActionType.SIT_DOWN);
+  };
   ws.on<{ name: string; position: number }>(WebSocketPushActionType.PUSH_SIT_DOWN, (data) => {
     for (let i = 0; i < roomData.watchers.length; i++) {
       if (roomData.watchers[i] === data!.name) {
@@ -191,6 +209,15 @@ export const useRoomStore = defineStore("room", () => {
         return;
       }
     }
+  });
+
+  const updateChangeCardCount = (name: string, count: number) => {
+    return ws.send(WebSocketActionType.UPDATE_CHANGE_CARD_COUNT, { name, count });
+  };
+  ws.on(WebSocketPushActionType.PUSH_UPDATE_CHANGE_CARD_COUNT, ({ name, count }) => {
+    const index = roomData.names.indexOf(name);
+    if (index == -1) return;
+    roomData.change_card_count[index] = count;
   });
 
   return {
@@ -208,6 +235,7 @@ export const useRoomStore = defineStore("room", () => {
     isWatcher,
     isHost,
     createRoom,
+    getRoomConfig,
     updateRoomConfig,
     loadRoomSettings,
     saveRoomSettings,
@@ -215,5 +243,6 @@ export const useRoomStore = defineStore("room", () => {
     leaveRoom,
     standUp,
     sitDown,
+    updateChangeCardCount,
   };
 });

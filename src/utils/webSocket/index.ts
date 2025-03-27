@@ -1,5 +1,6 @@
 import config from "@/config";
 import { HeartBeatOption, WebSocketCallBack, WebSocketEventType } from "./types";
+import { ElMessage } from "element-plus";
 
 export default abstract class WS {
   protected ws: WebSocket | null = null;
@@ -117,9 +118,10 @@ export default abstract class WS {
             this.reconnect();
           }
           console.log(error);
-          reject(error);
         };
       }
+    }).catch((e: Error) => {
+      ElMessage.error(e.message);
     });
   }
 
