@@ -2,7 +2,7 @@ name: build
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, dev ]
   pull_request:
     branches: [ master ]
   workflow_dispatch:
@@ -18,7 +18,7 @@ jobs:
       with:
         node-version: 14.x
     - name: Update .env.production
-      run: echo "VUE_APP_WS_API = 'ws://${{ secrets.REMOTE_HOST }}:9999/ws'" >> .env.production
+      run: echo "VUE_APP_WS_API = 'ws://${{ secrets.REMOTE_HOST }}:9998/ws'" >> .env.production
     - name: Build
       run: |
         npm install
@@ -32,4 +32,4 @@ jobs:
           SOURCE: "dist/"
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
-          TARGET: ${{ secrets.REMOTE_TARGET }}
+          TARGET: ${{ secrets.REMOTE_TARGET_DEV }}
