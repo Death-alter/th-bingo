@@ -314,7 +314,6 @@ import { useLocalStore } from "@/store/LocalStore";
 import { useGameStore } from "@/store/GameStore";
 import { BingoType } from "@/types";
 
-const router = useRouter();
 const roomStore = useRoomStore();
 const localStore = useLocalStore();
 const gameStore = useGameStore();
@@ -342,7 +341,7 @@ const isHost = computed(() => roomStore.isHost);
 const isWatcher = computed(() => roomStore.isWatcher);
 const soloMode = computed(() => roomStore.soloMode);
 const inGame = computed(() => roomStore.inGame);
-const inMatch = computed(() => gameStore.inMatch);
+const inMatch = computed(() => roomStore.inMatch);
 
 const logout = () => {
   localStore.logout();
@@ -362,9 +361,7 @@ const getRoomTypeText = (type: number) => {
 };
 
 const leaveRoom = () => {
-  roomStore.leaveRoom().then(() => {
-    router.push("/");
-  });
+  roomStore.leaveRoom();
 };
 
 const copyPassword = () => {

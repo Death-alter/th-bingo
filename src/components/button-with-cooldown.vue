@@ -3,12 +3,26 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { ElButton } from "element-plus";
 
+const enum ButtonStatus {
+  BEFORE_COOLING = 0,
+  IS_COOLING = 1,
+  COOLING_PAUSED = 2,
+  AFTER_COOLING = 3,
+}
+
 const timer = ref(0);
-const label = ref("");
 const locked = ref(false);
+const status = ref<ButtonStatus>(ButtonStatus.BEFORE_COOLING);
+const leftTime = ref(0);
+
+const label = computed(() =>
+  status.value === ButtonStatus.IS_COOLING || status.value === ButtonStatus.COOLING_PAUSED
+    ? `${Math.ceil(leftTime.value / 1000)}秒后可` + props.text
+    : props.text
+);
 
 const props = withDefaults(
   defineProps<{
@@ -16,45 +30,96 @@ const props = withDefaults(
     cooldown: number;
     text?: string;
     immediate?: boolean;
+    paused?: boolean;
   }>(),
   {
     disabled: false,
-    cooldown: 0,
+    cooldown: -1,
     text: "",
-    immediate: true,
+    immediate: false,
+    paused: false,
   }
 );
 
+const emits = defineEmits(["finish"]);
+
 onMounted(() => {
-  label.value = props.text;
-  if (props.immediate) {
-    cooling();
+  if (props.paused) {
+    leftTime.value = props.cooldown;
+    if (leftTime.value > 0) {
+      locked.value = true;
+      status.value = ButtonStatus.COOLING_PAUSED;
+    }
+  } else {
+    if (props.immediate) {
+      startCooling();
+    }
+  }
+  if (props.cooldown <= 0) {
+    emits("finish");
   }
 });
+
+watch(
+  () => props.paused,
+  (paused) => {
+    if (paused) {
+      puaseCooling();
+    } else {
+      resumeCooling();
+    }
+  }
+);
 
 onUnmounted(() => {
   locked.value = false;
+  status.value = ButtonStatus.BEFORE_COOLING;
 });
 
-const cooling = () => {
-  if (props.cooldown > 0) {
-    let cooldown = props.cooldown;
-    if (cooldown > 0) {
+const coolingCallback = () => {
+  leftTime.value -= 1000;
+  if (leftTime.value <= 0) {
+    window.clearInterval(timer.value);
+    timer.value = 0;
+    leftTime.value = 0;
+    locked.value = false;
+    status.value = ButtonStatus.AFTER_COOLING;
+    emits("finish");
+  }
+};
+
+const startCooling = () => {
+  if (status.value === ButtonStatus.BEFORE_COOLING && props.cooldown > 0) {
+    leftTime.value = props.cooldown;
+    if (leftTime.value > 0) {
       locked.value = true;
-      label.value = `${Math.ceil(cooldown / 1000)}秒后可` + props.text;
+      status.value = ButtonStatus.IS_COOLING;
       if (timer.value) window.clearInterval(timer.value);
-      timer.value = window.setInterval(() => {
-        cooldown = cooldown -= 1000;
-        if (cooldown <= 0) {
-          label.value = props.text;
-          window.clearInterval(timer.value);
-          timer.value = 0;
-          locked.value = false;
-        } else {
-          label.value = `${Math.ceil(cooldown / 1000)}秒后可` + props.text;
-        }
-      }, 1000);
+      timer.value = window.setInterval(coolingCallback, 1000);
     }
   }
 };
+
+const stopCooling = () => {
+  puaseCooling();
+  locked.value = false;
+  status.value = ButtonStatus.AFTER_COOLING;
+};
+
+const puaseCooling = () => {
+  clearInterval(timer.value);
+  timer.value = 0;
+};
+
+const resumeCooling = () => {
+  if (timer.value) window.clearInterval(timer.value);
+  timer.value = window.setInterval(coolingCallback, 1000);
+};
+
+const reset = () => {
+  status.value = ButtonStatus.BEFORE_COOLING;
+  locked.value = false;
+};
+
+defineExpose({ startCooling, stopCooling, puaseCooling, resumeCooling, reset });
 </script>

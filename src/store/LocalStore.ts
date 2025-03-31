@@ -4,36 +4,46 @@ import ws from "@/utils/webSocket/WebSocketBingo";
 import { WebSocketActionType } from "@/utils/webSocket/types";
 import { local } from "@/utils/Storage";
 import { useRoomStore } from "./RoomStore";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 export const useLocalStore = defineStore("local", () => {
   const roomStore = useRoomStore();
   const router = useRouter();
+  const route = useRoute();
 
   //用户数据
   const online = ref(false);
   const username = ref("");
   const password = ref("");
+  const savedUserData = local.get("userData");
+  if (savedUserData) {
+    username.value = savedUserData.username;
+    password.value = savedUserData.password;
+  }
+
   const userData = computed(() => ({
     username: username.value,
     password: password.value,
   }));
 
   const login = () => {
-    return ws
-      .send(WebSocketActionType.LOGIN, {
-        name: username.value,
-        pwd: password.value,
-      })
-      .then((res: any) => {
-        if (!local.has("userData")) {
-          local.set("userData", userData.value);
-        }
-        res && res.rid && (roomStore.roomId = res.rid);
-        online.value = true;
-        return res;
-      });
+    if (username.value && password.value) {
+      return ws
+        .send(WebSocketActionType.LOGIN, {
+          name: username.value,
+          pwd: password.value,
+        })
+        .then((res: any) => {
+          if (!local.has("userData")) {
+            local.set("userData", userData.value);
+          }
+          res && res.rid && (roomStore.roomId = res.rid);
+          online.value = true;
+          return res;
+        });
+    }
   };
+  login();
 
   const logout = () => {
     if (roomStore.inRoom) {
@@ -55,9 +65,7 @@ export const useLocalStore = defineStore("local", () => {
   watch(online, (flag) => {
     nextTick(() => {
       if (flag) {
-        if (roomStore.roomId) {
-          router.push(`/room/${roomStore.roomId}`);
-        } else {
+        if (!roomStore.roomId) {
           router.push("/");
         }
       } else {
@@ -65,13 +73,6 @@ export const useLocalStore = defineStore("local", () => {
       }
     });
   });
-
-  const savedUserData = local.get("userData");
-  if (savedUserData) {
-    username.value = savedUserData.username;
-    password.value = savedUserData.password;
-    login();
-  }
 
   //时间
   const localTime = ref(new Date().getTime());

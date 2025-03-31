@@ -5,8 +5,8 @@
         <div
           :class="{
             'game-item': true,
-            'current-select-A': isPlayerA && modelValue === game.code,
-            'current-select-B': isPlayerB && modelValue === game.code,
+            'current-select-A': isPlayerA && code === game.code,
+            'current-select-B': isPlayerB && code === game.code,
             'A-selected': ASelectedList.includes(game.code),
             'B-selected': BSelectedList.includes(game.code),
             banned: ABannedList.includes(game.code) || BBannedList.includes(game.code),
@@ -21,8 +21,8 @@
           v-if="phase < 3"
           :class="{
             'game-item': true,
-            'current-select-A': isPlayerA && modelValue === 'EX',
-            'current-select-B': isPlayerB && modelValue === 'EX',
+            'current-select-A': isPlayerA && code === 'EX',
+            'current-select-B': isPlayerB && code === 'EX',
           }"
           @click="selectGame('EX')"
         >
@@ -35,13 +35,13 @@
           <div class="title">选择作品</div>
           <div class="selected-game-list A-selected">
             <div class="game-item" v-for="(game, index) in ASelectedList" :key="index">
-              {{ game === "EX" ? game : `TH${game}` }}
+              <img v-if="game" class="game-icon" :src="getGameIcon(game)" alt="" />
             </div>
           </div>
           <div class="title">禁用作品</div>
           <div class="selected-game-list banned">
             <div class="game-item" v-for="(game, index) in ABannedList" :key="index">
-              {{ game === "EX" ? game : `TH${game}` }}
+              <img v-if="game" class="game-icon" :src="getGameIcon(game)" alt="" />
             </div>
           </div>
         </el-col>
@@ -49,23 +49,27 @@
           <div class="title">选择作品</div>
           <div class="selected-game-list B-selected">
             <div class="game-item" v-for="(game, index) in BSelectedList" :key="index">
-              {{ game === "EX" ? game : `TH${game}` }}
+              <img v-if="game" class="game-icon" :src="getGameIcon(game)" alt="" />
             </div>
           </div>
           <div class="title">禁用作品</div>
           <div class="selected-game-list banned">
             <div class="game-item" v-for="(game, index) in BBannedList" :key="index">
-              {{ game === "EX" ? game : `TH${game}` }}
+              <img v-if="game" class="game-icon" :src="getGameIcon(game)" alt="" />
             </div>
           </div>
         </el-col>
       </el-row>
     </template>
     <template v-else>
-      <div class="top-text">PB已经结束，本局可能出现以下作品</div>
+      <div class="top-text">BP已经结束，本局可能出现以下作品</div>
       <div class="game-list">
-        <div class="game-item" v-for="(game, index) in roomConfig.games" :key="index">TH{{ game }}</div>
-        <div v-if="openEX" class="game-item">EX</div>
+        <div class="game-item" v-for="(game, index) in roomConfig.games" :key="index">
+          <img class="game-icon" :src="getGameIcon(game)" alt="" />
+        </div>
+        <div v-if="openEX" class="game-item">
+          <img class="game-icon" :src="getGameIcon('EX')" alt="" />
+        </div>
       </div>
       <div class="bottom-text">{{ isHost ? "请抽取符卡" : "请等待房主抽取符卡" }}</div>
     </template>
@@ -73,30 +77,29 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import Config from "@/config";
 import { ElRow, ElCol } from "element-plus";
 import { BpStatus } from "@/types";
-import { useGameStore } from "@/store/GameStore";
 import { useRoomStore } from "@/store/RoomStore";
 
-const gameStore = useGameStore();
 const roomStore = useRoomStore();
 
 const code = defineModel();
 const gameList = ref([...Config.gameOptionList]);
-const ASelectedList = computed(() => gameStore.banPick.a_pick);
-const BSelectedList = computed(() => gameStore.banPick.b_pick);
-const ABannedList = computed(() => gameStore.banPick.a_ban);
-const BBannedList = computed(() => gameStore.banPick.b_ban);
+const ASelectedList = ref<string[]>([]);
+const BSelectedList = ref<string[]>([]);
+const ABannedList = ref<string[]>([]);
+const BBannedList = ref<string[]>([]);
 
+const isPlayer = computed(() => roomStore.isPlayer);
 const isPlayerA = computed(() => roomStore.isPlayerA);
 const isPlayerB = computed(() => roomStore.isPlayerB);
 const roomConfig = computed(() => roomStore.roomConfig);
-const phase = computed(() => gameStore.phase);
-const openEX = computed(() => gameStore.banPick.a_open_ex === 1 && gameStore.banPick.b_open_ex === 1);
+const phase = computed(() => roomStore.banPick.phase);
+const openEX = computed(() => roomStore.banPick.a_open_ex === 1 && roomStore.banPick.b_open_ex === 1);
 const isHost = computed(() => roomStore.isHost);
-const bpStatus = computed(() => gameStore.bpStatus);
+const bpStatus = computed(() => roomStore.bpStatus);
 const tooltipText = computed(() => {
   switch (bpStatus.value) {
     case BpStatus.IS_A_PICK:
@@ -173,6 +176,42 @@ const getGameIcon = (code: string) => {
     return require(`@/assets/image/game/th${code}.png`);
   }
 };
+
+watch(
+  () => roomStore.banPick,
+  (newVal, oldVal) => {
+    code.value = "";
+    ABannedList.value = newVal.a_ban;
+    BBannedList.value = newVal.b_ban;
+    if (!isPlayer.value) {
+      ASelectedList.value = newVal.a_pick || [];
+      BSelectedList.value = newVal.b_pick || [];
+    } else {
+      if (isPlayerA.value) {
+        ASelectedList.value = newVal.a_pick || [];
+        if (newVal.phase <= 2) {
+          BSelectedList.value = [];
+        } else if (newVal.phase <= 4 && newVal.b_pick && newVal.b_pick[0] === "EX") {
+          BSelectedList.value = ["EX"];
+        } else {
+          BSelectedList.value = newVal.b_pick || [];
+        }
+      }
+      if (isPlayerB.value) {
+        BSelectedList.value = newVal.b_pick || [];
+        if (newVal.phase <= 2) {
+          ASelectedList.value = [];
+        } else if (newVal.phase <= 4 && newVal.a_pick && newVal.a_pick[0] === "EX") {
+          ASelectedList.value = ["EX"];
+        } else {
+          ASelectedList.value = newVal.a_pick || [];
+        }
+      }
+    }
+    code.value = "";
+  },
+  { immediate: true, deep: true }
+);
 </script>
 
 <style lang="scss" scoped>
@@ -211,7 +250,7 @@ const getGameIcon = (code: string) => {
     border: 4px solid #000;
     margin: 10px 20px;
     line-height: 48px;
-
+    position: relative;
     user-select: none;
     font-size: 18px;
 
@@ -229,16 +268,31 @@ const getGameIcon = (code: string) => {
     &.A-selected.B-selected {
       border-image: linear-gradient(to right, var(--A-color), var(--B-color)) 4;
       background-image: linear-gradient(to right, var(--A-color), var(--B-color));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+
+      &::after {
+        display: block;
+        content: "";
+        opacity: 0.6;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        background-image: linear-gradient(to right, var(--A-color), var(--B-color));
+      }
     }
 
     &.banned {
       color: gray;
       border-color: gray;
-      opacity: 0.5;
+      opacity: 0.8;
       cursor: not-allowed;
       position: relative;
+
+      .game-icon {
+        -webkit-filter: grayscale(50%); /* Chrome, Safari, Opera */
+        filter: grayscale(100%);
+      }
     }
 
     &.banned::after {
@@ -267,6 +321,10 @@ const getGameIcon = (code: string) => {
     font-weight: 600;
   }
 
+  .game-icon {
+    width: 100%;
+  }
+
   .selected-game-list {
     display: flex;
     justify-content: center;
@@ -288,7 +346,6 @@ const getGameIcon = (code: string) => {
 
     &.banned {
       .game-item {
-        color: gray;
         border-color: gray;
       }
     }

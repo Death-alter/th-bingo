@@ -5,7 +5,7 @@
         <el-form-item prop="roomPassword">
           <div class="room-password">
             <el-input
-              v-model="roomStore.roomId"
+              v-model="roomId"
               :rules="rules"
               type="password"
               placeholder="请输入4-16位数房间密码，仅支持数字"
@@ -33,16 +33,13 @@
 import { computed, ref } from "vue";
 import { ElInput, ElButton, ElForm, ElFormItem, ElCheckbox } from "element-plus";
 import type { FormInstance } from "element-plus";
-import { useLocalStore } from "@/store/LocalStore";
 import { useRoomStore } from "@/store/RoomStore";
-import { useRouter } from "vue-router";
 
-const localStore = useLocalStore();
 const roomStore = useRoomStore();
-const router = useRouter();
+const roomId = ref("");
 
 const form = computed(() => ({
-  roomId: roomStore.roomId,
+  roomId: roomId.value,
   soloMode: roomStore.soloMode,
   addRobot: roomStore.addRobot,
 }));
@@ -69,16 +66,12 @@ const rules = {
 };
 
 const formRef = ref<FormInstance>();
-const roomSettings = computed(() => roomStore.roomSettings);
-const userData = computed(() => localStore.userData);
 
 const createRoom = () => {
   if (!formRef.value) return;
   formRef.value.validate((valid, fields) => {
     if (valid) {
-      roomStore.createRoom().then(() => {
-        router.push(`/room/${roomStore.roomId}`);
-      });
+      roomStore.createRoom(roomId.value);
     }
   });
 };
@@ -87,9 +80,7 @@ const joinRoom = () => {
   if (!formRef.value) return;
   formRef.value.validate((valid, fields) => {
     if (valid) {
-      roomStore.joinRoom().then(() => {
-        router.push(`/room/${roomStore.roomId}`);
-      });
+      roomStore.joinRoom(roomId.value);
     }
   });
 };

@@ -138,6 +138,7 @@ export default abstract class WS {
 
   startHeartBeat() {
     if (this.heartBeatOption) {
+      this.send(this.heartBeatOption!.action, this.heartBeatOption!.data);
       this.heartBeatTimer = window.setInterval(() => {
         this.send(this.heartBeatOption!.action, this.heartBeatOption!.data);
       }, WS.heartBeatInterval * 1000);

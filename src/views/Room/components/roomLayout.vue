@@ -48,7 +48,7 @@
                       :desc="item.desc"
                       @click="selectSpellCard(index)"
                       :selected="selectedSpellIndex === index"
-                      :status="gameStore.gameStatus[index]"
+                      :status="gameStore.spellStatus[index]"
                       :index="index"
                     ></spell-card-cell>
                   </div>
@@ -130,6 +130,7 @@ import { useRoomStore } from "@/store/RoomStore";
 import { useGameStore } from "@/store/GameStore";
 import ws from "@/utils/webSocket/WebSocketBingo";
 import { WebSocketPushActionType } from "@/utils/webSocket/types";
+import { useRoute } from "vue-router";
 
 const roomStore = useRoomStore();
 const gameStore = useGameStore();
@@ -190,7 +191,7 @@ const selectSpellCard = (index: number) => {
 const onMenuClick = ({ event, target, item }: any) => {
   const index = target.getAttribute("index");
   if (index !== null) {
-    // store.dispatch("update_spell", { idx: parseInt(index), status: item.value });
+    gameStore.updateSpellStatus(parseInt(index), item.value);
   }
 };
 const stopBGM = () => {
@@ -203,6 +204,10 @@ const showAlert = (text?: string, color?: string) => {
 };
 const hideAlert = () => {
   gameAlertRef.value.hide();
+};
+
+const warnGamePoint = () => {
+  gamePointAudioRef.value?.play();
 };
 
 onMounted(() => {
@@ -219,9 +224,6 @@ onMounted(() => {
   // Mit.on("right_link_start", () => {
   //   spellCardGrabbedAudioRef.value?.play();
   // });
-  // Mit.on("game_point", () => {
-  //   gamePointAudioRef.value?.play();
-  // });
   // Mit.on("alter", () => {
   //   spellCardGrabbedAudioRef.value?.stop();
   //   spellCardGrabbedAudioRef.value?.play();
@@ -235,30 +237,27 @@ onUnmounted(() => {
   ws.off(WebSocketPushActionType.PUSH_GM_WARN_PLAYER);
 });
 
-if (roomData.value.started) {
-  gameStore.getGameData();
-}
-
 watch(
   () => gameStore.gameStatus,
   (value) => {
     if (value === 1 && BGMpaused.value) {
       const score = roomData.value.score[0] + roomData.value.score[1];
+      const time = roomStore.roomConfig.countdown - Math.ceil(gameStore.leftTime / 1000);
       switch (score) {
         case 0:
-          turn1CountdownAudioRef.value?.setCurrent(turn1CountdownAudioRef.value.duration - gameStore.leftTime);
+          turn1CountdownAudioRef.value?.setCurrent(time);
           turn1CountdownAudioRef.value?.play();
           break;
         case 1:
-          turn2CountdownAudioRef.value?.setCurrent(turn2CountdownAudioRef.value.duration - gameStore.leftTime);
+          turn2CountdownAudioRef.value?.setCurrent(time);
           turn2CountdownAudioRef.value?.play();
           break;
         case 2:
-          turn3CountdownAudioRef.value?.setCurrent(turn3CountdownAudioRef.value.duration - gameStore.leftTime);
+          turn3CountdownAudioRef.value?.setCurrent(time);
           turn3CountdownAudioRef.value?.play();
           break;
         default:
-          turn1CountdownAudioRef.value?.setCurrent(turn1CountdownAudioRef.value.duration - gameStore.leftTime);
+          turn1CountdownAudioRef.value?.setCurrent(time);
           turn1CountdownAudioRef.value?.play();
       }
     } else {
@@ -267,7 +266,7 @@ watch(
   }
 );
 
-defineExpose({ showAlert, hideAlert });
+defineExpose({ showAlert, hideAlert, warnGamePoint });
 </script>
 
 <style lang="scss" scoped>

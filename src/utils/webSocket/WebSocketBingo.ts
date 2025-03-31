@@ -39,8 +39,13 @@ export class WebSocketBingo extends WS {
       delete this.eventMap[res.echo];
     } else {
       res = <WebSocketPushData>res;
-      for (const callback of this.eventList[res.push_action]) {
-        callback(res.data);
+
+      if (this.eventList[res.push_action]) {
+        for (const callback of this.eventList[res.push_action]) {
+          callback(res.data);
+        }
+      } else {
+        console.log(`事件${res.push_action}未被监听`);
       }
     }
   }

@@ -52,8 +52,8 @@ const cellClass = computed(() => ({
   "A-attained": props.status === SpellStatus.A_ATTAINED || props.status === SpellStatus.BOTH_ATTAINED,
   "B-selected": props.status === SpellStatus.B_SELECTED || props.status === SpellStatus.BOTH_SELECTED,
   "B-attained": props.status === SpellStatus.B_ATTAINED || props.status === SpellStatus.BOTH_ATTAINED,
-  "A-local-selected": props.selected && isPlayerA,
-  "B-local-selected": props.selected && isPlayerB,
+  "A-local-selected": props.selected && isPlayerA.value,
+  "B-local-selected": props.selected && isPlayerB.value,
 }));
 const levelClass = computed(() => `level${props.level}`);
 

@@ -39,7 +39,9 @@ const props = withDefaults(
 
 const play = () => {
   if (!audio.value?.paused) return;
-  audio.value?.play();
+  try {
+    audio.value?.play();
+  } catch (e) {}
   let delay = duration.value || audio.value.duration;
   if (audio.value.currentTime) {
     delay -= audio.value.currentTime;
