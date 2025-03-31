@@ -73,7 +73,7 @@ export class WebSocketBingo extends WS {
           this.heartBeatSendTime = new Date().getTime();
           this.heartBeatTimeOutTimer = setTimeout(() => {
             this.reconnect();
-          }, WS.timeOutSeconds);
+          }, WS.timeOutSeconds * 1000);
         }
       };
       if (!this.connected) {

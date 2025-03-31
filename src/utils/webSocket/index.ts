@@ -117,7 +117,6 @@ export default abstract class WS {
           if (this.state !== WebSocket.OPEN) {
             this.reconnect();
           }
-          console.log(error);
         };
       }
     }).catch((e: Error) => {
