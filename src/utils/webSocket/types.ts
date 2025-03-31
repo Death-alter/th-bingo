@@ -72,4 +72,5 @@ export enum WebSocketPushActionType {
   PUSH_PAUSE = "push_pause",
   PUSH_UPDATE_SEPLL_STATUS = "push_update_spell_status",
   PUSH_BAN_PICK = "push_ban_pick",
+  PUSH_KICK = "push_kick",
 }

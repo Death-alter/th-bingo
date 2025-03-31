@@ -1,10 +1,11 @@
 import { defineStore } from "pinia";
 import { computed, nextTick, ref, watch } from "vue";
 import ws from "@/utils/webSocket/WebSocketBingo";
-import { WebSocketActionType } from "@/utils/webSocket/types";
+import { WebSocketActionType, WebSocketPushActionType } from "@/utils/webSocket/types";
 import { local } from "@/utils/Storage";
 import { useRoomStore } from "./RoomStore";
 import { useRoute, useRouter } from "vue-router";
+import { ElMessage } from "element-plus";
 
 export const useLocalStore = defineStore("local", () => {
   const roomStore = useRoomStore();
@@ -61,6 +62,10 @@ export const useLocalStore = defineStore("local", () => {
       });
     }
   };
+  ws.on<{ now: number }>(WebSocketPushActionType.PUSH_KICK, () => {
+    logout();
+    ElMessage.error("该账号在别处登录");
+  });
 
   watch(online, (flag) => {
     nextTick(() => {
