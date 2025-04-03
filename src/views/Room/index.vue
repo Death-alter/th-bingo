@@ -158,7 +158,7 @@
 </template>
 
 <script lang="ts" setup>
-import { h, ref, computed, watch, nextTick, onMounted, onUnmounted } from "vue";
+import { h, ref, computed, watch, nextTick, onMounted } from "vue";
 import { BingoType, BpStatus, GameStatus } from "@/types";
 import RoomLayout from "./components/roomLayout.vue";
 import ScoreBoard from "@/components/score-board.vue";
@@ -183,7 +183,9 @@ const winFlag = ref(0);
 const roomData = computed(() => roomStore.roomData);
 const roomSettings = computed(() => roomStore.roomSettings);
 const roomConfig = computed(() => roomStore.roomConfig);
-const soloMode = computed(() => roomStore.soloMode);
+const soloMode = computed(() => {
+  return roomStore.soloMode;
+});
 const isHost = computed(() => roomStore.isHost);
 const isPlayer = computed(() => roomStore.isPlayer);
 const isPlayerA = computed(() => roomStore.isPlayerA);
@@ -399,12 +401,12 @@ const selectCooldown = computed(() => {
     return -1;
   }
   const c = gameStore.leftCdTime < 0 ? roomConfig.value.cd_time * 1000 : gameStore.leftCdTime;
+  console.log(gameStore.leftCdTime, roomConfig.value.cd_time, c);
   return c;
 });
 
 const setCdTime = () => {
   gameStore.leftCdTime = -1;
-  console.log(gameStore.leftCdTime);
 };
 
 //BP赛

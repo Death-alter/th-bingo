@@ -1,54 +1,28 @@
 <template>
-  <div v-if="isShow" class="game-alert">
+  <div v-if="visible" class="game-alert">
     <div :style="{ color: alertColor }">{{ alertText }}</div>
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref, watch } from "vue";
+<script lang="ts" setup>
+import { ref } from "vue";
 
-export default defineComponent({
-  name: "GameAlert",
-  props: {
-    modelValue: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  emits: ["update:modelValue"],
-  setup(props, context) {
-    const isShow = ref(false);
-    const alertColor = ref("#000");
-    const alertText = ref("");
+const visible = defineModel<boolean>({ default: false });
 
-    watch(
-      () => props.modelValue,
-      (value) => {
-        isShow.value = value;
-      }
-    );
+const alertColor = ref("#000");
+const alertText = ref("");
 
-    const show = (text?: string, color?: string) => {
-      if (text) alertText.value = text;
-      if (color) alertColor.value = color;
-      isShow.value = true;
-      context.emit("update:modelValue", true);
-    };
+const show = (text?: string, color?: string) => {
+  if (text) alertText.value = text;
+  if (color) alertColor.value = color;
+  visible.value = true;
+};
 
-    const hide = () => {
-      isShow.value = false;
-      context.emit("update:modelValue", false);
-    };
+const hide = () => {
+  visible.value = false;
+};
 
-    return {
-      isShow,
-      alertColor,
-      alertText,
-      show,
-      hide,
-    };
-  },
-});
+defineExpose({ show, hide });
 </script>
 
 <style lang="scss" scoped>

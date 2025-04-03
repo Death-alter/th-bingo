@@ -16,8 +16,8 @@
         </el-form-item>
         <el-form-item prop="soloMode">
           <div class="solo-mode-check-box">
-            <el-checkbox v-model="roomStore.soloMode" @change="onChangeSoloMode">无导播模式</el-checkbox>
-            <el-checkbox v-model="roomStore.addRobot" :disabled="!form.soloMode">单人练习模式</el-checkbox>
+            <el-checkbox v-model="soloMode" @change="onChangeSoloMode">无导播模式</el-checkbox>
+            <el-checkbox v-model="addRobot" :disabled="!form.soloMode">单人练习模式</el-checkbox>
           </div>
         </el-form-item>
       </el-form>
@@ -37,11 +37,13 @@ import { useRoomStore } from "@/store/RoomStore";
 
 const roomStore = useRoomStore();
 const roomId = ref("");
+const soloMode = ref(false);
+const addRobot = ref(false);
 
 const form = computed(() => ({
   roomId: roomId.value,
-  soloMode: roomStore.soloMode,
-  addRobot: roomStore.addRobot,
+  soloMode: soloMode,
+  addRobot: addRobot,
 }));
 const rules = {
   roomId: [
@@ -71,7 +73,7 @@ const createRoom = () => {
   if (!formRef.value) return;
   formRef.value.validate((valid, fields) => {
     if (valid) {
-      roomStore.createRoom(roomId.value);
+      roomStore.createRoom(roomId.value, soloMode.value, addRobot.value);
     }
   });
 };
@@ -87,7 +89,7 @@ const joinRoom = () => {
 
 const onChangeSoloMode = (val) => {
   if (!val) {
-    roomStore.addRobot = val;
+    addRobot.value = val;
   }
 };
 </script>

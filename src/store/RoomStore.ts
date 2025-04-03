@@ -22,9 +22,6 @@ export const useRoomStore = defineStore("room", () => {
     }
   });
 
-  const soloMode = ref(false);
-  const addRobot = ref(false);
-
   const inRoom = computed(() => isHost.value || isPlayer.value || isWatcher.value);
   const inGame = computed(() => roomData.started);
   const isPlayerA = computed(() => roomData.names[0] === localStore.username);
@@ -41,6 +38,7 @@ export const useRoomStore = defineStore("room", () => {
       return false;
     }
   });
+  const soloMode = computed(() => !roomData.host);
 
   const gameTimeLimit = {};
   const countdownTime = {};
@@ -142,7 +140,7 @@ export const useRoomStore = defineStore("room", () => {
     started: false, // 是否已经开始
     score: [0, 0], // 比分，一定有2个，和上面的names一一对应
     watchers: [] as string[], // 观众名字列表，有几个就是几个
-    last_winner: 1, // 上一场是谁赢，0或1，-1表示没有上一场
+    last_winner: -1, // 上一场是谁赢，0或1，-1表示没有上一场
   });
   const setRoomData = (data) => {
     for (const i in data) {
@@ -155,7 +153,7 @@ export const useRoomStore = defineStore("room", () => {
       }
     }
   };
-  const createRoom = (rid: string) => {
+  const createRoom = (rid: string, soloMode: boolean, addRobot: boolean) => {
     return ws
       .send(WebSocketActionType.CREATE_ROOM, {
         room_config: {
@@ -169,8 +167,8 @@ export const useRoomStore = defineStore("room", () => {
           difficulty: roomSettings.difficulty,
           cd_time: roomSettings.cdTime,
         },
-        solo: soloMode.value,
-        add_robot: addRobot.value,
+        solo: soloMode,
+        add_robot: addRobot,
       })
       .then((data) => {
         roomId.value = rid;
@@ -207,9 +205,21 @@ export const useRoomStore = defineStore("room", () => {
   });
 
   const leaveRoom = () => {
-    return ws.send(WebSocketActionType.LEAVE_ROOM).then(() => {
-      roomId.value = "";
-    });
+    return ws
+      .send(WebSocketActionType.LEAVE_ROOM)
+      .then(() => {
+        roomId.value = "";
+        roomData.rid = "";
+        roomData.type = BingoType.STANDARD;
+        roomData.host = "";
+        roomData.names = ["", ""];
+        roomData.change_card_count = [1, 2];
+        roomData.started = false;
+        roomData.score = [0, 0];
+        roomData.watchers = [] as string[];
+        roomData.last_winner = -1;
+      })
+      .catch((e) => {});
   };
   ws.on<{ name: string }>(WebSocketPushActionType.PUSH_LEAVE_ROOM, (data) => {
     for (let i = 0; i < roomData.names.length; i++) {
@@ -334,7 +344,6 @@ export const useRoomStore = defineStore("room", () => {
   return {
     roomId,
     soloMode,
-    addRobot,
     roomSettings,
     roomData,
     roomConfig,

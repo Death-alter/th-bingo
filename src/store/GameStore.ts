@@ -1,10 +1,18 @@
 import { defineStore } from "pinia";
-import { computed, onMounted, reactive, ref, watch } from "vue";
+import { computed, nextTick, reactive, ref, watch } from "vue";
 import { useRoomStore } from "./RoomStore";
-import { BpStatus, GameData, GameStatus, RoomConfig, Spell, SpellStatus } from "@/types";
+import { GameData, GameStatus, RoomConfig, Spell, SpellStatus } from "@/types";
 import ws from "@/utils/webSocket/WebSocketBingo";
 import { WebSocketActionType, WebSocketPushActionType } from "@/utils/webSocket/types";
-import { useLocalStore } from "./LocalStore";
+
+interface GameLog {
+  index: number;
+  status: number;
+  oldStatus: number;
+  causer: string;
+  failCountA?: number;
+  failCountB?: number;
+}
 
 export const useGameStore = defineStore("game", () => {
   const roomStore = useRoomStore();
@@ -17,12 +25,26 @@ export const useGameStore = defineStore("game", () => {
   const gameStatus = ref(GameStatus.NOT_STARTED);
   const leftCdTime = ref(-1);
   const debugSpellList = ref([]);
-  const gameLogs = ref<any[]>([]);
+  const gameLogs = reactive<string[]>([]);
   const winner = ref<-1 | 0 | 1 | undefined | null>(null);
   const inited = ref(false);
 
-  const playerASelectedIndex = computed(() => spellStatus.value.indexOf(SpellStatus.A_SELECTED));
-  const playerBSelectedIndex = computed(() => spellStatus.value.indexOf(SpellStatus.B_SELECTED));
+  const spellCardGrabbedFlag = ref(false);
+  watch(spellCardGrabbedFlag, (val) => {
+    if (val) {
+      nextTick(() => {
+        spellCardGrabbedFlag.value = false;
+      });
+    }
+  });
+
+  const bothSelectedIndex = computed(() => spellStatus.value.indexOf(SpellStatus.BOTH_SELECTED));
+  const playerASelectedIndex = computed(() =>
+    bothSelectedIndex.value === -1 ? spellStatus.value.indexOf(SpellStatus.A_SELECTED) : bothSelectedIndex.value
+  );
+  const playerBSelectedIndex = computed(() =>
+    bothSelectedIndex.value === -1 ? spellStatus.value.indexOf(SpellStatus.B_SELECTED) : bothSelectedIndex.value
+  );
 
   const bpGameData = reactive({
     whose_turn: 0, // 轮到谁了，0-左边，1-右边
@@ -134,6 +156,17 @@ export const useGameStore = defineStore("game", () => {
     spell_failed_count_a?: number;
     spell_failed_count_b?: number;
   }>(WebSocketPushActionType.PUSH_UPDATE_SEPLL_STATUS, (data) => {
+    const log: GameLog = {
+      index: data!.index,
+      status: data!.status,
+      oldStatus: spellStatus.value[data!.index],
+      causer: data!.causer,
+    };
+    if (data!.spell_failed_count_a) log.failCountA = data!.spell_failed_count_a;
+    if (data!.spell_failed_count_b) log.failCountB = data!.spell_failed_count_b;
+    const logText = getSepllCardLog(log);
+    gameLogs.push(logText);
+
     if (roomStore.isHost) {
       if (data!.causer === roomStore.roomData.names[0]) {
         setTimeout(() => {
@@ -151,6 +184,120 @@ export const useGameStore = defineStore("game", () => {
     }
   });
 
+  const getSepllCardLog = ({
+    index,
+    status,
+    oldStatus,
+    causer,
+    spell_failed_count_a,
+    spell_failed_count_b,
+  }: {
+    index: number;
+    status: number;
+    oldStatus: number;
+    causer: string;
+    spell_failed_count_a?: number;
+    spell_failed_count_b?: number;
+  }) => {
+    let str = "";
+    const playerA = `<span style="padding:0 2px;color:var(--A-color)">${causer}</span>`;
+    const playerB = `<span style="padding:0 2px;color:var(--B-color)">${causer}</span>`;
+    const host = `<span style="padding:0 2px;font-weight:600">${causer}</span>`;
+    const spellCard = `<span style="padding:0 2px;font-weight:600">${spells.value[index].name}</span>`;
+
+    if (roomStore.roomData.names[0] === causer) {
+      str += playerA;
+      switch (status) {
+        case -1:
+          str += "禁用了符卡";
+          break;
+        case 0:
+        case 3:
+          if (roomStore.isPlayerA) {
+            if (oldStatus === 5) {
+              str += "取消收取符卡";
+            } else {
+              str += "取消选择符卡";
+            }
+          }
+          break;
+        case 1:
+        case 2:
+          str += "选择了符卡";
+          break;
+        case 5:
+          if (roomStore.isPlayerB && (oldStatus === 3 || oldStatus === 2)) {
+            str += "抢了你选择的符卡";
+            spellCardGrabbedFlag.value = true;
+          } else {
+            str += "收取了符卡";
+          }
+          break;
+      }
+      str += spellCard;
+    } else if (roomStore.roomData.names[1] === causer) {
+      str += playerB;
+      switch (status) {
+        case -1:
+          str += "禁用了符卡";
+          break;
+        case 0:
+        case 1:
+          if (roomStore.isPlayerB) {
+            if (oldStatus === 7) {
+              str += "取消收取符卡";
+            } else {
+              str += "取消选择符卡";
+            }
+          }
+          break;
+        case 2:
+        case 3:
+          str += "选择了符卡";
+          break;
+        case 7:
+          if (roomStore.isPlayerA && (oldStatus === 1 || oldStatus === 2)) {
+            str += "抢了你选择的符卡";
+            spellCardGrabbedFlag.value = true;
+          } else {
+            str += "收取了符卡";
+          }
+          break;
+      }
+      str += spellCard;
+    } else {
+      str = `${host}把符卡${spellCard}`;
+      switch (status) {
+        case -1:
+          str += "设置为禁用";
+          break;
+        case 0:
+          str += "状态置空";
+          break;
+        case 1:
+          str += `设置为${playerA}选择`;
+          break;
+        case 2:
+          str += "设置为双方选择";
+          break;
+        case 3:
+          str += `设置为${playerB}选择`;
+          break;
+        case 5:
+          str += `设置为${playerA}收取`;
+          break;
+        case 6:
+          str += "设置为双方收取";
+          break;
+        case 7:
+          str += `设置为${playerB}收取`;
+          break;
+      }
+    }
+
+    return str;
+  };
+
   return {
     spells,
     spellStatus,
@@ -163,6 +310,7 @@ export const useGameStore = defineStore("game", () => {
     playerASelectedIndex,
     playerBSelectedIndex,
     inited,
+    spellCardGrabbedFlag,
     startGame,
     getGameData,
     stopGame,

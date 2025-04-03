@@ -210,14 +210,20 @@ const warnGamePoint = () => {
   gamePointAudioRef.value?.play();
 };
 
+watch(
+  () => gameStore.spellCardGrabbedFlag,
+  (val) => {
+    if (val) {
+      spellCardGrabbedAudioRef.value?.play();
+    }
+  }
+);
+
 onMounted(() => {
   ws.on(WebSocketPushActionType.PUSH_GM_WARN_PLAYER, () => {
     spellCardGrabbedAudioRef.value?.stop();
     spellCardGrabbedAudioRef.value?.play();
   });
-  // Mit.on("spell_card_grabbed", () => {
-  //   spellCardGrabbedAudioRef.value?.play();
-  // });
   // Mit.on("game_phase", () => {
   //   spellCardGrabbedAudioRef.value?.play();
   // });
@@ -230,7 +236,6 @@ onMounted(() => {
   // });
 });
 onUnmounted(() => {
-  // Mit.off("spell_card_grabbed");
   // Mit.off("game_phase");
   // Mit.off("right_link_start");
   // Mit.off("game_point");

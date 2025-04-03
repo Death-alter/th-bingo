@@ -59,6 +59,26 @@ onMounted(() => {
     emits("finish");
   }
 });
+watch(
+  () => props.cooldown,
+  (val) => {
+    if (val <= 0) return;
+    if (props.paused) {
+      leftTime.value = val;
+      if (leftTime.value > 0) {
+        locked.value = true;
+        status.value = ButtonStatus.COOLING_PAUSED;
+      }
+    } else {
+      if (props.immediate) {
+        startCooling();
+      }
+    }
+    if (val <= 0) {
+      emits("finish");
+    }
+  }
+);
 
 watch(
   () => props.paused,

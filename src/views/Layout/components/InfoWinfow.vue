@@ -276,9 +276,7 @@
         <el-tab-pane label="操作记录" :name="2" class="tab-content">
           <el-scrollbar ref="scrollbar">
             <div class="log-list">
-              <div class="log-list-item" v-for="(log, index) in gameLogs" :key="index">
-                <span v-for="(v, i) in log" :key="i" :style="v.style">{{ v.text }}</span>
-              </div>
+              <div class="log-list-item" v-for="(log, index) in gameLogs" :key="index" v-html="log"></div>
             </div>
           </el-scrollbar>
         </el-tab-pane>
@@ -336,7 +334,6 @@ const gameLogs = computed(() => gameStore.gameLogs);
 const inRoom = computed(() => roomStore.inRoom);
 const isPlayer = computed(() => roomStore.isPlayer);
 const isPlayerA = computed(() => roomStore.isPlayerA);
-const isPlayerB = computed(() => roomStore.isPlayerB);
 const isHost = computed(() => roomStore.isHost);
 const isWatcher = computed(() => roomStore.isWatcher);
 const soloMode = computed(() => roomStore.soloMode);
@@ -405,43 +402,6 @@ const onFormatChange = (value) => {
     roomStore.roomSettings.format++;
   }
   updateRoomConfig();
-};
-const getLogStyle = (v) => {
-  const style: any = {};
-  if (v.tag) {
-    style.padding = "0 2px";
-    switch (v.tag) {
-      case "playerA":
-        style.color = "var(--A-color)";
-        break;
-      case "playerB":
-        style.color = "var(--B-color)";
-        break;
-      case "spellCard":
-        style.fontWeight = 600;
-        break;
-      default:
-    }
-  } else if (v.color) {
-    style.color = v.color;
-  }
-  return style;
-};
-const getLogText = (v) => {
-  // if (v.tag) {
-  //   switch (v.tag) {
-  //     case "playerA":
-  //       return roomData.value.names[0];
-  //     case "playerB":
-  //       return roomData.value.names[1];
-  //     case "spellCard":
-  //       return roomData.value.spells[v.index].name;
-  //     default:
-  //   }
-  // } else {
-  //   return v.text;
-  // }
-  return "";
 };
 const standUp = () => {
   roomStore.standUp();

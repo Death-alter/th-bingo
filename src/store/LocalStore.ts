@@ -4,16 +4,27 @@ import ws from "@/utils/webSocket/WebSocketBingo";
 import { WebSocketActionType, WebSocketPushActionType } from "@/utils/webSocket/types";
 import { local } from "@/utils/Storage";
 import { useRoomStore } from "./RoomStore";
-import { useRoute, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 
 export const useLocalStore = defineStore("local", () => {
   const roomStore = useRoomStore();
   const router = useRouter();
-  const route = useRoute();
 
   //用户数据
   const online = ref(false);
+  watch(online, (flag) => {
+    nextTick(() => {
+      if (flag) {
+        if (!roomStore.roomId) {
+          router.push("/");
+        }
+      } else {
+        router.push("/login");
+      }
+    });
+  });
+
   const username = ref("");
   const password = ref("");
   const savedUserData = local.get("userData");
@@ -35,13 +46,11 @@ export const useLocalStore = defineStore("local", () => {
           pwd: password.value,
         })
         .then((res: any) => {
-          if (!local.has("userData")) {
-            local.set("userData", userData.value);
-          }
+          local.set("userData", userData.value);
           res && res.rid && (roomStore.roomId = res.rid);
           online.value = true;
-          return res;
-        });
+        })
+        .catch((e) => {});
     }
   };
   login();
@@ -49,15 +58,20 @@ export const useLocalStore = defineStore("local", () => {
   const logout = () => {
     if (roomStore.inRoom) {
       return ws.send(WebSocketActionType.LEAVE_ROOM).then(() => {
+        roomStore.roomId = "";
+        username.value = "";
+        password.value = "";
         local.remove("userData");
-        ws.reconnect();
         online.value = false;
+        ws.reconnect();
       });
     } else {
       return new Promise((reslove, reject) => {
+        username.value = "";
+        password.value = "";
         local.remove("userData");
-        ws.reconnect();
         online.value = false;
+        ws.reconnect();
         reslove(null);
       });
     }
@@ -65,18 +79,6 @@ export const useLocalStore = defineStore("local", () => {
   ws.on<{ now: number }>(WebSocketPushActionType.PUSH_KICK, () => {
     logout();
     ElMessage.error("该账号在别处登录");
-  });
-
-  watch(online, (flag) => {
-    nextTick(() => {
-      if (flag) {
-        if (!roomStore.roomId) {
-          router.push("/");
-        }
-      } else {
-        router.push("/login");
-      }
-    });
   });
 
   //时间
@@ -100,6 +102,7 @@ export const useLocalStore = defineStore("local", () => {
     serverTime,
     ping,
     timeMistake,
+    online,
     login,
     logout,
   };

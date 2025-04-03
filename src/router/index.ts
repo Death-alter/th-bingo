@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
-import { local } from "@/utils/Storage";
 import { useRoomStore } from "@/store/RoomStore";
+import { useLocalStore } from "@/store/LocalStore";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -34,15 +34,15 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   const roomStore = useRoomStore();
+  const localStore = useLocalStore();
 
-  const userData = local.get("userData");
   if (to.path === "/login") {
-    if (userData) {
+    if (localStore.online) {
       next("/");
       return;
     }
   } else {
-    if (!userData) {
+    if (!localStore.online) {
       next("/login");
       return;
     }

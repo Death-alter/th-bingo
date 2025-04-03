@@ -29,7 +29,8 @@ export class WebSocketBingo extends WS {
       if (res.code === 0) {
         ep.resolve(res.data);
       } else {
-        ep.reject(res.msg);
+        ElMessage.error(res.msg);
+        ep.reject(res);
       }
       if (this.eventList[ep.action]) {
         for (const callback of this.eventList[ep.action]) {
@@ -81,9 +82,6 @@ export class WebSocketBingo extends WS {
       } else {
         f();
       }
-    }).catch((e) => {
-      ElMessage.error(e);
-      console.log(e);
     });
   }
 
