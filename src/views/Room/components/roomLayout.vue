@@ -131,6 +131,7 @@ import { useGameStore } from "@/store/GameStore";
 import ws from "@/utils/webSocket/WebSocketBingo";
 import { WebSocketPushActionType } from "@/utils/webSocket/types";
 import { useRoute } from "vue-router";
+import { GameStatus } from "@/types";
 
 const roomStore = useRoomStore();
 const gameStore = useGameStore();
@@ -219,26 +220,24 @@ watch(
   }
 );
 
+const gamePaused = computed(() => gameStore.gameStatus === GameStatus.PAUSED);
+watch(gamePaused, (paused) => {
+  if (paused) {
+    spellCardGrabbedAudioRef.value?.play();
+  }
+});
+
 onMounted(() => {
   ws.on(WebSocketPushActionType.PUSH_GM_WARN_PLAYER, () => {
     spellCardGrabbedAudioRef.value?.stop();
     spellCardGrabbedAudioRef.value?.play();
   });
-  // Mit.on("game_phase", () => {
-  //   spellCardGrabbedAudioRef.value?.play();
-  // });
   // Mit.on("right_link_start", () => {
-  //   spellCardGrabbedAudioRef.value?.play();
-  // });
-  // Mit.on("alter", () => {
-  //   spellCardGrabbedAudioRef.value?.stop();
   //   spellCardGrabbedAudioRef.value?.play();
   // });
 });
 onUnmounted(() => {
-  // Mit.off("game_phase");
   // Mit.off("right_link_start");
-  // Mit.off("game_point");
   ws.off(WebSocketPushActionType.PUSH_GM_WARN_PLAYER);
 });
 
