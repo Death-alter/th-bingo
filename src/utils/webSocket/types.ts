@@ -56,6 +56,10 @@ export enum WebSocketActionType {
   UPDATE_SPELL_STATUS = "update_spell_status",
   START_BAN_PICK = "start_ban_pick",
   BAN_PICK = "ban_pick",
+
+  //bp赛
+  BP_GAME_BAN_PICK = "bp_game_ban_pick",
+  BP_GAME_NEXT_ROUND = "bp_game_next_round",
 }
 
 export enum WebSocketPushActionType {
@@ -73,4 +77,7 @@ export enum WebSocketPushActionType {
   PUSH_UPDATE_SEPLL_STATUS = "push_update_spell_status",
   PUSH_BAN_PICK = "push_ban_pick",
   PUSH_KICK = "push_kick",
+
+  //bp赛
+  PUSH_BP_GAME_NEXT_ROUND = "push_bp_game_next_round",
 }

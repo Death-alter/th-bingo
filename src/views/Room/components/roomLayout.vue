@@ -46,6 +46,9 @@
                     <spell-card-cell
                       :name="item.name"
                       :desc="item.desc"
+                      :level="isBingoStandard ? undefined : item.star"
+                      :failCountA="gameStore.bpGameData.spell_failed_count_a[index]"
+                      :failCountB="gameStore.bpGameData.spell_failed_count_b[index]"
                       @click="selectSpellCard(index)"
                       :selected="selectedSpellIndex === index"
                       :status="gameStore.spellStatus[index]"
@@ -130,8 +133,7 @@ import { useRoomStore } from "@/store/RoomStore";
 import { useGameStore } from "@/store/GameStore";
 import ws from "@/utils/webSocket/WebSocketBingo";
 import { WebSocketPushActionType } from "@/utils/webSocket/types";
-import { useRoute } from "vue-router";
-import { GameStatus } from "@/types";
+import { BingoType, GameStatus } from "@/types";
 
 const roomStore = useRoomStore();
 const gameStore = useGameStore();
@@ -141,7 +143,7 @@ const props = withDefaults(
     menu: { label: string; value: number; tag?: string }[];
     multiple?: boolean;
   }>(),
-  { multiple: true }
+  { multiple: false }
 );
 const selectedSpellIndex = defineModel();
 
@@ -160,6 +162,7 @@ const isWatcher = computed(() => roomStore.isWatcher);
 const isPlayerB = computed(() => roomStore.isPlayerB);
 const inGame = computed(() => roomStore.inGame);
 const needWin = computed(() => roomStore.roomConfig.need_win);
+const isBingoStandard = computed(() => roomData.value.type === BingoType.STANDARD);
 const spellCardSelected = computed(() => {
   if (roomStore.isPlayerA) {
     return gameStore.playerASelectedIndex !== -1;
@@ -180,19 +183,28 @@ const selectSpellCard = (index: number) => {
   }
   if (selectedSpellIndex.value === index) {
     selectedSpellIndex.value = -1;
-  } else if (!spellCardSelected.value) {
-    if (
-      gameStore.spellStatus[index] === 0 ||
-      (isPlayerB.value && gameStore.spellStatus[index] === 1) ||
-      (isPlayerB.value && gameStore.spellStatus[index] === 3)
-    )
-      selectedSpellIndex.value = index;
+  } else {
+    if (props.multiple) {
+      if (gameStore.spellStatus[index] === 0) selectedSpellIndex.value = index;
+    } else {
+      if (
+        gameStore.spellStatus[index] === 0 ||
+        (isPlayerB.value && gameStore.spellStatus[index] === 1) ||
+        (isPlayerB.value && gameStore.spellStatus[index] === 3)
+      ) {
+        selectedSpellIndex.value = index;
+      }
+    }
   }
 };
 const onMenuClick = ({ event, target, item }: any) => {
   const index = target.getAttribute("index");
   if (index !== null) {
-    gameStore.updateSpellStatus(parseInt(index), item.value);
+    if (item.isReset != null && item.isReset == false) {
+      gameStore.finishSpell(parseInt(index), false, gameStore.spellStatus[index] === 5 ? 0 : 1);
+    } else {
+      gameStore.updateSpellStatus(parseInt(index), item.value);
+    }
   }
 };
 const stopBGM = () => {

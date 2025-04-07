@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { computed, nextTick, reactive, ref, watch } from "vue";
 import { useRoomStore } from "./RoomStore";
-import { GameData, GameStatus, RoomConfig, Spell, SpellStatus } from "@/types";
+import { BingoType, GameData, GameStatus, RoomConfig, Spell, SpellStatus } from "@/types";
 import ws from "@/utils/webSocket/WebSocketBingo";
 import { WebSocketActionType, WebSocketPushActionType } from "@/utils/webSocket/types";
 
@@ -46,27 +46,23 @@ export const useGameStore = defineStore("game", () => {
     bothSelectedIndex.value === -1 ? spellStatus.value.indexOf(SpellStatus.B_SELECTED) : bothSelectedIndex.value
   );
 
-  const bpGameData = reactive({
-    whose_turn: 0, // 轮到谁了，0-左边，1-右边
-    ban_pick: 1, // 0-选，1-ban，2-轮到收卡了
-    spell_failed_count_a: [], // 左边玩家25张符卡的失败次数
-    spell_failed_count_b: [], // 右边玩家25张符卡的失败次数
-  });
-
   const linkGameData = reactive({});
 
   const getGameData = () => {
-    return ws.send(WebSocketActionType.GET_ALL_SPELLS).then((data: GameData) => {
-      spells.value = data.spells;
-      spellStatus.value = data.spell_status;
-      leftTime.value = data.left_time;
-      gameStatus.value = data.status;
-      leftCdTime.value = data.left_cd_time;
-      inited.value = true;
-      for (const i in data.bp_data) {
-        bpGameData[i] = data.bp_data[i];
-      }
-    });
+    return ws
+      .send(WebSocketActionType.GET_ALL_SPELLS)
+      .then((data: GameData) => {
+        spells.value = data.spells;
+        spellStatus.value = data.spell_status;
+        leftTime.value = data.left_time;
+        gameStatus.value = data.status;
+        leftCdTime.value = data.left_cd_time;
+        inited.value = true;
+        for (const i in data.bp_data) {
+          bpGameData[i] = data.bp_data[i];
+        }
+      })
+      .catch(() => {});
   };
   watch(
     () => roomStore.roomData.started,
@@ -142,8 +138,8 @@ export const useGameStore = defineStore("game", () => {
     return ws.send(WebSocketActionType.SELECT_SPELL, { index });
   };
 
-  const finishSpell = (index: number, success = true) => {
-    return ws.send(WebSocketActionType.FINISH_SPELL, { index, success });
+  const finishSpell = (index: number, success = true, playerIndex?: 0 | 1) => {
+    return ws.send(WebSocketActionType.FINISH_SPELL, { index, success, player_index: playerIndex });
   };
 
   const updateSpellStatus = (index, status) => {
@@ -162,8 +158,18 @@ export const useGameStore = defineStore("game", () => {
       oldStatus: spellStatus.value[data!.index],
       causer: data!.causer,
     };
-    if (data!.spell_failed_count_a) log.failCountA = data!.spell_failed_count_a;
-    if (data!.spell_failed_count_b) log.failCountB = data!.spell_failed_count_b;
+    if (data!.spell_failed_count_a) {
+      log.failCountA = data!.spell_failed_count_a;
+      nextTick(() => {
+        bpGameData.spell_failed_count_a[data!.index] = data!.spell_failed_count_a!;
+      });
+    }
+    if (data!.spell_failed_count_b) {
+      log.failCountB = data!.spell_failed_count_b;
+      nextTick(() => {
+        bpGameData.spell_failed_count_b[data!.index] = data!.spell_failed_count_b!;
+      });
+    }
     const logText = getSepllCardLog(log);
     gameLogs.push(logText);
 
@@ -189,20 +195,20 @@ export const useGameStore = defineStore("game", () => {
     status,
     oldStatus,
     causer,
-    spell_failed_count_a,
-    spell_failed_count_b,
+    failCountA,
+    failCountB,
   }: {
     index: number;
     status: number;
     oldStatus: number;
     causer: string;
-    spell_failed_count_a?: number;
-    spell_failed_count_b?: number;
+    failCountA?: number;
+    failCountB?: number;
   }) => {
     let str = "";
-    const playerA = `<span style="padding:0 2px;color:var(--A-color)">${causer}</span>`;
-    const playerB = `<span style="padding:0 2px;color:var(--B-color)">${causer}</span>`;
-    const host = `<span style="padding:0 2px;font-weight:600">${causer}</span>`;
+    const playerA = `<span style="padding:0 2px;color:var(--A-color)">${roomStore.roomData.names[0]}</span>`;
+    const playerB = `<span style="padding:0 2px;color:var(--B-color)">${roomStore.roomData.names[1]}</span>`;
+    const host = `<span style="padding:0 2px;font-weight:600">${roomStore.roomData.host}</span>`;
     const spellCard = `<span style="padding:0 2px;font-weight:600">${spells.value[index].name}</span>`;
 
     if (roomStore.roomData.names[0] === causer) {
@@ -266,6 +272,16 @@ export const useGameStore = defineStore("game", () => {
       }
       str += spellCard;
     } else {
+      if (roomStore.roomData.type === BingoType.BP) {
+        const currentCountA = bpGameData.spell_failed_count_a[index];
+        const currentCountB = bpGameData.spell_failed_count_b[index];
+        if (failCountA! > currentCountA) {
+          return `${playerA}收取符卡${spellCard}失败`;
+        }
+        if (failCountB! > currentCountB) {
+          return `${playerB}收取符卡${spellCard}失败`;
+        }
+      }
       str = `${host}把符卡${spellCard}`;
       switch (status) {
         case -1:
@@ -298,6 +314,26 @@ export const useGameStore = defineStore("game", () => {
     return str;
   };
 
+  //bp赛
+  const bpGameData = reactive({
+    whose_turn: 0, // 轮到谁了，0-左边，1-右边
+    ban_pick: 1, // 0-选，1-ban，2-轮到收卡了
+    spell_failed_count_a: [] as number[], // 左边玩家25张符卡的失败次数
+    spell_failed_count_b: [] as number[], // 右边玩家25张符卡的失败次数
+  });
+
+  const bpGameBanPick = (index: number) => {
+    return ws.send(WebSocketActionType.BP_GAME_BAN_PICK, { idx: index });
+  };
+
+  const bpGameNextRound = () => {
+    return ws.send(WebSocketActionType.BP_GAME_NEXT_ROUND);
+  };
+  ws.on<{ whose_turn: number; ban_pick: number }>(WebSocketPushActionType.PUSH_BP_GAME_NEXT_ROUND, (data) => {
+    bpGameData.whose_turn = data!.whose_turn;
+    bpGameData.ban_pick = data!.ban_pick;
+  });
+
   return {
     spells,
     spellStatus,
@@ -311,6 +347,7 @@ export const useGameStore = defineStore("game", () => {
     playerBSelectedIndex,
     inited,
     spellCardGrabbedFlag,
+    bpGameData,
     startGame,
     getGameData,
     stopGame,
@@ -319,5 +356,7 @@ export const useGameStore = defineStore("game", () => {
     selectSpell,
     finishSpell,
     updateSpellStatus,
+    bpGameBanPick,
+    bpGameNextRound,
   };
 });

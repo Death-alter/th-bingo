@@ -10,6 +10,8 @@
         {{ desc }}
       </div>
       <div class="name">{{ name }}</div>
+      <div class="fail-count-a" v-if="failCountA && status < 5">失败：{{ failCountA }}</div>
+      <div class="fail-count-b" v-if="failCountB && status < 5">失败：{{ failCountB }}</div>
     </div>
   </div>
 </template>
@@ -25,11 +27,13 @@ const roomStore = useRoomStore();
 const props = withDefaults(
   defineProps<{
     level?: number;
-    name: string;
+    name?: string;
     disabled?: boolean;
-    status: number;
-    selected: boolean;
-    desc: string;
+    status?: number;
+    selected?: boolean;
+    desc?: string;
+    failCountA?: number;
+    failCountB?: number;
   }>(),
   {
     level: 0,
@@ -38,6 +42,8 @@ const props = withDefaults(
     status: 0,
     selected: false,
     desc: "",
+    failCountA: 0,
+    failCountB: 0,
   }
 );
 
@@ -123,6 +129,22 @@ const onClick = () => {
       word-break: break-all;
       white-space: "pre-wrap";
       font-size: 14px;
+    }
+
+    .fail-count-a {
+      position: absolute;
+      top: 0;
+      right: 0;
+      font-size: 12px;
+      color: var(--A-color);
+    }
+
+    .fail-count-b {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      font-size: 12px;
+      color: var(--B-color);
     }
   }
 

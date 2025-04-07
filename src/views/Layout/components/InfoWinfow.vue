@@ -28,7 +28,7 @@
                   </div>
                 </el-form-item>
                 <el-form-item label="房间规则：">
-                  {{ getRoomTypeText(roomData.type) }}
+                  {{ roomTypeText }}
                 </el-form-item>
                 <el-form-item label="房间模式：">{{ roomData.host ? "导播模式" : "无导播模式" }}</el-form-item>
                 <el-form-item v-if="roomData.host" label="导播：">{{ roomData.host }}</el-form-item>
@@ -65,7 +65,7 @@
                 <el-form-item label="规则：">
                   <div class="label-with-button">
                     <div>
-                      <el-select v-if="showTypeInput" v-model="roomData.type">
+                      <el-select v-if="showTypeInput" v-model="roomSettings.type" style="width: 150px">
                         <el-option
                           v-for="(item, index) in gameTypeList"
                           :key="index"
@@ -73,7 +73,7 @@
                           :value="item.type"
                         ></el-option>
                       </el-select>
-                      <span v-else> {{ getRoomTypeText(roomData.type) }}</span>
+                      <span v-else> {{ roomTypeText }}</span>
                     </div>
                     <el-button link type="primary" @click="editType" v-if="!inGame">{{
                       showTypeInput ? "确认" : "修改"
@@ -287,7 +287,6 @@
 
 <script lang="ts" setup>
 import { computed, ref, watch, nextTick } from "vue";
-import { useRouter } from "vue-router";
 import {
   ElTabs,
   ElTabPane,
@@ -324,9 +323,11 @@ const rankList = Config.rankList;
 const difficultyList = Config.difficultyList;
 const predefineColors = Config.predefineColors;
 const gameTypeList = computed(() => {
-  const list = [...Config.gameTypeList];
-  list.splice(1, 2);
-  return list;
+  if (soloMode.value) {
+    return [...Config.gameTypeList].slice(0, 1);
+  } else {
+    return [...Config.gameTypeList].slice(0, 2);
+  }
 });
 const roomSettings = computed(() => roomStore.roomSettings);
 const roomData = computed(() => roomStore.roomData);
@@ -340,12 +341,8 @@ const soloMode = computed(() => roomStore.soloMode);
 const inGame = computed(() => roomStore.inGame);
 const inMatch = computed(() => roomStore.inMatch);
 
-const logout = () => {
-  localStore.logout();
-};
-
-const getRoomTypeText = (type: number) => {
-  switch (type) {
+const roomTypeText = computed(() => {
+  switch (roomData.value.type) {
     case 1:
       return "bingo 标准赛";
     case 2:
@@ -355,6 +352,10 @@ const getRoomTypeText = (type: number) => {
     default:
       return "未选择比赛类型";
   }
+});
+
+const logout = () => {
+  localStore.logout();
 };
 
 const leaveRoom = () => {
@@ -382,10 +383,12 @@ const editType = () => {
   if (showTypeInput.value === false) {
     showTypeInput.value = true;
   } else {
-    if (roomStore.roomData.type !== roomData.value.type) {
-      roomStore.updateRoomConfig().then(() => {
-        showTypeInput.value = false;
-      });
+    if (roomStore.roomConfig.type !== roomSettings.value.type) {
+      roomStore
+        .updateRoomConfig()
+        .then(() => {
+          showTypeInput.value = false;
+        })
     } else {
       showTypeInput.value = false;
     }

@@ -1,6 +1,11 @@
 <template>
   <div class="room">
-    <room-layout ref="layoutRef" v-model="selectedSpellIndex" :menu="menu">
+    <room-layout
+      ref="layoutRef"
+      v-model="selectedSpellIndex"
+      :menu="menu"
+      :multiple="isBingoBp || (isBingoStandard && gameStore.gameStatus === GameStatus.COUNT_DOWN)"
+    >
       <template #left>
         <score-board
           class="change-card"
@@ -61,20 +66,25 @@
       </template>
 
       <template #button-center>
-        <template v-if="isBingoStandard">
-          <template v-if="!soloMode && isHost">
-            <el-button type="primary" v-if="!inGame && !isBpPhase" @click="startGame">开始比赛</el-button>
-            <el-button type="primary" v-if="isBpPhase" @click="drawSpellCard" :disabled="banPick.phase < 99">
-              抽取符卡
-            </el-button>
-            <el-button type="primary" v-if="inGame && winFlag === 0" @click="stopGame">结束比赛</el-button>
-            <el-button type="primary" v-if="winFlag !== 0" @click="confirmWinner">
-              确认：{{ winFlag < 0 ? roomData.names[0] : roomData.names[1] }}获胜
-            </el-button>
-          </template>
+        <template v-if="!soloMode && isHost">
+          <el-button type="primary" v-if="!inGame && !isBpPhase" @click="startGame">开始比赛</el-button>
+          <el-button type="primary" v-if="isBpPhase" @click="drawSpellCard" :disabled="banPick.phase < 99">
+            抽取符卡
+          </el-button>
+          <el-button type="primary" v-if="inGame && winFlag === 0" @click="stopGame">结束比赛</el-button>
+          <el-button type="primary" v-if="winFlag !== 0" @click="confirmWinner">
+            确认：{{ winFlag < 0 ? roomData.names[0] : roomData.names[1] }}获胜
+          </el-button>
+        </template>
 
-          <template v-if="isPlayer">
-            <template v-if="inGame">
+        <template v-if="soloMode && isPlayerA">
+          <el-button type="primary" v-if="!inGame && !isBpPhase" @click="startGame">开始比赛</el-button>
+          <el-button type="primary" v-if="banPick.phase === 9999" @click="drawSpellCard">抽取符卡</el-button>
+        </template>
+
+        <template v-if="isPlayer">
+          <template v-if="inGame">
+            <template v-if="isBingoStandard">
               <confirm-select-button
                 @click="confirmSelect"
                 :disabled="selectedSpellIndex < 0 || gamePaused"
@@ -93,64 +103,87 @@
                 text="确认收取"
               ></confirm-select-button>
             </template>
-
-            <template v-if="isBpPhase">
+            <template v-if="isBingoBp">
               <el-button
                 type="primary"
-                v-if="banPick.phase !== 11"
-                :disabled="!(isPlayerA && playerACanBP) && !(isPlayerB && playerBCanBP)"
-                @click="playerBanPick"
-                >确定</el-button
+                @click="confirmBp"
+                :disabled="!isMyTurn || !bingoBpPhase || selectedSpellIndex < 0"
+                v-if="!gameStore.bpGameData.ban_pick"
+                >{{ bingoBpPhase ? (isMyTurn ? "选择符卡" : "等待对手选择符卡") : "等待房主操作" }}</el-button
               >
-              <el-button type="primary" v-if="banPick.phase === 11" @click="confirmOpenEX(true)">开启</el-button>
-              <el-button type="primary" v-if="banPick.phase === 11" @click="confirmOpenEX(false)">不开启</el-button>
+              <el-button
+                type="primary"
+                @click="confirmBp"
+                v-if="gameStore.bpGameData.ban_pick"
+                :disabled="!isMyTurn || !bingoBpPhase || selectedSpellIndex < 0"
+                >{{ bingoBpPhase ? (isMyTurn ? "禁用符卡" : "等待对手禁用符卡") : "等待房主操作" }}</el-button
+              >
             </template>
+            <!-- <template v-if="isBingoLink">
+              <el-button
+                type="primary"
+                @click="confirmSelect"
+                :disabled="gamePaused || !routeComplete"
+                v-if="(gamePhase === 1 || !confirmed) && !(gamePhase > 1 && routeComplete)"
+                >{{ confirmed ? "取消确认" : "确认路线" }}</el-button
+              >
+            </template> -->
           </template>
 
-          <template v-if="soloMode && isPlayerA">
-            <el-button type="primary" v-if="!inGame && !isBpPhase" @click="startGame">开始比赛</el-button>
-            <el-button type="primary" v-if="isBpPhase" @click="drawSpellCard">抽取符卡</el-button>
+          <template v-if="isBpPhase">
+            <el-button
+              type="primary"
+              v-if="banPick.phase < 11"
+              :disabled="!(isPlayerA && playerACanBP) && !(isPlayerB && playerBCanBP)"
+              @click="playerBanPick"
+              >确定</el-button
+            >
+            <el-button type="primary" v-if="banPick.phase === 11" @click="confirmOpenEX(true)">开启</el-button>
+            <el-button type="primary" v-if="banPick.phase === 11" @click="confirmOpenEX(false)">不开启</el-button>
           </template>
         </template>
 
-        <template v-if="isBingoBp">
+        <!-- <template v-if="isBingoLink">
           <el-button type="primary" v-if="!inGame">开始比赛</el-button>
           <el-button type="primary" v-else>结束比赛</el-button>
-        </template>
-
-        <template v-if="isBingoLink">
-          <el-button type="primary" v-if="!inGame">开始比赛</el-button>
-          <el-button type="primary" v-else>结束比赛</el-button>
-        </template>
+        </template> -->
       </template>
 
       <template #button-left-1>
-        <template v-if="isBingoStandard">
-          <template v-if="!soloMode && isHost">
+        <template v-if="!soloMode && isHost">
+          <template v-if="isBingoStandard || !inGame">
             <el-button size="small" :disabled="inGame" @click="resetRoom">重置房间</el-button>
           </template>
-          <template v-if="soloMode && isPlayerA">
-            <el-button v-if="isPlayerA && !inGame" size="small" @click="resetRoom">重置房间</el-button>
-            <el-button v-if="isPlayerA && inGame" size="small" @click="stopGame">结束比赛</el-button>
+          <template v-else>
+            <el-button size="small" :disabled="!inGame" v-if="gamePaused" @click="resumeGame"> 继续比赛 </el-button>
+            <el-button size="small" :disabled="!inGame" v-else @click="pauseGame">暂停比赛</el-button>
           </template>
+        </template>
+        <template v-if="soloMode && isPlayerA">
+          <el-button v-if="isPlayerA && !inGame" size="small" @click="resetRoom">重置房间</el-button>
+          <el-button v-if="isPlayerA && inGame" size="small" @click="stopGame">结束比赛</el-button>
         </template>
       </template>
 
       <template #button-right-1>
-        <template v-if="isBingoStandard">
-          <template v-if="(!soloMode && isHost) || (soloMode && isPlayerA)">
-            <el-button
-              size="small"
-              :disabled="gameStore.gameStatus === GameStatus.STARTED"
-              v-if="gamePaused"
-              @click="resumeGame"
-            >
-              继续比赛
-            </el-button>
-            <el-button size="small" :disabled="gameStore.gameStatus !== GameStatus.STARTED" v-else @click="pauseGame"
-              >暂停比赛</el-button
+        <template v-if="isOwner">
+          <template v-if="isBingoStandard">
+            <template v-if="!isBpPhase">
+              <el-button size="small" :disabled="!inGame" v-if="gamePaused" @click="resumeGame"> 继续比赛 </el-button>
+              <el-button size="small" :disabled="!inGame" v-else @click="pauseGame">暂停比赛</el-button>
+            </template>
+            <el-button :disabled="bpStatus !== 5" size="small" v-else @click="startBP">重新BP</el-button>
+          </template>
+          <template v-if="isBingoBp">
+            <el-button size="small" @click="nextRound" :disabled="!inGame || gameStore.bpGameData.ban_pick !== 2"
+              >进入下轮</el-button
             >
           </template>
+          <!-- <template v-if="isBingoLink">
+            <el-button size="small" @click="linkTiming" :disabled="gamePhase < 2 || gamePhase > 3 || gamePaused">{{
+              gamePhase === 3 && !gameData.link_data.start_ms_b ? "开始计时" : "结束计时"
+            }}</el-button>
+          </template> -->
         </template>
       </template>
     </room-layout>
@@ -190,6 +223,7 @@ const isHost = computed(() => roomStore.isHost);
 const isPlayer = computed(() => roomStore.isPlayer);
 const isPlayerA = computed(() => roomStore.isPlayerA);
 const isPlayerB = computed(() => roomStore.isPlayerB);
+const isOwner = computed(() => (soloMode.value ? isPlayerA.value : isHost.value));
 
 const inMatch = computed(() => roomStore.inMatch);
 
@@ -216,8 +250,8 @@ const spellCardSelected = computed(() => {
   }
   return false;
 });
-const menu = computed<{ label: string; value: number; tag?: string }[]>(() => {
-  let data: { label: string; value: number; tag?: string }[] = [];
+const menu = computed<{ label: string; value: number; tag?: string; isReset?: boolean }[]>(() => {
+  let data: { label: string; value: number; tag?: string; isReset?: boolean }[] = [];
   switch (roomData.value.type) {
     case BingoType.STANDARD:
       if (soloMode.value) {
@@ -293,10 +327,101 @@ const menu = computed<{ label: string; value: number; tag?: string }[]>(() => {
       }
       break;
     case BingoType.BP:
-      data = [];
+      if (isHost.value) {
+        data = [
+          {
+            label: "收取失败",
+            value: 0,
+            isReset: false,
+          },
+          {
+            label: "禁用",
+            value: -1,
+          },
+          {
+            label: "置空",
+            value: 0,
+            isReset: true,
+          },
+          {
+            label: "左侧玩家选择",
+            value: 1,
+            tag: "playerA",
+          },
+          {
+            label: "右侧玩家选择",
+            value: 3,
+            tag: "playerB",
+          },
+          // {
+          //   label: "两侧玩家选择",
+          //   value: 2,
+          // },
+          {
+            label: "左侧玩家收取",
+            value: 5,
+            tag: "playerA",
+          },
+          {
+            label: "右侧玩家收取",
+            value: 7,
+            tag: "playerB",
+          },
+        ];
+      }
       break;
     case BingoType.LINK:
-      data = [];
+      if (soloMode.value) {
+        data = [
+          {
+            label: "置空",
+            value: 0,
+          },
+        ];
+        if (isPlayerA.value) {
+          data = [
+            ...data,
+            {
+              label: "收取",
+              value: 5,
+              tag: "playerA",
+            },
+          ];
+        }
+        if (isPlayerB.value) {
+          data = [
+            ...data,
+            {
+              label: "收取",
+              value: 7,
+              tag: "playerB",
+            },
+          ];
+        }
+      } else {
+        if (isHost.value) {
+          data = [
+            {
+              label: "置空",
+              value: 0,
+            },
+            {
+              label: "两侧玩家收取",
+              value: 6,
+            },
+            {
+              label: "左侧玩家收取",
+              value: 5,
+              tag: "playerA",
+            },
+            {
+              label: "右侧玩家收取",
+              value: 7,
+              tag: "playerB",
+            },
+          ];
+        }
+      }
       break;
   }
   return data;
@@ -368,6 +493,9 @@ const bpCode = ref("");
 const banPick = computed(() => roomStore.banPick);
 const bpStatus = computed(() => roomStore.bpStatus);
 
+const startBP = () => {
+  roomStore.startBanPick();
+};
 const playerBanPick = () => {
   if (!bpCode.value) {
     ElMessageBox.confirm("你没有选择作品，是否确认不选择？", "提示", {
@@ -401,16 +529,201 @@ const selectCooldown = computed(() => {
     return -1;
   }
   const c = gameStore.leftCdTime < 0 ? roomConfig.value.cd_time * 1000 : gameStore.leftCdTime;
-  console.log(gameStore.leftCdTime, roomConfig.value.cd_time, c);
   return c;
 });
 
 const setCdTime = () => {
   gameStore.leftCdTime = -1;
 };
+const decideStandard = (status) => {
+  const available: number[] = new Array(12).fill(2);
+  const sumArr: number[] = new Array(12).fill(0);
+  winFlag.value = 0;
+  let countA = 0;
+  let countB = 0;
+  let scoreA = 0;
+  let scoreB = 0;
+  status.forEach((item: number, index: number) => {
+    const rowIndex = Math.floor(index / 5);
+    const columnIndex = index % 5;
+    if (item === 5) {
+      countA++;
+      scoreA += 1;
+      if (available[rowIndex] > 0) available[rowIndex] -= 2;
+      if (available[columnIndex + 5] > 0) available[columnIndex + 5] -= 2;
+      sumArr[rowIndex] -= 1;
+      sumArr[columnIndex + 5] -= 1;
+      if (index % 6 === 0) {
+        sumArr[10] -= 1;
+        if (available[10] > 0) available[10] -= 2;
+      }
+      if (index && index !== 24 && index % 4 === 0) {
+        sumArr[11] -= 1;
+        if (available[11] > 0) available[11] -= 2;
+      }
+    } else if (item === 7) {
+      countB++;
+      scoreB += 1;
+      if (available[rowIndex] % 2 === 0) available[rowIndex] -= 1;
+      if (available[columnIndex + 5] % 2 === 0) available[columnIndex + 5] -= 1;
+      sumArr[rowIndex] += 1;
+      sumArr[columnIndex + 5] += 1;
+      if (index % 6 === 0) {
+        sumArr[10] += 1;
+        if (available[10] % 2 === 0) available[10] -= 1;
+      }
+      if (index && index !== 24 && index % 4 === 0) {
+        sumArr[11] += 1;
+        if (available[11] % 2 === 0) available[11] -= 1;
+      }
+    }
+  });
+
+  let gamePointFlag = false;
+  for (let i = 0; i < 12; i++) {
+    if (sumArr[i] === -5) {
+      winFlag.value = -(i + 1);
+      break;
+    } else if (sumArr[i] === 5) {
+      winFlag.value = i + 1;
+      break;
+    } else if (
+      (sumArr[i] === -4 && oldSumArr.value[i] > -4 && isPlayerB.value) ||
+      (sumArr[i] === 4 && oldSumArr.value[i] < 4 && isPlayerA.value)
+    ) {
+      gamePointFlag = true;
+    }
+  }
+  if (gamePointFlag) {
+    layoutRef.value?.warnGamePoint();
+  }
+  oldSumArr.value = sumArr;
+
+  playerAScore.value = scoreA;
+  playerBScore.value = scoreB;
+
+  if (countA >= 13) {
+    winFlag.value = -13;
+  }
+  if (countB >= 13) {
+    winFlag.value = 13;
+  }
+
+  if (soloMode.value && isPlayerA.value && winFlag.value !== 0) {
+    // if (trainingMode.value) Mit.emit("ai_game_over");
+    confirmWinner();
+  }
+  if (!soloMode.value && !isHost.value) {
+    if (winFlag.value !== 0) {
+      layoutRef.value?.showAlert("已满足胜利条件，等待房主判断胜负", "red");
+    } else {
+      layoutRef.value?.hideAlert();
+    }
+  }
+
+  if (gameStore.leftTime < 0 && countA !== countB) {
+    if (countA > countB) {
+      winFlag.value = -14;
+    } else {
+      winFlag.value = 14;
+    }
+    // if (trainingMode.value) Mit.emit("ai_game_over");
+  }
+};
 
 //BP赛
 const isBingoBp = computed(() => roomStore.roomData.type === BingoType.BP);
+const isMyTurn = computed(
+  () =>
+    (isPlayerA.value && gameStore.bpGameData.whose_turn === 0) ||
+    (isPlayerB.value && gameStore.bpGameData.whose_turn === 1)
+);
+const bingoBpPhase = computed(() => gameStore.bpGameData.ban_pick !== 2);
+
+const nextRound = () => {
+  gameStore.bpGameNextRound();
+};
+const confirmBp = () => {
+  if (selectedSpellIndex.value === -1) return;
+  gameStore.bpGameBanPick(selectedSpellIndex.value).then(() => {
+    selectedSpellIndex.value = -1;
+  });
+};
+const decideBp = (status) => {
+  const available: number[] = new Array(12).fill(2);
+  const sumArr: number[] = new Array(12).fill(0);
+  winFlag.value = 0;
+  let count = 0;
+  let scoreA = 0;
+  let scoreB = 0;
+  status.forEach((item: number, index: number) => {
+    const rowIndex = Math.floor(index / 5);
+    const columnIndex = index % 5;
+    if (item == -1) {
+      count++;
+    }
+    if (item === 5) {
+      count++;
+      scoreA += gameStore.spells[index].star;
+      if (available[rowIndex] > 0) available[rowIndex] -= 2;
+      if (available[columnIndex + 5] > 0) available[columnIndex + 5] -= 2;
+      sumArr[rowIndex] -= 1;
+      sumArr[columnIndex + 5] -= 1;
+      if (index % 6 === 0) {
+        sumArr[10] -= 1;
+        if (available[10] > 0) available[10] -= 2;
+      }
+      if (index && index % 4 === 0) {
+        sumArr[11] -= 1;
+        if (available[11] > 0) available[11] -= 2;
+      }
+    } else if (item === 7) {
+      count++;
+      scoreB += gameStore.spells[index].star;
+      if (available[rowIndex] % 2 === 0) available[rowIndex] -= 1;
+      if (available[columnIndex + 5] % 2 === 0) available[columnIndex + 5] -= 1;
+      sumArr[rowIndex] += 1;
+      sumArr[columnIndex + 5] += 1;
+      if (index % 6 === 0) {
+        sumArr[10] += 1;
+        if (available[10] % 2 === 0) available[10] -= 1;
+      }
+      if (index && index % 4 === 0) {
+        sumArr[11] += 1;
+        if (available[11] % 2 === 0) available[11] -= 1;
+      }
+    }
+  });
+
+  for (let i = 0; i < 12; i++) {
+    if (sumArr[i] === -5) {
+      winFlag.value = -(i + 1);
+      break;
+    } else if (sumArr[i] === 5) {
+      winFlag.value = i + 1;
+      break;
+    }
+  }
+
+  playerAScore.value = scoreA;
+  playerBScore.value = scoreB;
+
+  if (count == 25) {
+    if (scoreB - scoreA < 0) {
+      winFlag.value = -25;
+    } else {
+      winFlag.value = 25;
+    }
+  }
+
+  if (!isHost.value) {
+    if (winFlag.value !== 0) {
+      layoutRef.value?.showAlert("已满足胜利条件，等待房主判断胜负", "red");
+    } else {
+      layoutRef.value?.hideAlert();
+    }
+  }
+};
 
 //link赛
 const isBingoLink = computed(() => roomStore.roomData.type === BingoType.LINK);
@@ -454,91 +767,21 @@ watch(
 watch(
   () => gameStore.spellStatus,
   (status) => {
-    console.log(status);
     if (status && status.length) {
-      const available: number[] = new Array(12).fill(2);
-      const sumArr: number[] = new Array(12).fill(0);
-      winFlag.value = 0;
-      let countA = 0;
-      let countB = 0;
-      let scoreA = 0;
-      let scoreB = 0;
-      status.forEach((item: number, index: number) => {
-        const rowIndex = Math.floor(index / 5);
-        const columnIndex = index % 5;
-        if (item === 5) {
-          countA++;
-          scoreA += 1;
-          if (available[rowIndex] > 0) available[rowIndex] -= 2;
-          if (available[columnIndex + 5] > 0) available[columnIndex + 5] -= 2;
-          sumArr[rowIndex] -= 1;
-          sumArr[columnIndex + 5] -= 1;
-          if (index % 6 === 0) {
-            sumArr[10] -= 1;
-            if (available[10] > 0) available[10] -= 2;
-          }
-          if (index && index !== 24 && index % 4 === 0) {
-            sumArr[11] -= 1;
-            if (available[11] > 0) available[11] -= 2;
-          }
-        } else if (item === 7) {
-          countB++;
-          scoreB += 1;
-          if (available[rowIndex] % 2 === 0) available[rowIndex] -= 1;
-          if (available[columnIndex + 5] % 2 === 0) available[columnIndex + 5] -= 1;
-          sumArr[rowIndex] += 1;
-          sumArr[columnIndex + 5] += 1;
-          if (index % 6 === 0) {
-            sumArr[10] += 1;
-            if (available[10] % 2 === 0) available[10] -= 1;
-          }
-          if (index && index !== 24 && index % 4 === 0) {
-            sumArr[11] += 1;
-            if (available[11] % 2 === 0) available[11] -= 1;
-          }
-        }
-      });
-      let gamePointFlag = false;
-      for (let i = 0; i < 12; i++) {
-        if (sumArr[i] === -5) {
-          winFlag.value = -(i + 1);
-          break;
-        } else if (sumArr[i] === 5) {
-          winFlag.value = i + 1;
-          break;
-        } else if (
-          (sumArr[i] === -4 && oldSumArr.value[i] > -4 && isPlayerB.value) ||
-          (sumArr[i] === 4 && oldSumArr.value[i] < 4 && isPlayerA.value)
-        ) {
-          gamePointFlag = true;
-        }
+      if (isBingoStandard.value) {
+        decideStandard(status);
       }
-      if (gamePointFlag) {
-        layoutRef.value?.warnGamePoint();
-      }
-      oldSumArr.value = sumArr;
-      playerAScore.value = scoreA;
-      playerBScore.value = scoreB;
-      if (countA >= 13) {
-        winFlag.value = -13;
-      }
-      if (countB >= 13) {
-        winFlag.value = 13;
-      }
-      if (winFlag.value !== 0) {
-        if (soloMode.value) {
-          if (isPlayerA.value) {
-            confirmWinner();
-          }
-        } else {
-          if (!isHost.value) {
-            layoutRef.value?.showAlert("已满足胜利条件，等待房主判断", "red");
-          }
-        }
-      } else {
-        layoutRef.value?.hideAlert();
+      if (isBingoBp.value) {
+        decideBp(status);
       }
     }
+
+    // if (isBingoLink.value) {
+    //   winFlag.value = 0;
+    //   if (newVal.link_data) {
+    //     decideLink(newVal);
+    //   }
+    // }
   },
   { deep: true, immediate: true }
 );
@@ -546,7 +789,7 @@ watch(
 //方法
 const startGame = () => {
   if (roomSettings.value.gamebp && !inMatch.value) {
-    roomStore.startBanPick();
+    startBP();
   } else {
     gameStore.startGame().then(() => {
       roomStore.updateChangeCardCount(roomData.value.names[0], roomSettings.value.playerA.changeCardCount);
@@ -650,6 +893,7 @@ const onCountDownComplete = () => {
     });
   } else if (gameStore.gameStatus === GameStatus.STARTED) {
     gameStore.gameStatus = GameStatus.ENDED;
+    if (!isHost.value) layoutRef.value?.showAlert("游戏时间到，等待房主判断胜负", "red");
   }
 };
 const resetRoom = () => {

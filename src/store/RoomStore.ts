@@ -10,7 +10,6 @@ import { useRoute, useRouter } from "vue-router";
 
 export const useRoomStore = defineStore("room", () => {
   const localStore = useLocalStore();
-  const route = useRoute();
   const router = useRouter();
 
   const roomId = ref<string>("");
@@ -39,6 +38,7 @@ export const useRoomStore = defineStore("room", () => {
     }
   });
   const soloMode = computed(() => !roomData.host);
+  const practiceMode = computed(() => !roomData.host && roomData.names[1] === "训练用毛玉");
 
   const gameTimeLimit = {};
   const countdownTime = {};
@@ -127,6 +127,9 @@ export const useRoomStore = defineStore("room", () => {
   ws.on<{ name: string; position: number }>(WebSocketPushActionType.PUSH_UPDATE_ROOM_CONFIG, (data) => {
     for (const i in data) {
       roomConfig[i] = data[i];
+      if (roomData.hasOwnProperty(i)) {
+        roomData[i] = data[i];
+      }
     }
   });
 
@@ -154,6 +157,7 @@ export const useRoomStore = defineStore("room", () => {
     }
   };
   const createRoom = (rid: string, soloMode: boolean, addRobot: boolean) => {
+    roomSettings.type = BingoType.STANDARD;
     return ws
       .send(WebSocketActionType.CREATE_ROOM, {
         room_config: {
@@ -173,14 +177,18 @@ export const useRoomStore = defineStore("room", () => {
       .then((data) => {
         roomId.value = rid;
         setRoomData(data);
-      });
+      })
+      .catch(() => {});
   };
   const getRoomData = () => {
-    return ws.send(WebSocketActionType.GET_ROOM, { rid: roomId.value }).then((data) => {
-      if (data) {
-        setRoomData(data);
-      }
-    });
+    return ws
+      .send(WebSocketActionType.GET_ROOM, { rid: roomId.value })
+      .then((data) => {
+        if (data) {
+          setRoomData(data);
+        }
+      })
+      .catch(() => {});
   };
   watch(roomId, (id) => {
     if (id) {
@@ -189,12 +197,15 @@ export const useRoomStore = defineStore("room", () => {
   });
 
   const joinRoom = (rid: string) => {
-    return ws.send(WebSocketActionType.JOIN_ROOM, { rid }).then((data) => {
-      roomId.value = rid;
-      for (const i in data) {
-        roomData[i] = data[i];
-      }
-    });
+    return ws
+      .send(WebSocketActionType.JOIN_ROOM, { rid })
+      .then((data) => {
+        roomId.value = rid;
+        for (const i in data) {
+          roomData[i] = data[i];
+        }
+      })
+      .catch(() => {});
   };
   ws.on<{ name: string; position: number }>(WebSocketPushActionType.PUSH_JOIN_ROOM, (data) => {
     if (data!.position !== -1) {
@@ -344,6 +355,7 @@ export const useRoomStore = defineStore("room", () => {
   return {
     roomId,
     soloMode,
+    practiceMode,
     roomSettings,
     roomData,
     roomConfig,
