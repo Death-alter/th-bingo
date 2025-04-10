@@ -97,7 +97,7 @@ const gameTypeList = [
     name: "bingo BP赛",
     type: 2,
     timeLimit: 60,
-    countdown: 300,
+    countdown: 30,
   },
   {
     name: "bingo link赛",
