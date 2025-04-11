@@ -139,6 +139,14 @@
                     style="margin-right: 0"
                   ></el-checkbox>
                 </el-form-item>
+                <el-form-item label="全局BP：" v-if="roomSettings.gamebp">
+                  <el-checkbox
+                    v-model="roomSettings.matchbp"
+                    :disabled="inGame"
+                    @change="saveRoomSettings"
+                    style="margin-right: 0"
+                  ></el-checkbox>
+                </el-form-item>
                 <el-form-item label="题目：" v-if="!roomSettings.gamebp">
                   <el-checkbox-group
                     v-model="roomSettings.checkList"
@@ -384,11 +392,9 @@ const editType = () => {
     showTypeInput.value = true;
   } else {
     if (roomStore.roomConfig.type !== roomSettings.value.type) {
-      roomStore
-        .updateRoomConfig()
-        .then(() => {
-          showTypeInput.value = false;
-        })
+      roomStore.updateRoomConfig().then(() => {
+        showTypeInput.value = false;
+      });
     } else {
       showTypeInput.value = false;
     }

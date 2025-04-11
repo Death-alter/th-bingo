@@ -2,7 +2,7 @@
   <div class="login">
     <div class="login-box relative-center">
       <div class="login-box-item">
-        <el-input v-model="localStore.username" placeholder="请输入想要使用的名称" @change="onchange"></el-input>
+        <el-input v-model="localStore.username" placeholder="请输入想要使用的名称"></el-input>
       </div>
       <div class="login-box-item">
         <el-input v-model="localStore.password" placeholder="请输入密码" type="password" show-password></el-input>
@@ -23,12 +23,6 @@ const localStore = useLocalStore();
 
 const login = () => {
   localStore.login();
-};
-
-const onchange = () => {
-  nextTick(() => {
-    console.log(localStore.username, localStore.password);
-  });
 };
 </script>
 

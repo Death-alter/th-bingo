@@ -159,6 +159,7 @@ const turn3CountdownAudioRef = ref<InstanceType<typeof bgm>>();
 const muted = computed(() => roomStore.roomSettings.bgmMuted);
 const roomData = computed(() => roomStore.roomData);
 const isWatcher = computed(() => roomStore.isWatcher);
+const isPlayerA= computed(() => roomStore.isPlayerA);
 const isPlayerB = computed(() => roomStore.isPlayerB);
 const inGame = computed(() => roomStore.inGame);
 const needWin = computed(() => roomStore.roomConfig.need_win);
@@ -190,7 +191,7 @@ const selectSpellCard = (index: number) => {
       if (
         gameStore.spellStatus[index] === 0 ||
         (isPlayerB.value && gameStore.spellStatus[index] === 1) ||
-        (isPlayerB.value && gameStore.spellStatus[index] === 3)
+        (isPlayerA.value && gameStore.spellStatus[index] === 3)
       ) {
         selectedSpellIndex.value = index;
       }

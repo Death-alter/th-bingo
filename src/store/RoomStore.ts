@@ -59,6 +59,7 @@ export const useRoomStore = defineStore("room", () => {
     difficulty: 3,
     bgmMuted: false,
     gamebp: false,
+    matchbp: false,
     confirmDelay: 5,
     playerA: {
       color: "hsl(16, 100%, 50%)",
@@ -180,6 +181,18 @@ export const useRoomStore = defineStore("room", () => {
       })
       .catch(() => {});
   };
+  const resetRoomData = () => {
+    roomId.value = "";
+    roomData.rid = "";
+    roomData.type = BingoType.STANDARD;
+    roomData.host = "";
+    roomData.names = ["", ""];
+    roomData.change_card_count = [1, 2];
+    roomData.started = false;
+    roomData.score = [0, 0];
+    roomData.watchers = [] as string[];
+    roomData.last_winner = -1;
+  };
   const getRoomData = () => {
     return ws
       .send(WebSocketActionType.GET_ROOM, { rid: roomId.value })
@@ -219,20 +232,15 @@ export const useRoomStore = defineStore("room", () => {
     return ws
       .send(WebSocketActionType.LEAVE_ROOM)
       .then(() => {
-        roomId.value = "";
-        roomData.rid = "";
-        roomData.type = BingoType.STANDARD;
-        roomData.host = "";
-        roomData.names = ["", ""];
-        roomData.change_card_count = [1, 2];
-        roomData.started = false;
-        roomData.score = [0, 0];
-        roomData.watchers = [] as string[];
-        roomData.last_winner = -1;
+        resetRoomData();
       })
       .catch((e) => {});
   };
   ws.on<{ name: string }>(WebSocketPushActionType.PUSH_LEAVE_ROOM, (data) => {
+    if (data!.name === localStore.username) {
+      resetRoomData();
+      return;
+    }
     for (let i = 0; i < roomData.names.length; i++) {
       if (roomData.names[i] === data!.name) {
         roomData.names[i] = "";

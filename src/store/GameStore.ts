@@ -32,6 +32,7 @@ export const useGameStore = defineStore("game", () => {
   const spellCardGrabbedFlag = ref(false);
   watch(spellCardGrabbedFlag, (val) => {
     if (val) {
+      leftCdTime.value = 0;
       nextTick(() => {
         spellCardGrabbedFlag.value = false;
       });

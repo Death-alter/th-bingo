@@ -90,7 +90,7 @@
                 :disabled="selectedSpellIndex < 0 || gamePaused"
                 v-if="!spellCardSelected"
                 :cooldown="selectCooldown"
-                :immediate="gameStore.gameStatus === GameStatus.STARTED"
+                :immediate="gameStore.gameStatus === GameStatus.STARTED && !gameStore.spellCardGrabbedFlag"
                 :paused="gamePaused"
                 @finish="setCdTime"
                 text="选择符卡"
@@ -799,12 +799,10 @@ const startGame = () => {
   }
 };
 const drawSpellCard = () => {
-  roomStore.updateRoomConfig().then(() => {
-    gameStore.startGame().then(() => {
-      roomStore.updateChangeCardCount(roomData.value.names[0], roomSettings.value.playerA.changeCardCount);
-      roomStore.updateChangeCardCount(roomData.value.names[1], roomSettings.value.playerB.changeCardCount);
-      layoutRef.value?.hideAlert();
-    });
+  gameStore.startGame().then(() => {
+    roomStore.updateChangeCardCount(roomData.value.names[0], roomSettings.value.playerA.changeCardCount);
+    roomStore.updateChangeCardCount(roomData.value.names[1], roomSettings.value.playerB.changeCardCount);
+    layoutRef.value?.hideAlert();
   });
 };
 const stopGame = () => {
