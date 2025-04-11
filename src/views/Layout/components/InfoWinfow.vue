@@ -3,7 +3,7 @@
     <div class="info">
       <el-tabs v-model="tabIndex" class="info-tabs">
         <el-tab-pane label="用户/房间" :name="0" class="tab-content">
-          <div>
+          <el-scrollbar>
             <div class="user-info">
               <el-form label-width="90px">
                 <el-form-item label="用户名：">
@@ -55,7 +55,7 @@
               </div>
             </div>
             <div class="room-info-none" v-if="!inRoom">目前尚未加入房间</div>
-          </div>
+          </el-scrollbar>
         </el-tab-pane>
         <el-tab-pane label="房间设置" :name="1" class="tab-content">
           <el-scrollbar>

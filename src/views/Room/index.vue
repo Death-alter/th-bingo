@@ -788,7 +788,7 @@ watch(
 
 //方法
 const startGame = () => {
-  if (roomSettings.value.gamebp && !inMatch.value) {
+  if (roomSettings.value.gamebp && (!roomSettings.value.matchbp || !inMatch.value)) {
     startBP();
   } else {
     gameStore.startGame().then(() => {
