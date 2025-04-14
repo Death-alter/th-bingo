@@ -100,6 +100,7 @@
                 v-if="spellCardSelected"
                 :disabled="gameStore.gameStatus !== GameStatus.STARTED"
                 :cooldown="roomSettings.confirmDelay * 1000"
+                :immediate="true"
                 text="确认收取"
               ></confirm-select-button>
             </template>
