@@ -110,10 +110,11 @@ export const useRoomStore = defineStore("room", () => {
   watch(roomId, (id) => {
     if (id) getRoomConfig();
   });
-
-  const updateRoomConfig = () => {
+  const updateRoomConfig = (
+    key?: "type" | "game_time" | "countdown" | "games" | "ranks" | "need_win" | "difficulty" | "cd_time"
+  ) => {
     saveRoomSettings();
-    return ws.send(WebSocketActionType.UPDATE_ROOM_CONFIG, {
+    const allParams = {
       rid: roomId.value,
       type: roomSettings.type,
       game_time: roomSettings.gameTimeLimit && roomSettings.gameTimeLimit[roomSettings.type],
@@ -123,7 +124,13 @@ export const useRoomStore = defineStore("room", () => {
       need_win: (roomSettings.format + 1) / 2,
       difficulty: roomSettings.difficulty,
       cd_time: roomSettings.cdTime,
-    });
+    };
+    const params: any = {};
+    if (key) {
+      params.rid = allParams.rid;
+      params[key] = allParams[key];
+    }
+    return ws.send(WebSocketActionType.UPDATE_ROOM_CONFIG, key ? params : allParams);
   };
   ws.on<{ name: string; position: number }>(WebSocketPushActionType.PUSH_UPDATE_ROOM_CONFIG, (data) => {
     for (const i in data) {

@@ -89,7 +89,7 @@
                     :disabled="inGame"
                     size="small"
                     controls-position="right"
-                    @change="updateRoomConfig"
+                    @change="roomStore.updateRoomConfig('game_time')"
                   />
                   <span class="input-number-text">分钟</span>
                 </el-form-item>
@@ -101,7 +101,7 @@
                     :disabled="inGame"
                     size="small"
                     controls-position="right"
-                    @change="updateRoomConfig"
+                    @change="roomStore.updateRoomConfig('countdown')"
                   />
                   <span class="input-number-text">秒</span>
                 </el-form-item>
@@ -113,7 +113,7 @@
                     :disabled="inGame"
                     size="small"
                     controls-position="right"
-                    @change="updateRoomConfig"
+                    @change="roomStore.updateRoomConfig('cd_time')"
                   />
                   <span class="input-number-text">秒</span>
                 </el-form-item>
@@ -152,7 +152,7 @@
                     v-model="roomSettings.checkList"
                     style="text-align: left"
                     :min="1"
-                    @change="updateRoomConfig"
+                    @change="roomStore.updateRoomConfig('games')"
                   >
                     <el-checkbox v-for="(item, index) in gameList" :value="item.code" :key="index">{{
                       item.name
@@ -164,7 +164,7 @@
                     v-model="roomSettings.rankList"
                     style="text-align: left"
                     :min="1"
-                    @change="updateRoomConfig"
+                    @change="roomStore.updateRoomConfig('ranks')"
                   >
                     <el-checkbox v-for="(item, index) in rankList" :value="item" :key="index">{{ item }}</el-checkbox>
                   </el-checkbox-group>
@@ -174,7 +174,7 @@
                     v-model="roomSettings.difficulty"
                     style="text-align: left"
                     :disabled="inGame"
-                    @change="updateRoomConfig"
+                    @change="roomStore.updateRoomConfig('difficulty')"
                   >
                     <el-radio v-for="(item, index) in difficultyList" :value="item.value" :key="index">{{
                       item.name
@@ -392,16 +392,13 @@ const editType = () => {
     showTypeInput.value = true;
   } else {
     if (roomStore.roomConfig.type !== roomSettings.value.type) {
-      roomStore.updateRoomConfig().then(() => {
+      roomStore.updateRoomConfig("type").then(() => {
         showTypeInput.value = false;
       });
     } else {
       showTypeInput.value = false;
     }
   }
-};
-const updateRoomConfig = () => {
-  roomStore.updateRoomConfig();
 };
 const saveRoomSettings = () => {
   roomStore.saveRoomSettings();
@@ -410,7 +407,7 @@ const onFormatChange = (value) => {
   if (value % 2 === 0) {
     roomStore.roomSettings.format++;
   }
-  updateRoomConfig();
+  roomStore.updateRoomConfig("need_win");
 };
 const standUp = () => {
   roomStore.standUp();

@@ -159,20 +159,11 @@ const turn3CountdownAudioRef = ref<InstanceType<typeof bgm>>();
 const muted = computed(() => roomStore.roomSettings.bgmMuted);
 const roomData = computed(() => roomStore.roomData);
 const isWatcher = computed(() => roomStore.isWatcher);
-const isPlayerA= computed(() => roomStore.isPlayerA);
+const isPlayerA = computed(() => roomStore.isPlayerA);
 const isPlayerB = computed(() => roomStore.isPlayerB);
 const inGame = computed(() => roomStore.inGame);
 const needWin = computed(() => roomStore.roomConfig.need_win);
 const isBingoStandard = computed(() => roomData.value.type === BingoType.STANDARD);
-const spellCardSelected = computed(() => {
-  if (roomStore.isPlayerA) {
-    return gameStore.playerASelectedIndex !== -1;
-  }
-  if (roomStore.isPlayerB) {
-    return gameStore.playerBSelectedIndex !== -1;
-  }
-  return false;
-});
 const BGMpaused = computed(
   () =>
     turn1CountdownAudioRef.value?.paused && turn2CountdownAudioRef.value?.paused && turn3CountdownAudioRef.value?.paused
@@ -213,6 +204,12 @@ const stopBGM = () => {
   turn1CountdownAudioRef.value?.stop();
   turn1CountdownAudioRef.value?.stop();
 };
+watch(
+  () => roomStore.roomData.started,
+  () => {
+    stopBGM();
+  }
+);
 const showAlert = (text?: string, color?: string) => {
   gameAlertRef.value.show(text, color);
 };
