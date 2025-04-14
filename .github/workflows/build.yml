@@ -2,7 +2,7 @@ name: build
 
 on:
   push:
-    branches: [ master, dev ]
+    branches: [ master ]
   pull_request:
     branches: [ master ]
   workflow_dispatch:
@@ -12,13 +12,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Use Node.js 20.x
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v4
       with:
         node-version: 20.x
     - name: Update .env.production
-      run: echo "VUE_APP_WS_API = 'ws://${{ secrets.REMOTE_HOST }}:9998/ws'" >> .env.production
+      run: echo "VUE_APP_WS_API = 'ws://${{ secrets.REMOTE_HOST }}:9999/ws'" >> .env.production
     - name: Build
       run: |
         npm install
@@ -32,4 +32,4 @@ jobs:
           SOURCE: "dist/"
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
-          TARGET: ${{ secrets.REMOTE_TARGET_DEV }}
+          TARGET: ${{ secrets.REMOTE_TARGET }}
