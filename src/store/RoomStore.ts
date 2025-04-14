@@ -322,18 +322,18 @@ export const useRoomStore = defineStore("room", () => {
     switch (banPick.phase) {
       case 1:
       case 3:
-        return BpStatus.IS_A_PICK;
+        return banPick.who_first === 0 ? BpStatus.IS_A_PICK : BpStatus.IS_B_PICK;
       case 2:
       case 4:
-        return BpStatus.IS_B_PICK;
+        return banPick.who_first === 0 ? BpStatus.IS_B_PICK : BpStatus.IS_A_PICK;
       case 5:
       case 8:
       case 9:
-        return BpStatus.IS_A_BAN;
+        return banPick.who_first === 0 ? BpStatus.IS_A_BAN : BpStatus.IS_B_BAN;
       case 6:
       case 7:
       case 10:
-        return BpStatus.IS_B_BAN;
+        return banPick.who_first === 0 ? BpStatus.IS_B_BAN : BpStatus.IS_A_BAN;
       case 11:
         return BpStatus.SELECT_OPEN_EX;
       case 9999:
@@ -354,8 +354,8 @@ export const useRoomStore = defineStore("room", () => {
     banPick.b_open_ex = 0;
   };
 
-  const startBanPick = (first: 0 | 1 = 0) => {
-    return ws.send(WebSocketActionType.START_BAN_PICK, { who_first: first });
+  const startBanPick = () => {
+    return ws.send(WebSocketActionType.START_BAN_PICK);
   };
 
   const banPickCard = (selection: string) => {
