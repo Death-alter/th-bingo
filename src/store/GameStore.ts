@@ -28,6 +28,7 @@ export const useGameStore = defineStore("game", () => {
   const gameLogs = reactive<string[]>([]);
   const winner = ref<-1 | 0 | 1 | undefined | null>(null);
   const inited = ref(false);
+  const alreadySelectCard = ref(false);
 
   const spellCardGrabbedFlag = ref(false);
   watch(spellCardGrabbedFlag, (val) => {
@@ -349,6 +350,7 @@ export const useGameStore = defineStore("game", () => {
     inited,
     spellCardGrabbedFlag,
     bpGameData,
+    alreadySelectCard,
     startGame,
     getGameData,
     stopGame,

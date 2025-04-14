@@ -100,7 +100,7 @@
                 v-if="spellCardSelected"
                 :disabled="gameStore.gameStatus !== GameStatus.STARTED"
                 :cooldown="roomSettings.confirmDelay * 1000"
-                :immediate="true"
+                :immediate="gameStore.alreadySelectCard"
                 text="确认收取"
               ></confirm-select-button>
             </template>
@@ -873,6 +873,7 @@ const confirmWinner = () => {
   });
 };
 const confirmSelect = () => {
+  gameStore.alreadySelectCard = true;
   gameStore.selectSpell(selectedSpellIndex.value).then(() => {
     selectedSpellIndex.value = -1;
   });
