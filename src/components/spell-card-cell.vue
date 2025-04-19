@@ -58,8 +58,13 @@ const cellClass = computed(() => ({
   "A-attained": props.status === SpellStatus.A_ATTAINED || props.status === SpellStatus.BOTH_ATTAINED,
   "B-selected": props.status === SpellStatus.B_SELECTED || props.status === SpellStatus.BOTH_SELECTED,
   "B-attained": props.status === SpellStatus.B_ATTAINED || props.status === SpellStatus.BOTH_ATTAINED,
-  "A-local-selected": props.selected && isPlayerA.value,
-  "B-local-selected": props.selected && isPlayerB.value,
+  "A-local-selected": props.selected && isPlayerA.value && props.status != SpellStatus.BOTH_HIDDEN,
+  "B-local-selected": props.selected && isPlayerB.value && props.status != SpellStatus.BOTH_HIDDEN,
+  "Hidden": props.status == SpellStatus.BOTH_HIDDEN,
+  "A-see-only": props.status == SpellStatus.LEFT_SEE_ONLY,
+  "B-see-only": props.status == SpellStatus.RIGHT_SEE_ONLY,
+  "Hidden-A-local-select": props.selected && isPlayerA.value && props.status == SpellStatus.BOTH_HIDDEN,
+  "Hidden-B-local-select": props.selected && isPlayerB.value && props.status == SpellStatus.BOTH_HIDDEN,
 }));
 const levelClass = computed(() => `level${props.level}`);
 
@@ -241,6 +246,71 @@ const onClick = () => {
 
     .level-icons {
       color: #666 !important;
+    }
+  }
+
+  &.Hidden {
+    .spell-card-info > *:not(.level) { // 排除level容器（本身已隐藏）
+      visibility: hidden;
+    }
+    .level-icons { // 单独处理星星图标
+      visibility: hidden !important;
+    }
+  }
+
+  &.Hidden-A-local-select{
+    .spell-card-info > *:not(.level) { // 排除level容器（本身已隐藏）
+      visibility: hidden;
+    }
+    .level-icons { // 单独处理星星图标
+      visibility: hidden !important;
+    }
+    &::before {
+      background-image: linear-gradient(var(--A-color) 60%, var(--A-color-dark));
+      opacity: 0.2;
+    }
+  }
+
+  &.Hidden-B-local-select{
+    .spell-card-info > *:not(.level) { // 排除level容器（本身已隐藏）
+      visibility: hidden;
+    }
+    .level-icons { // 单独处理星星图标
+      visibility: hidden !important;
+    }
+    &::before {
+      background-image: linear-gradient(var(--B-color) 60%, var(--B-color-dark));
+      opacity: 0.2;
+    }
+  }
+
+  &.A-see-only {
+    &::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 10%;
+      height: 10%;
+      background-color: var(--A-color);
+      z-index: 2; // 覆盖在现有内容之上
+      pointer-events: none;
+      opacity: 0.5;
+    }
+  }
+
+  &.B-see-only {
+    &::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 10%;
+      height: 10%;
+      background-color: var(--B-color);
+      z-index: 2; // 覆盖在现有内容之上
+      pointer-events: none;
+      opacity: 0.5;
     }
   }
 }

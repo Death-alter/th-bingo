@@ -177,12 +177,13 @@ const selectSpellCard = (index: number) => {
     selectedSpellIndex.value = -1;
   } else {
     if (props.multiple) {
-      if (gameStore.spellStatus[index] === 0) selectedSpellIndex.value = index;
+      if (gameStore.spellStatus[index] === 0 || gameStore.spellStatus[index] === 0x1000) selectedSpellIndex.value = index;
     } else {
       if (
         gameStore.spellStatus[index] === 0 ||
         (isPlayerB.value && gameStore.spellStatus[index] === 1) ||
-        (isPlayerA.value && gameStore.spellStatus[index] === 3)
+        (isPlayerA.value && gameStore.spellStatus[index] === 3) ||
+        gameStore.spellStatus[index] === 0x1000
       ) {
         selectedSpellIndex.value = index;
       }

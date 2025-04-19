@@ -131,6 +131,14 @@
                     @change="onFormatChange"
                   />
                 </el-form-item>
+                <el-form-item label="开启盲盒">
+                  <el-checkbox
+                    v-model="roomSettings.is_blind"
+                    :disabled="inGame"
+                    @change="roomStore.updateRoomConfig('is_blind')"
+                    style="margin-right: 0"
+                  ></el-checkbox>
+                </el-form-item>
                 <el-form-item label="作品BP：">
                   <el-checkbox
                     v-model="roomSettings.gamebp"
@@ -332,9 +340,9 @@ const difficultyList = Config.difficultyList;
 const predefineColors = Config.predefineColors;
 const gameTypeList = computed(() => {
   if (soloMode.value) {
-    return [...Config.gameTypeList].slice(0, 1);
+    return [...Config.gameTypeList]
   } else {
-    return [...Config.gameTypeList].slice(0, 2);
+    return [...Config.gameTypeList]
   }
 });
 const roomSettings = computed(() => roomStore.roomSettings);
