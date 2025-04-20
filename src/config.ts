@@ -20,6 +20,10 @@ const difficultyList = [
     value: 3,
   },
   {
+    name: "史",
+    value: 4
+  },
+  {
     name: "随机",
     value: 0,
   },
