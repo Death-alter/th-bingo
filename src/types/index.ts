@@ -31,6 +31,7 @@ export const enum SpellStatus {
   BOTH_HIDDEN = 0x1000,
   LEFT_SEE_ONLY = 0x1001,
   RIGHT_SEE_ONLY = 0x1002,
+  BOTH_SEE_ONLY = 0x1003,
 }
 
 export const enum GameStatus {

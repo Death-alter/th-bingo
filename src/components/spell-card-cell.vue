@@ -63,6 +63,7 @@ const cellClass = computed(() => ({
   "Hidden": props.status == SpellStatus.BOTH_HIDDEN,
   "A-see-only": props.status == SpellStatus.LEFT_SEE_ONLY,
   "B-see-only": props.status == SpellStatus.RIGHT_SEE_ONLY,
+  "All-see-but-dont-know-each-other": props.status == SpellStatus.BOTH_SEE_ONLY,
   "Hidden-A-local-select": props.selected && isPlayerA.value && props.status == SpellStatus.BOTH_HIDDEN,
   "Hidden-B-local-select": props.selected && isPlayerB.value && props.status == SpellStatus.BOTH_HIDDEN,
 }));
@@ -288,14 +289,14 @@ const onClick = () => {
     &::after {
       content: "";
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 10%;
-      height: 10%;
+      top: 1px;
+      left: 1px;
+      width: 15%;
+      height: 15%;
       background-color: var(--A-color);
       z-index: 2; // 覆盖在现有内容之上
       pointer-events: none;
-      opacity: 0.5;
+      opacity: 0.3;
     }
   }
 
@@ -303,14 +304,29 @@ const onClick = () => {
     &::after {
       content: "";
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 10%;
-      height: 10%;
+      top: 1px;
+      left: 1px;
+      width: 15%;
+      height: 15%;
       background-color: var(--B-color);
       z-index: 2; // 覆盖在现有内容之上
       pointer-events: none;
-      opacity: 0.5;
+      opacity: 0.3;
+    }
+  }
+
+  &.All-see-but-dont-know-each-other {
+    &::after {
+      content: "";
+      position: absolute;
+      top: 1px;
+      left: 1px;
+      width: 15%;
+      height: 15%;
+      background-image: linear-gradient(var(--A-color) 0%, var(--B-color));
+      z-index: 2; // 覆盖在现有内容之上
+      pointer-events: none;
+      opacity: 0.3;
     }
   }
 }
