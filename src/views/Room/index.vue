@@ -62,7 +62,12 @@
       </template>
 
       <template #widget>
-        <count-down ref="countdownRef" :size="30" @complete="onCountDownComplete" v-show="inGame"></count-down>
+        <count-down
+          ref="countdownRef"
+          :size="30"
+          @complete="onCountDownComplete"
+          v-show="(isBingoStandard && inGame) || (isBingoBp && gameStore.gameStatus === GameStatus.COUNT_DOWN)"
+        ></count-down>
       </template>
 
       <template #button-center>
@@ -227,6 +232,9 @@ const isPlayerB = computed(() => roomStore.isPlayerB);
 const isOwner = computed(() => (soloMode.value ? isPlayerA.value : isHost.value));
 
 const inMatch = computed(() => roomStore.inMatch);
+const isBingoStandard = computed(() => roomStore.roomData.type === BingoType.STANDARD);
+const isBingoBp = computed(() => roomStore.roomData.type === BingoType.BP);
+const isBingoLink = computed(() => roomStore.roomData.type === BingoType.LINK);
 
 const playerACanBP = computed(
   () =>
@@ -481,7 +489,11 @@ watch(
       countdownRef.value?.pause();
     } else {
       layoutRef.value?.hideAlert();
-      countdownRef.value?.start();
+      if (!isBingoBp.value) {
+        nextTick(() => {
+          countdownRef.value?.start();
+        });
+      }
     }
   },
   {
@@ -521,7 +533,6 @@ const confirmOpenEX = (flag: boolean) => {
 };
 
 //标准赛
-const isBingoStandard = computed(() => roomStore.roomData.type === BingoType.STANDARD);
 const oldSumArr = ref<number[]>([]);
 const playerAScore = ref(0);
 const playerBScore = ref(0);
@@ -633,7 +644,6 @@ const decideStandard = (status) => {
 };
 
 //BP赛
-const isBingoBp = computed(() => roomStore.roomData.type === BingoType.BP);
 const isMyTurn = computed(
   () =>
     (isPlayerA.value && gameStore.bpGameData.whose_turn === 0) ||
@@ -727,7 +737,6 @@ const decideBp = (status) => {
 };
 
 //link赛
-const isBingoLink = computed(() => roomStore.roomData.type === BingoType.LINK);
 // const routeA = ref([]);
 // const routeB = ref([]);
 
@@ -745,9 +754,11 @@ watch(
         });
         break;
       case GameStatus.STARTED:
-        nextTick(() => {
-          countdownRef.value?.start();
-        });
+        if (!isBingoBp.value) {
+          nextTick(() => {
+            countdownRef.value?.start();
+          });
+        }
         break;
       case GameStatus.PAUSED:
         break;
@@ -888,9 +899,11 @@ const onCountDownComplete = () => {
   if (gameStore.gameStatus === GameStatus.COUNT_DOWN) {
     gameStore.gameStatus = GameStatus.STARTED;
     gameStore.leftTime = roomConfig.value.game_time * 1000 * 60;
-    nextTick(() => {
-      countdownRef.value?.start();
-    });
+    if (!isBingoBp.value) {
+      nextTick(() => {
+        countdownRef.value?.start();
+      });
+    }
   } else if (gameStore.gameStatus === GameStatus.STARTED) {
     gameStore.gameStatus = GameStatus.ENDED;
     if (!isHost.value) layoutRef.value?.showAlert("游戏时间到，等待房主判断胜负", "red");
