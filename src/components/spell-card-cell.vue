@@ -323,7 +323,7 @@ const onClick = () => {
       left: 1px;
       width: 15%;
       height: 15%;
-      background-image: linear-gradient(var(--A-color) 0%, var(--B-color));
+      background-image: linear-gradient(var(--A-color) 20%, var(--B-color) 80%);
       z-index: 2; // 覆盖在现有内容之上
       pointer-events: none;
       opacity: 0.3;

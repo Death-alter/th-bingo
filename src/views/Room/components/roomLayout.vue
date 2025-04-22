@@ -94,6 +94,13 @@
     <div class="audio">
       <bgm ref="spellCardGrabbedAudioRef" :src="require('@/assets/audio/spell_card_grabbed.mp3')"></bgm>
       <bgm ref="gamePointAudioRef" :src="require('@/assets/audio/game_point.wav')"></bgm>
+      <bgm ref="lineWarnAudioRef" :src="require('@/assets/audio/se_ufoalert.mp3')"></bgm>
+      <bgm ref="pauseAudioRef" :src="require('@/assets/audio/se_pause.mp3')"></bgm>
+      <bgm ref="startGameAudioRef" :src="require('@/assets/audio/start_game.mp3')"></bgm>
+      <bgm ref="captureCardAudioRef" :src="require('@/assets/audio/se_cardget.mp3')"></bgm>
+      <bgm ref="captureCardFailureAudioRef" :src="require('@/assets/audio/se_pldead00.mp3')"></bgm>
+      <bgm ref="winGameAudioRef" :src="require('@/assets/audio/se_extend.mp3')"></bgm>
+      <bgm ref="loseGameAudioRef" :src="require('@/assets/audio/se_fault.mp3')"></bgm>
       <bgm
         ref="turn1CountdownAudioRef"
         src="http://link.hhtjim.com/163/22636828.mp3"
@@ -155,6 +162,13 @@ const gamePointAudioRef = ref<InstanceType<typeof bgm>>();
 const turn1CountdownAudioRef = ref<InstanceType<typeof bgm>>();
 const turn2CountdownAudioRef = ref<InstanceType<typeof bgm>>();
 const turn3CountdownAudioRef = ref<InstanceType<typeof bgm>>();
+const lineWarnAudioRef = ref<InstanceType<typeof bgm>>();
+const pauseAudioRef = ref<InstanceType<typeof bgm>>();
+const startGameAudioRef = ref<InstanceType<typeof bgm>>();
+const captureCardAudioRef = ref<InstanceType<typeof bgm>>();
+const captureCardFailureAudioRef = ref<InstanceType<typeof bgm>>();
+const winGameAudioRef = ref<InstanceType<typeof bgm>>();
+const loseGameAudioRef = ref<InstanceType<typeof bgm>>();
 
 const muted = computed(() => roomStore.roomSettings.bgmMuted);
 const roomData = computed(() => roomStore.roomData);
@@ -219,8 +233,36 @@ const hideAlert = () => {
 };
 
 const warnGamePoint = () => {
-  gamePointAudioRef.value?.play();
+  //gamePointAudioRef.value?.play();
+  lineWarnAudioRef.value?.play();
 };
+
+const infoCaptureCard = () => {
+  captureCardAudioRef.value?.play();
+};
+
+const infoFailCard = () => {
+  captureCardFailureAudioRef.value?.play();
+};
+
+const infoWinGame = () => {
+  muteSFXOnGameEnd();
+  winGameAudioRef.value?.play()
+}
+
+const infoLoseGame = () => {
+  muteSFXOnGameEnd();
+  loseGameAudioRef.value?.play()
+}
+
+const muteSFXOnGameEnd = () =>{
+  captureCardAudioRef.value?.stop();
+  captureCardFailureAudioRef.value?.stop();
+  lineWarnAudioRef.value?.stop();
+  spellCardGrabbedAudioRef.value?.stop();
+  startGameAudioRef.value?.stop();
+  pauseAudioRef.value?.stop();
+}
 
 watch(
   () => gameStore.spellCardGrabbedFlag,
@@ -231,10 +273,28 @@ watch(
   }
 );
 
+const gameStarted = computed(() => gameStore.gameStatus === GameStatus.STARTED)
+watch(gameStarted,
+  (started) =>{
+    if(started){
+      startGameAudioRef.value?.play();
+    }
+  }
+)
+
+const gameCountDown = computed(() => gameStore.gameStatus === GameStatus.COUNT_DOWN);
+watch(gameCountDown,
+  (started) =>{
+    if(started){
+      startGameAudioRef.value?.play();
+    }
+  }
+)
+
 const gamePaused = computed(() => gameStore.gameStatus === GameStatus.PAUSED);
 watch(gamePaused, (paused) => {
   if (paused) {
-    spellCardGrabbedAudioRef.value?.play();
+    pauseAudioRef.value?.play();
   }
 });
 
@@ -281,7 +341,8 @@ watch(
   }
 );
 
-defineExpose({ showAlert, hideAlert, warnGamePoint });
+defineExpose({ showAlert, hideAlert, warnGamePoint,
+    infoCaptureCard, infoFailCard, infoWinGame, infoLoseGame });
 </script>
 
 <style lang="scss" scoped>
