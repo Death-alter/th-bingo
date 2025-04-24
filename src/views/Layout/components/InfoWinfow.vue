@@ -131,14 +131,22 @@
                     @change="onFormatChange"
                   />
                 </el-form-item>
-                <el-form-item label="开启盲盒">
-                  <el-checkbox
-                    v-model="roomSettings.is_blind"
-                    :disabled="inGame"
-                    @change="roomStore.updateRoomConfig('is_blind')"
-                    style="margin-right: 0"
-                  ></el-checkbox>
+                <el-form-item label="盲盒设定">
+                  <el-select
+                      v-model="roomSettings.blind_setting"
+                      style="width: 150px"
+                      @change="roomStore.updateRoomConfig('blind_setting')"
+                      :disabled="inGame"
+                  >
+                    <el-option
+                        v-for="(item, index) in blindTypeList"
+                        :key="index"
+                        :label="item.name"
+                        :value="item.type"
+                    ></el-option>
+                  </el-select>
                 </el-form-item>
+
                 <el-form-item label="作品BP：">
                   <el-checkbox
                     v-model="roomSettings.gamebp"
@@ -369,6 +377,21 @@ const roomTypeText = computed(() => {
       return "未选择比赛类型";
   }
 });
+
+const blindTypeList = [
+  {
+    name: "不开启",
+    type: 1
+  },
+  {
+    name: "模式1",
+    type: 2
+  },
+  {
+    name: "模式2",
+    type: 3
+  }
+];
 
 const logout = () => {
   localStore.logout();

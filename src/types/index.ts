@@ -31,7 +31,9 @@ export const enum SpellStatus {
   BOTH_HIDDEN = 0x1000,
   LEFT_SEE_ONLY = 0x1001,
   RIGHT_SEE_ONLY = 0x1002,
-  BOTH_SEE_ONLY = 0x1003,
+  ONLY_REVEAL_GAME = 0x1010,
+  ONLY_REVEAL_GAME_STAGE = 0x1011,
+  ONLY_REVEAL_STAR = 0x1012,
 }
 
 export const enum GameStatus {
@@ -86,5 +88,5 @@ export interface RoomConfig {
   difficulty: 3; // 难度（影响不同星级的卡的分布），1对应E，2对应N，3对应L，其它对应随机
   cd_time: 30; // 选卡cd，收卡后要多少秒才能选下一张卡
   reserved_type: 1; // 纯客户端用的一个类型字段，服务器只负责透传
-  is_blind: false; //是否盲盒（标准限定）
+  blind_setting: 1; //盲盒设置（标准限定）
 }

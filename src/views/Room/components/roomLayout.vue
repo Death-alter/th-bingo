@@ -191,19 +191,24 @@ const selectSpellCard = (index: number) => {
     selectedSpellIndex.value = -1;
   } else {
     if (props.multiple) {
-      if (gameStore.spellStatus[index] === 0 || gameStore.spellStatus[index] === 0x1000) selectedSpellIndex.value = index;
+      if (gameStore.spellStatus[index] === 0 || canSelectBlindCard(gameStore.spellStatus[index])) selectedSpellIndex.value = index;
     } else {
       if (
         gameStore.spellStatus[index] === 0 ||
         (isPlayerB.value && gameStore.spellStatus[index] === 1) ||
         (isPlayerA.value && gameStore.spellStatus[index] === 3) ||
-        gameStore.spellStatus[index] === 0x1000
+        canSelectBlindCard(gameStore.spellStatus[index])
       ) {
         selectedSpellIndex.value = index;
       }
     }
   }
 };
+
+function canSelectBlindCard (status: number) {
+  return status === 0x1000 || status === 0x1010 || status === 0x1011 || status === 0x1012
+}
+
 const onMenuClick = ({ event, target, item }: any) => {
   const index = target.getAttribute("index");
   if (index !== null) {

@@ -7,7 +7,8 @@
         </div>
       </div>
       <div class="desc">
-        {{ desc }}
+        <!-- 使用split方法截取破折号前的内容 -->
+        {{ status === SpellStatus.ONLY_REVEAL_GAME ? (desc?.split('-')[0] || '') : desc }}
       </div>
       <div class="name">{{ name }}</div>
       <div class="fail-count-a" v-if="failCountA && status < 5">失败：{{ failCountA }}</div>
@@ -60,12 +61,26 @@ const cellClass = computed(() => ({
   "B-attained": props.status === SpellStatus.B_ATTAINED || props.status === SpellStatus.BOTH_ATTAINED,
   "A-local-selected": props.selected && isPlayerA.value && props.status != SpellStatus.BOTH_HIDDEN,
   "B-local-selected": props.selected && isPlayerB.value && props.status != SpellStatus.BOTH_HIDDEN,
-  "Hidden": props.status == SpellStatus.BOTH_HIDDEN,
+  //see-only为非选手的视觉效果
   "A-see-only": props.status == SpellStatus.LEFT_SEE_ONLY,
   "B-see-only": props.status == SpellStatus.RIGHT_SEE_ONLY,
-  "All-see-but-dont-know-each-other": props.status == SpellStatus.BOTH_SEE_ONLY,
-  "Hidden-A-local-select": props.selected && isPlayerA.value && props.status == SpellStatus.BOTH_HIDDEN,
-  "Hidden-B-local-select": props.selected && isPlayerB.value && props.status == SpellStatus.BOTH_HIDDEN,
+  //FIXME: EACH INDIVIDUAL NON_SELECT STATUS NEEDS TWO LOCAL SELECT
+  //完全隐藏
+  "Hidden": props.status == SpellStatus.BOTH_HIDDEN,
+  "Hidden-ALS": props.selected && isPlayerA.value && props.status == SpellStatus.BOTH_HIDDEN,
+  "Hidden-BLS": props.selected && isPlayerB.value && props.status == SpellStatus.BOTH_HIDDEN,
+  //只显示TH[0-9]+
+  "Only-reveal-game": props.status == SpellStatus.ONLY_REVEAL_GAME,
+  "Only-reveal-game-ALS":  props.selected && isPlayerA.value && props.status == SpellStatus.ONLY_REVEAL_GAME,
+  "Only-reveal-game-BLS":  props.selected && isPlayerB.value && props.status == SpellStatus.ONLY_REVEAL_GAME,
+  //只显示完整的游戏信息
+  "Only-reveal-game-stage": props.status == SpellStatus.ONLY_REVEAL_GAME_STAGE,
+  "Only-reveal-game-stage-ALS":  props.selected && isPlayerA.value && props.status == SpellStatus.ONLY_REVEAL_GAME_STAGE,
+  "Only-reveal-game-stage-BLS":  props.selected && isPlayerB.value && props.status == SpellStatus.ONLY_REVEAL_GAME_STAGE,
+  //只显示星级
+  "Only-reveal-star": props.status == SpellStatus.ONLY_REVEAL_STAR,
+  "Only-reveal-star-ALS":  props.selected && isPlayerA.value && props.status == SpellStatus.ONLY_REVEAL_STAR,
+  "Only-reveal-star-BLS":  props.selected && isPlayerB.value && props.status == SpellStatus.ONLY_REVEAL_STAR,
 }));
 const levelClass = computed(() => `level${props.level}`);
 
@@ -251,20 +266,14 @@ const onClick = () => {
   }
 
   &.Hidden {
-    .spell-card-info > *:not(.level) { // 排除level容器（本身已隐藏）
+    .spell-card-info {
       visibility: hidden;
-    }
-    .level-icons { // 单独处理星星图标
-      visibility: hidden !important;
     }
   }
 
-  &.Hidden-A-local-select{
-    .spell-card-info > *:not(.level) { // 排除level容器（本身已隐藏）
+  &.Hidden-ALS{
+    .spell-card-info {
       visibility: hidden;
-    }
-    .level-icons { // 单独处理星星图标
-      visibility: hidden !important;
     }
     &::before {
       background-image: linear-gradient(var(--A-color) 60%, var(--A-color-dark));
@@ -272,14 +281,11 @@ const onClick = () => {
     }
   }
 
-  &.Hidden-B-local-select{
-    .spell-card-info > *:not(.level) { // 排除level容器（本身已隐藏）
+  &.Hidden-BLS{
+    .spell-card-info {
       visibility: hidden;
     }
-    .level-icons { // 单独处理星星图标
-      visibility: hidden !important;
-    }
-    &::before {
+    &::after {
       background-image: linear-gradient(var(--B-color) 60%, var(--B-color-dark));
       opacity: 0.2;
     }
@@ -299,7 +305,7 @@ const onClick = () => {
       opacity: 0.3;
     }
   }
-
+  
   &.B-see-only {
     &::after {
       content: "";
@@ -315,18 +321,81 @@ const onClick = () => {
     }
   }
 
-  &.All-see-but-dont-know-each-other {
+  &.Only-reveal-game{
+    .spell-card-info > *:not(.desc) {
+      visibility: hidden;
+    }
+  }
+  
+  &.Only-reveal-game-ALS {
+    .spell-card-info > *:not(.desc) {
+      visibility: hidden;
+    }
+    &::before {
+      background-image: linear-gradient(var(--A-color) 60%, var(--A-color-dark));
+      opacity: 0.2;
+    }
+  }
+  
+  &.Only-reveal-game-BLS {
+    .spell-card-info > *:not(.desc) {
+      visibility: hidden;
+    }
     &::after {
-      content: "";
-      position: absolute;
-      top: 1px;
-      left: 1px;
-      width: 15%;
-      height: 15%;
-      background-image: linear-gradient(var(--A-color) 20%, var(--B-color) 80%);
-      z-index: 2; // 覆盖在现有内容之上
-      pointer-events: none;
-      opacity: 0.3;
+      background-image: linear-gradient(var(--B-color) 60%, var(--B-color-dark));
+      opacity: 0.2;
+    }
+  }
+
+  &.Only-reveal-game-stage {
+    .spell-card-info > *:not(.desc) {
+      visibility: hidden;
+    }
+  }
+  
+  &.Only-reveal-game-stage-ALS {
+    .spell-card-info > *:not(.desc) {
+      visibility: hidden;
+    }
+    &::before {
+      background-image: linear-gradient(var(--A-color) 60%, var(--A-color-dark));
+      opacity: 0.2;
+    }
+  }
+  
+  &.Only-reveal-game-stage-BLS {
+    .spell-card-info > *:not(.desc) {
+      visibility: hidden;
+    }
+    &::after {
+      background-image: linear-gradient(var(--B-color) 60%, var(--B-color-dark));
+      opacity: 0.2;
+    }
+  }
+
+  &.Only-reveal-star{
+    .spell-card-info > *:not(.level) {
+      visibility: hidden;
+    }
+  }
+
+  &.Only-reveal-star-ALS{
+    .spell-card-info > *:not(.level) {
+      visibility: hidden;
+    }
+    &::before {
+      background-image: linear-gradient(var(--A-color) 60%, var(--A-color-dark));
+      opacity: 0.2;
+    }
+  }
+
+  &.Only-reveal-star-BLS{
+    .spell-card-info > *:not(.level) {
+      visibility: hidden;
+    }
+    &::after {
+      background-image: linear-gradient(var(--B-color) 60%, var(--B-color-dark));
+      opacity: 0.2;
     }
   }
 }
