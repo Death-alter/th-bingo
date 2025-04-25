@@ -426,6 +426,8 @@ const editType = () => {
       roomStore.updateRoomConfig("type").then(() => {
         showTypeInput.value = false;
       });
+      roomStore.updateRoomConfig("game_time");
+      roomStore.updateRoomConfig("countdown");
     } else {
       showTypeInput.value = false;
     }
