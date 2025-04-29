@@ -131,7 +131,22 @@
                     @change="onFormatChange"
                   />
                 </el-form-item>
-                <el-form-item label="盲盒设定">
+                <el-form-item label="卡池设定：">
+                  <el-select
+                    v-model="roomSettings.spell_version"
+                    style="width: 150px"
+                    @change="roomStore.updateRoomConfig('spell_version')"
+                    :disabled="inGame"
+                  >
+                    <el-option
+                      v-for="(item, index) in spellVersionList"
+                      :key="index"
+                      :label="item.name"
+                      :value="item.type"
+                    ></el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="盲盒设定：">
                   <el-select
                       v-model="roomSettings.blind_setting"
                       style="width: 150px"
@@ -389,6 +404,21 @@ const blindTypeList = [
   },
   {
     name: "模式2",
+    type: 3
+  }
+];
+
+const spellVersionList = [
+  {
+    name: "S6前瞻卡池",
+    type: 1
+  },
+  {
+    name: "S5卡池",
+    type: 2
+  },
+  {
+    name: "S3卡池",
     type: 3
   }
 ];

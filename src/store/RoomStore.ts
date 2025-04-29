@@ -72,6 +72,7 @@ export const useRoomStore = defineStore("room", () => {
       changeCardCount: 2,
     },
     blind_setting: 1,
+    spell_version: 1,
   });
 
   //加载本地设置
@@ -100,6 +101,7 @@ export const useRoomStore = defineStore("room", () => {
     cd_time: 30, // 选卡cd，收卡后要多少秒才能选下一张卡
     reserved_type: 1, // 纯客户端用的一个类型字段，服务器只负责透传
     blind_setting: 1,
+    spell_version: 1,
   });
 
   const getRoomConfig = () => {
@@ -113,7 +115,7 @@ export const useRoomStore = defineStore("room", () => {
     if (id) getRoomConfig();
   });
   const updateRoomConfig = (
-    key?: "type" | "game_time" | "countdown" | "games" | "ranks" | "need_win" | "difficulty" | "cd_time" | "blind_setting"
+    key?: "type" | "game_time" | "countdown" | "games" | "ranks" | "need_win" | "difficulty" | "cd_time" | "blind_setting" | "spell_version"
   ) => {
     saveRoomSettings();
     const allParams = {
@@ -127,6 +129,7 @@ export const useRoomStore = defineStore("room", () => {
       difficulty: roomSettings.difficulty,
       cd_time: roomSettings.cdTime,
       blind_setting : roomSettings.blind_setting,
+      spell_version : roomSettings.spell_version,
     };
     const params: any = {};
     if (key) {
@@ -182,6 +185,7 @@ export const useRoomStore = defineStore("room", () => {
           difficulty: roomSettings.difficulty,
           cd_time: roomSettings.cdTime,
           blind_setting: roomSettings.blind_setting,
+          spell_version: roomSettings.spell_version,
         },
         solo: soloMode,
         add_robot: addRobot,

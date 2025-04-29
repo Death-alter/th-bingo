@@ -89,4 +89,5 @@ export interface RoomConfig {
   cd_time: 30; // 选卡cd，收卡后要多少秒才能选下一张卡
   reserved_type: 1; // 纯客户端用的一个类型字段，服务器只负责透传
   blind_setting: 1; //盲盒设置（标准限定）
+  spell_version: 1;
 }
