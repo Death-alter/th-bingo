@@ -60,6 +60,9 @@ export enum WebSocketActionType {
   //bp赛
   BP_GAME_BAN_PICK = "bp_game_ban_pick",
   BP_GAME_NEXT_ROUND = "bp_game_next_round",
+
+  //normal 双重面板 切换按钮
+  NORMAL_DUAL_BOARD_CHANGE = "normal_dual_board_change"
 }
 
 export enum WebSocketPushActionType {

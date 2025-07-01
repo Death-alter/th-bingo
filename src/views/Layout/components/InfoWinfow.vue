@@ -47,7 +47,7 @@
                     type="primary"
                     @click="sitDown"
                     :disabled="inGame || (roomData.names[0] !== '' && roomData.names[1] !== '')"
-                    >成为玩家</el-button
+                  >成为玩家</el-button
                   >
                   <el-button v-if="isPlayer" type="primary" @click="standUp" :disabled="inGame">成为观众</el-button>
                 </template>
@@ -76,8 +76,8 @@
                       <span v-else> {{ roomTypeText }}</span>
                     </div>
                     <el-button link type="primary" @click="editType" v-if="!inGame">{{
-                      showTypeInput ? "确认" : "修改"
-                    }}</el-button>
+                        showTypeInput ? "确认" : "修改"
+                      }}</el-button>
                   </div>
                 </el-form-item>
                 <el-form-item label="比赛时长：" v-if="roomData.type !== BingoType.LINK">
@@ -134,7 +134,7 @@
                 <el-form-item label="卡池设定：">
                   <el-select
                     v-model="roomSettings.spell_version"
-                    style="width: 150px"
+                    style="width: 120px"
                     @change="roomStore.updateRoomConfig('spell_version')"
                     :disabled="inGame"
                   >
@@ -148,18 +148,76 @@
                 </el-form-item>
                 <el-form-item label="盲盒设定：">
                   <el-select
-                      v-model="roomSettings.blind_setting"
-                      style="width: 150px"
-                      @change="roomStore.updateRoomConfig('blind_setting')"
-                      :disabled="inGame"
+                    v-model="roomSettings.blind_setting"
+                    style="width: 120px"
+                    @change="roomStore.updateRoomConfig('blind_setting')"
+                    :disabled="inGame"
                   >
                     <el-option
-                        v-for="(item, index) in blindTypeList"
-                        :key="index"
-                        :label="item.name"
-                        :value="item.type"
+                      v-for="(item, index) in blindTypeList"
+                      :key="index"
+                      :label="item.name"
+                      :value="item.type"
                     ></el-option>
                   </el-select>
+                </el-form-item>
+                <el-form-item label="揭示等级" v-if="roomSettings.blind_setting > 1 &&
+                  !(roomSettings.type == BingoType.BP && roomSettings.blind_setting == 3)">
+                  <el-input-number
+                    class="input-number"
+                    v-model="roomSettings.blind_reveal_level"
+                    :min="0"
+                    :max="4"
+                    :step="1"
+                    :disabled="inGame"
+                    size="small"
+                    controls-position="right"
+                    @change="roomStore.updateRoomConfig('blind_reveal_level')"
+                  />
+                  <span class="input-number-text"></span>
+                </el-form-item>
+                <el-form-item label="双重盘面：" v-if="roomSettings.type == BingoType.STANDARD">
+                  <el-select
+                    v-model="roomSettings.dual_board"
+                    style="width: 120px"
+                    @change="roomStore.updateRoomConfig('dual_board')"
+                    :disabled="inGame"
+                  >
+                    <el-option
+                      v-for="(item, index) in dualTypeList"
+                      :key="index"
+                      :label="item.name"
+                      :value="item.type"
+                    ></el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="转换格数：" v-if="roomSettings.dual_board > 0 && roomSettings.type == BingoType.STANDARD">
+                  <el-input-number
+                    class="input-number"
+                    v-model="roomSettings.portal_count"
+                    :min="1"
+                    :max="25"
+                    :step="1"
+                    :disabled="inGame"
+                    size="small"
+                    controls-position="right"
+                    @change="roomStore.updateRoomConfig('portal_count')"
+                  />
+                  <span class="input-number-text">格</span>
+                </el-form-item>
+                <el-form-item label="差异等级：" v-if="roomSettings.dual_board > 0 && roomSettings.type == BingoType.STANDARD">
+                  <el-input-number
+                    class="input-number"
+                    v-model="roomSettings.diff_level"
+                    :min="0"
+                    :max="5"
+                    :step="1"
+                    :disabled="inGame"
+                    size="small"
+                    controls-position="right"
+                    @change="roomStore.updateRoomConfig('diff_level')"
+                  />
+                  <span class="input-number-text"></span>
                 </el-form-item>
 
                 <el-form-item label="作品BP：">
@@ -186,8 +244,8 @@
                     @change="roomStore.updateRoomConfig('games')"
                   >
                     <el-checkbox v-for="(item, index) in gameList" :value="item.code" :key="index">{{
-                      item.name
-                    }}</el-checkbox>
+                        item.name
+                      }}</el-checkbox>
                   </el-checkbox-group>
                 </el-form-item>
                 <el-form-item label="符卡来源：" v-if="!roomSettings.gamebp">
@@ -208,8 +266,8 @@
                     @change="roomStore.updateRoomConfig('difficulty')"
                   >
                     <el-radio v-for="(item, index) in difficultyList" :value="item.value" :key="index">{{
-                      item.name
-                    }}</el-radio>
+                        item.name
+                      }}</el-radio>
                   </el-radio-group>
                 </el-form-item>
               </el-form>
@@ -395,7 +453,7 @@ const roomTypeText = computed(() => {
 
 const blindTypeList = [
   {
-    name: "不开启",
+    name: "关闭",
     type: 1
   },
   {
@@ -415,13 +473,36 @@ const spellVersionList = [
   },
   {
     name: "S5卡池",
-    type: 2
+    type: 3
   },
   {
     name: "S3卡池",
-    type: 3
+    type: 4
+  },
+  {
+    name: "史卡池（你确定吗）",
+    type: 5
+  },
+  {
+    name: "小数点（th11-13替换）",
+    type: 6
+  },
+  {
+    name: "缘（th10替换）",
+    type: 7
   }
 ];
+
+const dualTypeList = [
+  {
+    name: "关闭",
+    type: 0
+  },
+  {
+    name: "开启",
+    type: 1
+  }
+]
 
 const logout = () => {
   localStore.logout();

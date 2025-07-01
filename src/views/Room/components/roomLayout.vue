@@ -20,7 +20,7 @@
               v-for="(item, index) in needWinArr"
               :key="index"
             ></div
-          ></template>
+            ></template>
         </div>
       </div>
       <div class="player-B">{{ roomData.names[1] }}</div>
@@ -41,8 +41,8 @@
               @click="onMenuClick"
             >
               <div class="bingo-items">
-                <template v-if="gameStore.spells">
-                  <div class="spell-card" v-for="(item, index) in gameStore.spells" :key="index">
+                <template v-if="gameStore.currentBoard == 0 ? gameStore.spells : gameStore.spells2">
+                  <div class="spell-card" v-for="(item, index) in gameStore.currentBoard == 0 ? gameStore.spells : gameStore.spells2" :key="index">
                     <spell-card-cell
                       :name="item.name"
                       :desc="item.desc"
@@ -53,6 +53,11 @@
                       :selected="selectedSpellIndex === index"
                       :status="gameStore.spellStatus[index]"
                       :index="index"
+                      :isPortalA="gameStore.normalGameData.is_portal_a[index] > 0"
+                      :isPortalB="gameStore.normalGameData.is_portal_b[index] > 0"
+                      :isACurrentBoard="gameStore.currentBoard == 0"
+                      :isBCurrentBoard="gameStore.currentBoard == 1"
+                      :spellIndex="index"
                     ></spell-card-cell>
                   </div>
                 </template>
@@ -347,7 +352,7 @@ watch(
 );
 
 defineExpose({ showAlert, hideAlert, warnGamePoint,
-    infoCaptureCard, infoFailCard, infoWinGame, infoLoseGame });
+  infoCaptureCard, infoFailCard, infoWinGame, infoLoseGame });
 </script>
 
 <style lang="scss" scoped>
