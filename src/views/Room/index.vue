@@ -285,6 +285,10 @@ const menu = computed<{ label: string; value: number; tag?: string; isReset?: bo
               value: 5,
               tag: "playerA",
             },
+            {
+              label: "刷新",
+              value: 0x100,
+            },
           ];
         }
         if (isPlayerB.value) {
@@ -299,6 +303,10 @@ const menu = computed<{ label: string; value: number; tag?: string; isReset?: bo
               label: "收取",
               value: 7,
               tag: "playerB",
+            },
+            {
+              label: "刷新",
+              value: 0x100,
             },
           ];
         }
@@ -332,6 +340,10 @@ const menu = computed<{ label: string; value: number; tag?: string; isReset?: bo
               label: "右侧玩家收取",
               value: 7,
               tag: "playerB",
+            },
+            {
+              label: "刷新",
+              value: 0x100,
             },
           ];
         }
@@ -377,6 +389,10 @@ const menu = computed<{ label: string; value: number; tag?: string; isReset?: bo
             label: "右侧玩家收取",
             value: 7,
             tag: "playerB",
+          },
+          {
+            label: "刷新",
+            value: 0x100,
           },
         ];
       }
@@ -429,6 +445,10 @@ const menu = computed<{ label: string; value: number; tag?: string; isReset?: bo
               label: "右侧玩家收取",
               value: 7,
               tag: "playerB",
+            },
+            {
+              label: "刷新",
+              value: 0x100,
             },
           ];
         }

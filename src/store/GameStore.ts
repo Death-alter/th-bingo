@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { computed, nextTick, reactive, ref, watch } from "vue";
 import { useRoomStore } from "./RoomStore";
-import { BingoType, GameData, GameStatus, RoomConfig, Spell, SpellStatus } from "@/types";
+import { BingoType, GameData, GameStatus, OneSpell, RoomConfig, Spell, SpellStatus } from "@/types";
 import ws from "@/utils/webSocket/WebSocketBingo";
 import { WebSocketActionType, WebSocketPushActionType } from "@/utils/webSocket/types";
 
@@ -158,6 +158,28 @@ export const useGameStore = defineStore("game", () => {
     return ws.send(WebSocketActionType.FINISH_SPELL, { index, success, player_index: playerIndex });
   };
 
+  const refreshSpell = (index: number) => {
+    return ws.send(WebSocketActionType.REFRESH_SPELL, { board_idx: currentBoard.value, spell_idx: index })
+  };
+  ws.on<OneSpell>(WebSocketPushActionType.PUSH_UPDATE_ONE_SPELL, (data) => {
+    const log: GameLog = {
+      index: data!.spell_idx,
+      status: 0x100,
+      oldStatus: 0,
+      causer: data!.player_name,
+    };
+    gameLogs.push(getSepllCardLog(log))
+    if(data!.board_idx == 0){
+      const newSpells = [...spells.value]; // 1. Create a shallow copy of the current array
+      newSpells[data!.spell_idx] = data!.spell; // 2. Update the element in the new array
+      spells.value = newSpells; // 3. Assign the new array back to the ref
+    }else if(data!.board_idx == 1){
+      const newSpells2 = [...spells2.value];
+      newSpells2[data!.spell_idx] = data!.spell;
+      spells2.value = newSpells2;
+    }
+  })
+
   const updateSpellStatus = (index, status) => {
     return ws.send(WebSocketActionType.UPDATE_SPELL_STATUS, { index, status });
   };
@@ -270,6 +292,9 @@ export const useGameStore = defineStore("game", () => {
             str += "收取了符卡";
           }
           break;
+        case 0x100:
+          str += `刷新了${Math.floor(index/5)+1}行${index%5+1}列的符卡`
+          break;
       }
       str += spellCard;
     } else if (roomStore.roomData.names[1] === causer) {
@@ -299,6 +324,9 @@ export const useGameStore = defineStore("game", () => {
           } else {
             str += "收取了符卡";
           }
+          break;
+        case 0x100:
+          str += `刷新了${Math.floor(index/5)+1}行${index%5+1}列的符卡`
           break;
       }
       str += spellCard;
@@ -338,6 +366,9 @@ export const useGameStore = defineStore("game", () => {
           break;
         case 7:
           str += `设置为${playerB}收取`;
+          break;
+        case 0x100:
+          str += `刷新，该符卡位于${Math.floor(index/5)+1}行${index%5+1}列`
           break;
       }
     }
@@ -427,5 +458,6 @@ export const useGameStore = defineStore("game", () => {
     updateSpellStatus,
     bpGameBanPick,
     bpGameNextRound,
+    refreshSpell,
   };
 });

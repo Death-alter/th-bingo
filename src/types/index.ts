@@ -85,6 +85,13 @@ export interface GameData {
   spells2: Spell[] | [];
 }
 
+export interface OneSpell{
+  board_idx: number;
+  spell_idx: number;
+  spell: Spell;
+  player_name: string;
+}
+
 export interface RoomConfig {
   rid: string; // 房间名
   type: BingoType; // 1-标准赛，2-BP赛，3-link赛

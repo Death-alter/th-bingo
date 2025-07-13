@@ -220,7 +220,11 @@ const onMenuClick = ({ event, target, item }: any) => {
     if (item.isReset != null && item.isReset == false) {
       gameStore.finishSpell(parseInt(index), false, gameStore.spellStatus[index] === 5 ? 0 : 1);
     } else {
-      gameStore.updateSpellStatus(parseInt(index), item.value);
+      if(item.value == 0x100){
+        gameStore.refreshSpell(parseInt(index))
+      }else{
+        gameStore.updateSpellStatus(parseInt(index), item.value);
+      }
     }
   }
 };
