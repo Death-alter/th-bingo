@@ -16,6 +16,7 @@ export default abstract class WS {
   protected retryTime = 0;
   protected autoReconnect = true;
   protected autoSendHeartBeat = false;
+  protected heartbeat_miss = 0;
 
   public static readonly heartBeatInterval: number = config.webSocket.heartBeatInterval; //单位：秒
   public static readonly retryLimit: number = config.webSocket.maxRetryTimes; //最大重连次数
@@ -82,6 +83,7 @@ export default abstract class WS {
 
         this.ws.onmessage = (event) => {
           if (this.heartBeatOption) {
+            this.heartbeat_miss = 0;
             clearTimeout(this.heartBeatTimeOutTimer);
           }
           this.onMessage(event, resolve, reject);
