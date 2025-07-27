@@ -38,7 +38,8 @@ export const useRoomStore = defineStore("room", () => {
     }
   });
   const soloMode = computed(() => !roomData.host);
-  const practiceMode = computed(() => !roomData.host && roomData.names[1] === "训练用毛玉");
+  //const practiceMode = computed(() => !roomData.host && roomData.names[1] === "训练用毛玉");
+  const practiceMode = computed(() => roomData.names[1] === "训练用毛玉");
 
   const gameTimeLimit = {};
   const countdownTime = {};
@@ -77,6 +78,11 @@ export const useRoomStore = defineStore("room", () => {
     portal_count: 5,
     blind_reveal_level: 2,
     diff_level: 3,
+    use_ai: false,
+    ai_strategy_level: 2,
+    ai_style: 0,
+    ai_base_power: 5,
+    ai_experience: 5,
   });
 
   //加载本地设置
@@ -89,6 +95,9 @@ export const useRoomStore = defineStore("room", () => {
   loadRoomSettings();
 
   const saveRoomSettings = () => {
+    if(!(practiceMode.value) || roomSettings.spell_version != 1 || roomSettings.blind_setting > 1 || roomSettings.dual_board > 0){
+      roomSettings.use_ai = false;
+    }
     local.set("roomSettings", roomSettings);
   };
 
@@ -110,6 +119,11 @@ export const useRoomStore = defineStore("room", () => {
     portal_count: 5,
     blind_reveal_level: 2,
     diff_level: 3,
+    use_ai: false,
+    ai_strategy_level: 2,
+    ai_style: 0,
+    ai_base_power: 5,
+    ai_experience: 5,
   });
 
   const getRoomConfig = () => {
@@ -124,7 +138,8 @@ export const useRoomStore = defineStore("room", () => {
   });
   const updateRoomConfig = (
     key?: "type" | "game_time" | "countdown" | "games" | "ranks" | "need_win" | "difficulty" | "cd_time"
-      | "blind_setting" | "spell_version" | "dual_board" | "portal_count" | "blind_reveal_level" | "diff_level",
+      | "blind_setting" | "spell_version" | "dual_board" | "portal_count" | "blind_reveal_level" | "diff_level"
+      | "use_ai" | "ai_strategy_level" | "ai_style" | "ai_base_power" | "ai_experience",
   ) => {
     saveRoomSettings();
     const allParams = {
@@ -143,6 +158,11 @@ export const useRoomStore = defineStore("room", () => {
       portal_count: roomSettings.portal_count,
       blind_reveal_level: roomSettings.blind_reveal_level,
       diff_level: roomSettings.diff_level,
+      use_ai: roomSettings.use_ai,
+      ai_strategy_level: roomSettings.ai_strategy_level,
+      ai_style: roomSettings.ai_style,
+      ai_base_power: roomSettings.ai_base_power,
+      ai_experience: roomSettings.ai_experience,
     };
     const params: any = {};
     if (key) {
@@ -203,6 +223,11 @@ export const useRoomStore = defineStore("room", () => {
           portal_count: roomSettings.portal_count,
           blind_reveal_level: roomSettings.blind_reveal_level,
           diff_level: roomSettings.diff_level,
+          use_ai: roomSettings.use_ai,
+          ai_strategy_level: roomSettings.ai_strategy_level,
+          ai_style: roomSettings.ai_style,
+          ai_base_power: roomSettings.ai_base_power,
+          ai_experience: roomSettings.ai_experience,
         },
         solo: soloMode,
         add_robot: addRobot,

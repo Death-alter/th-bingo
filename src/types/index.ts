@@ -52,12 +52,12 @@ export interface Spell {
   star: number; // 星级
   desc: string; // 符卡描述
   id: number; // 在对应作品里的id
-  fastest: number; // AI参数
-  one: number; // AI参数
-  two: number; // AI参数
-  three: number; // AI参数
-  final: number; // AI参数
-  bonus_rate: number; // AI参数
+  fastest: number, //理论最快速度
+  miss_time: number, //miss平均时间
+  power_weight: number, //底力系数，熟练度系数=1-底力系数
+  difficulty: number,  //难度
+  change_rate: number, //变化率，越高说明门槛的性质越强
+  max_capRate: number, //最高收率
 }
 
 export interface GameData {
@@ -109,4 +109,9 @@ export interface RoomConfig {
   portal_count: 5;
   blind_reveal_level: 2;
   diff_level: 3;
+  use_ai: false;
+  ai_strategy_level: 2;
+  ai_style: 0;
+  ai_base_power: 5;
+  ai_experience: 5;
 }

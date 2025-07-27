@@ -146,6 +146,72 @@
                     ></el-option>
                   </el-select>
                 </el-form-item>
+                <el-form-item label="AI练习：" v-if="roomStore.practiceMode && roomSettings.spell_version == 1 ">
+                  <el-checkbox
+                    v-model="roomSettings.use_ai"
+                    :disabled="inGame || roomSettings.blind_setting > 1 || roomSettings.dual_board > 0"
+                    @change="roomStore.updateRoomConfig('use_ai')"
+                    style="margin-right: 0"
+                  ></el-checkbox>
+                </el-form-item>
+                <el-form-item label="AI策略：" v-if="roomSettings.use_ai">
+                  <el-select
+                    v-model="roomSettings.ai_strategy_level"
+                    style="width: 120px"
+                    @change="roomStore.updateRoomConfig('ai_strategy_level')"
+                    :disabled="inGame"
+                  >
+                    <el-option
+                      v-for="(item, index) in aiStrategyLevelList"
+                      :key="index"
+                      :label="item.name"
+                      :value="item.type"
+                    ></el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="AI风格：" v-if="roomSettings.use_ai && roomSettings.ai_strategy_level >= 3">
+                  <el-select
+                    v-model="roomSettings.ai_style"
+                    style="width: 120px"
+                    @change="roomStore.updateRoomConfig('ai_style')"
+                    :disabled="inGame"
+                  >
+                    <el-option
+                      v-for="(item, index) in aiStyleLevelList"
+                      :key="index"
+                      :label="item.name"
+                      :value="item.type"
+                    ></el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="AI底力：" v-if="roomSettings.use_ai">
+                  <el-input-number
+                    class="input-number"
+                    v-model="roomSettings.ai_base_power"
+                    :min="1"
+                    :max="10"
+                    :step="1"
+                    :disabled="inGame"
+                    size="small"
+                    controls-position="right"
+                    @change="roomStore.updateRoomConfig('ai_base_power')"
+                  />
+                  <span class="input-number-text">级</span>
+                </el-form-item>
+                <el-form-item label="AI熟练度：" v-if="roomSettings.use_ai">
+                  <el-input-number
+                    class="input-number"
+                    v-model="roomSettings.ai_experience"
+                    :min="1"
+                    :max="10"
+                    :step="1"
+                    :disabled="inGame"
+                    size="small"
+                    controls-position="right"
+                    @change="roomStore.updateRoomConfig('ai_experience')"
+                  />
+                  <span class="input-number-text">级</span>
+                </el-form-item>
                 <el-form-item label="盲盒设定：">
                   <el-select
                     v-model="roomSettings.blind_setting"
@@ -502,6 +568,36 @@ const dualTypeList = [
     name: "开启",
     type: 1
   }
+]
+
+const aiStrategyLevelList = [
+  {
+    name: "初级",
+    type: 1
+  },
+  {
+    name: "中级",
+    type: 2
+  },
+  {
+    name: "高级",
+    type: 3
+  },
+]
+
+const aiStyleLevelList = [
+  {
+    name: "平衡",
+    type: 0
+  },
+  {
+    name: "进攻",
+    type: 1
+  },
+  {
+    name: "防守",
+    type: 2
+  },
 ]
 
 const logout = () => {
