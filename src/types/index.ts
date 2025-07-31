@@ -28,6 +28,12 @@ export const enum SpellStatus {
   A_ATTAINED = 5,
   BOTH_ATTAINED = 6,
   B_ATTAINED = 7,
+  BOTH_HIDDEN = 0x1000,
+  LEFT_SEE_ONLY = 0x1001,
+  RIGHT_SEE_ONLY = 0x1002,
+  ONLY_REVEAL_GAME = 0x1010,
+  ONLY_REVEAL_GAME_STAGE = 0x1011,
+  ONLY_REVEAL_STAR = 0x1012,
 }
 
 export const enum GameStatus {
@@ -46,12 +52,12 @@ export interface Spell {
   star: number; // 星级
   desc: string; // 符卡描述
   id: number; // 在对应作品里的id
-  fastest: number; // AI参数
-  one: number; // AI参数
-  two: number; // AI参数
-  three: number; // AI参数
-  final: number; // AI参数
-  bonus_rate: number; // AI参数
+  fastest: number, //理论最快速度
+  miss_time: number, //miss平均时间
+  power_weight: number, //底力系数，熟练度系数=1-底力系数
+  difficulty: number,  //难度
+  change_rate: number, //变化率，越高说明门槛的性质越强
+  max_capRate: number, //最高收率
 }
 
 export interface GameData {
@@ -69,6 +75,21 @@ export interface GameData {
     spell_failed_count_b: number[]; // 右边玩家25张符卡的失败次数
   };
   link_data: { [index: string]: any } | null; // BP赛相关数据，同push_link_data协议的参数，如果不是BP赛则为null
+  normal_data: {
+    which_board_a: number;
+    which_board_b: number;
+    is_portal_a: number[];
+    is_portal_b: number[];
+    get_on_which_board: number[];
+  }
+  spells2: Spell[] | [];
+}
+
+export interface OneSpell{
+  board_idx: number;
+  spell_idx: number;
+  spell: Spell;
+  player_name: string;
 }
 
 export interface RoomConfig {
@@ -82,4 +103,15 @@ export interface RoomConfig {
   difficulty: 3; // 难度（影响不同星级的卡的分布），1对应E，2对应N，3对应L，其它对应随机
   cd_time: 30; // 选卡cd，收卡后要多少秒才能选下一张卡
   reserved_type: 1; // 纯客户端用的一个类型字段，服务器只负责透传
+  blind_setting: 1;
+  spell_version: 1;
+  dual_board: 0;
+  portal_count: 5;
+  blind_reveal_level: 2;
+  diff_level: 3;
+  use_ai: false;
+  ai_strategy_level: 2;
+  ai_style: 0;
+  ai_base_power: 5;
+  ai_experience: 5;
 }

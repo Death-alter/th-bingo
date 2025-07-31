@@ -38,7 +38,8 @@ export const useRoomStore = defineStore("room", () => {
     }
   });
   const soloMode = computed(() => !roomData.host);
-  const practiceMode = computed(() => !roomData.host && roomData.names[1] === "训练用毛玉");
+  //const practiceMode = computed(() => !roomData.host && roomData.names[1] === "训练用毛玉");
+  const practiceMode = computed(() => roomData.names[1] === "训练用毛玉");
 
   const gameTimeLimit = {};
   const countdownTime = {};
@@ -71,6 +72,17 @@ export const useRoomStore = defineStore("room", () => {
       delay: 5,
       changeCardCount: 2,
     },
+    blind_setting: 1,
+    spell_version: 1,
+    dual_board: 0,
+    portal_count: 5,
+    blind_reveal_level: 2,
+    diff_level: 3,
+    use_ai: false,
+    ai_strategy_level: 2,
+    ai_style: 0,
+    ai_base_power: 5,
+    ai_experience: 5,
   });
 
   //加载本地设置
@@ -83,6 +95,9 @@ export const useRoomStore = defineStore("room", () => {
   loadRoomSettings();
 
   const saveRoomSettings = () => {
+    if(!(practiceMode.value) || roomSettings.spell_version != 1 || roomSettings.blind_setting > 1 || roomSettings.dual_board > 0){
+      roomSettings.use_ai = false;
+    }
     local.set("roomSettings", roomSettings);
   };
 
@@ -98,6 +113,17 @@ export const useRoomStore = defineStore("room", () => {
     difficulty: 3, // 难度（影响不同星级的卡的分布），1对应E，2对应N，3对应L，其它对应随机
     cd_time: 30, // 选卡cd，收卡后要多少秒才能选下一张卡
     reserved_type: 1, // 纯客户端用的一个类型字段，服务器只负责透传
+    blind_setting: 1,
+    spell_version: 1,
+    dual_board: 0,
+    portal_count: 5,
+    blind_reveal_level: 2,
+    diff_level: 3,
+    use_ai: false,
+    ai_strategy_level: 2,
+    ai_style: 0,
+    ai_base_power: 5,
+    ai_experience: 5,
   });
 
   const getRoomConfig = () => {
@@ -112,6 +138,8 @@ export const useRoomStore = defineStore("room", () => {
   });
   const updateRoomConfig = (
     key?: "type" | "game_time" | "countdown" | "games" | "ranks" | "need_win" | "difficulty" | "cd_time"
+      | "blind_setting" | "spell_version" | "dual_board" | "portal_count" | "blind_reveal_level" | "diff_level"
+      | "use_ai" | "ai_strategy_level" | "ai_style" | "ai_base_power" | "ai_experience",
   ) => {
     saveRoomSettings();
     const allParams = {
@@ -124,6 +152,17 @@ export const useRoomStore = defineStore("room", () => {
       need_win: (roomSettings.format + 1) / 2,
       difficulty: roomSettings.difficulty,
       cd_time: roomSettings.cdTime,
+      blind_setting : roomSettings.blind_setting,
+      spell_version : roomSettings.spell_version,
+      dual_board: roomSettings.dual_board,
+      portal_count: roomSettings.portal_count,
+      blind_reveal_level: roomSettings.blind_reveal_level,
+      diff_level: roomSettings.diff_level,
+      use_ai: roomSettings.use_ai,
+      ai_strategy_level: roomSettings.ai_strategy_level,
+      ai_style: roomSettings.ai_style,
+      ai_base_power: roomSettings.ai_base_power,
+      ai_experience: roomSettings.ai_experience,
     };
     const params: any = {};
     if (key) {
@@ -178,6 +217,17 @@ export const useRoomStore = defineStore("room", () => {
           need_win: (roomSettings.format + 1) / 2,
           difficulty: roomSettings.difficulty,
           cd_time: roomSettings.cdTime,
+          blind_setting: roomSettings.blind_setting,
+          spell_version: roomSettings.spell_version,
+          dual_board: roomSettings.dual_board,
+          portal_count: roomSettings.portal_count,
+          blind_reveal_level: roomSettings.blind_reveal_level,
+          diff_level: roomSettings.diff_level,
+          use_ai: roomSettings.use_ai,
+          ai_strategy_level: roomSettings.ai_strategy_level,
+          ai_style: roomSettings.ai_style,
+          ai_base_power: roomSettings.ai_base_power,
+          ai_experience: roomSettings.ai_experience,
         },
         solo: soloMode,
         add_robot: addRobot,

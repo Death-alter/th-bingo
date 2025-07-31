@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { computed, nextTick, reactive, ref, watch } from "vue";
 import { useRoomStore } from "./RoomStore";
-import { BingoType, GameData, GameStatus, RoomConfig, Spell, SpellStatus } from "@/types";
+import { BingoType, GameData, GameStatus, OneSpell, RoomConfig, Spell, SpellStatus } from "@/types";
 import ws from "@/utils/webSocket/WebSocketBingo";
 import { WebSocketActionType, WebSocketPushActionType } from "@/utils/webSocket/types";
 
@@ -12,12 +12,13 @@ interface GameLog {
   causer: string;
   failCountA?: number;
   failCountB?: number;
+  getOnWhichBoard?: number;
 }
 
 export const useGameStore = defineStore("game", () => {
   const roomStore = useRoomStore();
 
-  //bigon对局相关
+  //bingo对局相关
   const spells = ref<Spell[]>([]);
   const spellStatus = ref<SpellStatus[]>([]);
   const leftTime = ref(0);
@@ -29,6 +30,8 @@ export const useGameStore = defineStore("game", () => {
   const winner = ref<-1 | 0 | 1 | undefined | null>(null);
   const inited = ref(false);
   const alreadySelectCard = ref(false);
+  const spells2 = ref<Spell[]>([]);
+  const currentBoard = ref(0);
 
   const spellCardGrabbedFlag = ref(false);
   watch(spellCardGrabbedFlag, (val) => {
@@ -55,6 +58,7 @@ export const useGameStore = defineStore("game", () => {
       .send(WebSocketActionType.GET_ALL_SPELLS)
       .then((data: GameData) => {
         spells.value = data.spells;
+        spells2.value = data.spells2;
         spellStatus.value = data.spell_status;
         leftTime.value = data.left_time;
         gameStatus.value = data.status;
@@ -62,6 +66,9 @@ export const useGameStore = defineStore("game", () => {
         inited.value = true;
         for (const i in data.bp_data) {
           bpGameData[i] = data.bp_data[i];
+        }
+        for (const i in data.normal_data) {
+          normalGameData[i] = data.normal_data[i];
         }
       })
       .catch(() => {});
@@ -86,6 +93,13 @@ export const useGameStore = defineStore("game", () => {
     bpGameData.ban_pick = 0;
     bpGameData.spell_failed_count_a = [];
     bpGameData.spell_failed_count_b = [];
+    spells2.value = [];
+    normalGameData.which_board_a = 0;
+    normalGameData.which_board_b = 0;
+    normalGameData.is_portal_a = [];
+    normalGameData.is_portal_b = [];
+    normalGameData.get_on_which_board = [];
+    currentBoard.value = 0;
   };
 
   const startGame = () => {
@@ -144,6 +158,28 @@ export const useGameStore = defineStore("game", () => {
     return ws.send(WebSocketActionType.FINISH_SPELL, { index, success, player_index: playerIndex });
   };
 
+  const refreshSpell = (index: number) => {
+    return ws.send(WebSocketActionType.REFRESH_SPELL, { board_idx: currentBoard.value, spell_idx: index })
+  };
+  ws.on<OneSpell>(WebSocketPushActionType.PUSH_UPDATE_ONE_SPELL, (data) => {
+    const log: GameLog = {
+      index: data!.spell_idx,
+      status: 0x100,
+      oldStatus: 0,
+      causer: data!.player_name,
+    };
+    gameLogs.push(getSepllCardLog(log))
+    if(data!.board_idx == 0){
+      const newSpells = [...spells.value]; // 1. Create a shallow copy of the current array
+      newSpells[data!.spell_idx] = data!.spell; // 2. Update the element in the new array
+      spells.value = newSpells; // 3. Assign the new array back to the ref
+    }else if(data!.board_idx == 1){
+      const newSpells2 = [...spells2.value];
+      newSpells2[data!.spell_idx] = data!.spell;
+      spells2.value = newSpells2;
+    }
+  })
+
   const updateSpellStatus = (index, status) => {
     return ws.send(WebSocketActionType.UPDATE_SPELL_STATUS, { index, status });
   };
@@ -153,6 +189,9 @@ export const useGameStore = defineStore("game", () => {
     causer: string;
     spell_failed_count_a?: number;
     spell_failed_count_b?: number;
+    which_board_a?: number;
+    which_board_b?: number;
+    get_on_which_board?: number;
   }>(WebSocketPushActionType.PUSH_UPDATE_SEPLL_STATUS, (data) => {
     const log: GameLog = {
       index: data!.index,
@@ -171,6 +210,16 @@ export const useGameStore = defineStore("game", () => {
       nextTick(() => {
         bpGameData.spell_failed_count_b[data!.index] = data!.spell_failed_count_b!;
       });
+    }
+    if(data!.which_board_a != null){
+      normalGameData.which_board_a = data!.which_board_a!;
+    }
+    if(data!.which_board_b != null){
+      normalGameData.which_board_b = data!.which_board_b!;
+    }
+    if(data!.get_on_which_board){
+      log.getOnWhichBoard = data!.get_on_which_board;
+      normalGameData.get_on_which_board[data!.index] = data!.get_on_which_board!;
     }
     const logText = getSepllCardLog(log);
     gameLogs.push(logText);
@@ -193,13 +242,13 @@ export const useGameStore = defineStore("game", () => {
   });
 
   const getSepllCardLog = ({
-    index,
-    status,
-    oldStatus,
-    causer,
-    failCountA,
-    failCountB,
-  }: {
+                             index,
+                             status,
+                             oldStatus,
+                             causer,
+                             failCountA,
+                             failCountB,
+                           }: {
     index: number;
     status: number;
     oldStatus: number;
@@ -211,7 +260,9 @@ export const useGameStore = defineStore("game", () => {
     const playerA = `<span style="padding:0 2px;color:var(--A-color)">${roomStore.roomData.names[0]}</span>`;
     const playerB = `<span style="padding:0 2px;color:var(--B-color)">${roomStore.roomData.names[1]}</span>`;
     const host = `<span style="padding:0 2px;font-weight:600">${roomStore.roomData.host}</span>`;
-    const spellCard = `<span style="padding:0 2px;font-weight:600">${spells.value[index].name}</span>`;
+    const curSpellList = computed(() => currentBoard.value == 0 ? spells.value : spells2.value)
+    const spellCard = `<span style="padding:0 2px;font-weight:600">
+      ${curSpellList.value[index].name}</span>`;
 
     if (roomStore.roomData.names[0] === causer) {
       str += playerA;
@@ -240,6 +291,9 @@ export const useGameStore = defineStore("game", () => {
           } else {
             str += "收取了符卡";
           }
+          break;
+        case 0x100:
+          str += `刷新了${Math.floor(index/5)+1}行${index%5+1}列的符卡`
           break;
       }
       str += spellCard;
@@ -270,6 +324,9 @@ export const useGameStore = defineStore("game", () => {
           } else {
             str += "收取了符卡";
           }
+          break;
+        case 0x100:
+          str += `刷新了${Math.floor(index/5)+1}行${index%5+1}列的符卡`
           break;
       }
       str += spellCard;
@@ -310,6 +367,9 @@ export const useGameStore = defineStore("game", () => {
         case 7:
           str += `设置为${playerB}收取`;
           break;
+        case 0x100:
+          str += `刷新，该符卡位于${Math.floor(index/5)+1}行${index%5+1}列`
+          break;
       }
     }
 
@@ -324,6 +384,14 @@ export const useGameStore = defineStore("game", () => {
     spell_failed_count_b: [] as number[], // 右边玩家25张符卡的失败次数
   });
 
+  const normalGameData = reactive({
+    which_board_a: 0,
+    which_board_b: 0,
+    is_portal_a: [] as number[],
+    is_portal_b: [] as number[],
+    get_on_which_board: [] as number[],
+  })
+
   const bpGameBanPick = (index: number) => {
     return ws.send(WebSocketActionType.BP_GAME_BAN_PICK, { idx: index });
   };
@@ -335,6 +403,32 @@ export const useGameStore = defineStore("game", () => {
     bpGameData.whose_turn = data!.whose_turn;
     bpGameData.ban_pick = data!.ban_pick;
   });
+
+  watch(
+    () => normalGameData.which_board_a,
+    (newVal, oldVal) => {
+      if (roomStore.isPlayerA){
+        currentBoard.value = newVal;
+      }
+    },
+    {
+      immediate: true,
+      deep: true,
+    }
+  );
+
+  watch(
+    () => normalGameData.which_board_b,
+    (boardB) => {
+      if (roomStore.isPlayerB){
+        currentBoard.value = boardB;
+      }
+    },
+    {
+      immediate: true,
+      deep: true,
+    }
+  );
 
   return {
     spells,
@@ -350,7 +444,10 @@ export const useGameStore = defineStore("game", () => {
     inited,
     spellCardGrabbedFlag,
     bpGameData,
+    normalGameData,
     alreadySelectCard,
+    spells2,
+    currentBoard,
     startGame,
     getGameData,
     stopGame,
@@ -361,5 +458,6 @@ export const useGameStore = defineStore("game", () => {
     updateSpellStatus,
     bpGameBanPick,
     bpGameNextRound,
+    refreshSpell,
   };
 });

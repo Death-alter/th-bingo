@@ -185,11 +185,13 @@
               >进入下轮</el-button
             >
           </template>
-          <!-- <template v-if="isBingoLink">
-            <el-button size="small" @click="linkTiming" :disabled="gamePhase < 2 || gamePhase > 3 || gamePaused">{{
-              gamePhase === 3 && !gameData.link_data.start_ms_b ? "开始计时" : "结束计时"
-            }}</el-button>
-          </template> -->
+        </template>
+      </template>
+
+      <template #button-right-2>
+        <template v-if="inGame && roomStore.roomConfig.dual_board > 0 && roomStore.roomConfig.type == BingoType.STANDARD">
+          <el-button type="primary" :disabled="(isPlayer && (!inGame || gameStore.gameStatus != GameStatus.COUNT_DOWN))"
+                     @click="switchDualBoardSide">{{gameStore.currentBoard == 0 ? "A->B":"B->A"}}</el-button>
         </template>
       </template>
     </room-layout>
@@ -197,14 +199,14 @@
 </template>
 
 <script lang="ts" setup>
-import { h, ref, computed, watch, nextTick, onMounted } from "vue";
+import { computed, h, nextTick, onMounted, ref, watch } from "vue";
 import { BingoType, BpStatus, GameStatus } from "@/types";
 import RoomLayout from "./components/roomLayout.vue";
 import ScoreBoard from "@/components/score-board.vue";
 import CountDown from "@/components/count-down.vue";
 import GameBp from "@/components/game-bp.vue";
 import ConfirmSelectButton from "@/components/button-with-cooldown.vue";
-import { ElButton, ElMessageBox, ElRadioGroup, ElRadio } from "element-plus";
+import { ElButton, ElMessageBox, ElRadio, ElRadioGroup } from "element-plus";
 import ws from "@/utils/webSocket/WebSocketBingo";
 import { useRoomStore } from "@/store/RoomStore";
 import { useGameStore } from "@/store/GameStore";
@@ -283,6 +285,10 @@ const menu = computed<{ label: string; value: number; tag?: string; isReset?: bo
               value: 5,
               tag: "playerA",
             },
+            {
+              label: "刷新",
+              value: 0x100,
+            },
           ];
         }
         if (isPlayerB.value) {
@@ -297,6 +303,10 @@ const menu = computed<{ label: string; value: number; tag?: string; isReset?: bo
               label: "收取",
               value: 7,
               tag: "playerB",
+            },
+            {
+              label: "刷新",
+              value: 0x100,
             },
           ];
         }
@@ -330,6 +340,10 @@ const menu = computed<{ label: string; value: number; tag?: string; isReset?: bo
               label: "右侧玩家收取",
               value: 7,
               tag: "playerB",
+            },
+            {
+              label: "刷新",
+              value: 0x100,
             },
           ];
         }
@@ -375,6 +389,10 @@ const menu = computed<{ label: string; value: number; tag?: string; isReset?: bo
             label: "右侧玩家收取",
             value: 7,
             tag: "playerB",
+          },
+          {
+            label: "刷新",
+            value: 0x100,
           },
         ];
       }
@@ -427,6 +445,10 @@ const menu = computed<{ label: string; value: number; tag?: string; isReset?: bo
               label: "右侧玩家收取",
               value: 7,
               tag: "playerB",
+            },
+            {
+              label: "刷新",
+              value: 0x100,
             },
           ];
         }
@@ -590,7 +612,7 @@ const decideStandard = (status) => {
       }
     }
   });
-
+  //计算是否产生了新的四连
   let gamePointFlag = false;
   for (let i = 0; i < 12; i++) {
     if (sumArr[i] === -5) {
@@ -610,6 +632,10 @@ const decideStandard = (status) => {
     layoutRef.value?.warnGamePoint();
   }
   oldSumArr.value = sumArr;
+  //加分的一方收卡音效
+  if ((playerAScore.value < scoreA && isPlayerA.value) || (playerBScore.value < scoreB && isPlayerB.value)) {
+    layoutRef.value?.infoCaptureCard();
+  }
 
   playerAScore.value = scoreA;
   playerBScore.value = scoreB;
@@ -650,6 +676,9 @@ const isMyTurn = computed(
     (isPlayerB.value && gameStore.bpGameData.whose_turn === 1)
 );
 const bingoBpPhase = computed(() => gameStore.bpGameData.ban_pick !== 2);
+//总失败次数
+const playerAFailure = ref(0);
+const playerBFailure = ref(0);
 
 const nextRound = () => {
   gameStore.bpGameNextRound();
@@ -716,8 +745,31 @@ const decideBp = (status) => {
     }
   }
 
+  let playerAFailureNew = 0;
+  let playerBFailureNew = 0;
+  gameStore.bpGameData.spell_failed_count_a.forEach((item: number) => {
+    playerAFailureNew += item;
+  });
+  gameStore.bpGameData.spell_failed_count_b.forEach((item: number) => {
+    playerBFailureNew += item;
+  });
+
+  //加分的一方收卡音效
+  if ((playerAScore.value < scoreA && isPlayerA.value) || (playerBScore.value < scoreB && isPlayerB.value)) {
+    layoutRef.value?.infoCaptureCard();
+  }
   playerAScore.value = scoreA;
   playerBScore.value = scoreB;
+
+  //失败的一方爆炸音效
+  if (
+    (playerAFailure.value < playerAFailureNew && isPlayerA.value) ||
+    (playerBFailure.value < playerBFailureNew && isPlayerB.value)
+  ) {
+    layoutRef.value?.infoFailCard();
+  }
+  playerAFailure.value = playerAFailureNew;
+  playerBFailure.value = playerBFailureNew;
 
   if (count == 25) {
     if (scoreB - scoreA < 0) {
@@ -747,6 +799,8 @@ watch(
       case GameStatus.NOT_STARTED:
         playerAScore.value = 0;
         playerBScore.value = 0;
+        playerAFailure.value = 0;
+        playerBFailure.value = 0;
         break;
       case GameStatus.COUNT_DOWN:
         nextTick(() => {
@@ -883,6 +937,33 @@ const confirmWinner = () => {
     winFlag.value = 0;
   });
 };
+/*
+const stopGameInfo = (winner: number) => {
+  if (isPlayerA.value) {
+    winner == 0 ? layoutRef.value?.infoWinGame() : layoutRef.value?.infoLoseGame();
+  }
+  if (isPlayerB.value) {
+    winner == 1 ? layoutRef.value?.infoWinGame() : layoutRef.value?.infoLoseGame();
+  }
+};*/
+const playerAWin = ref(0);
+const playerBWin = ref(0);
+watch(
+  () => roomData.value.score,
+  (score) => {
+    if (score[0] > playerAWin.value) {
+      if (isPlayerA.value) layoutRef.value?.infoWinGame();
+      if (isPlayerB.value) layoutRef.value?.infoLoseGame();
+    }
+    if (score[1] > playerBWin.value) {
+      if (isPlayerB.value) layoutRef.value?.infoWinGame();
+      if (isPlayerA.value) layoutRef.value?.infoLoseGame();
+    }
+    playerAWin.value = score[0];
+    playerBWin.value = score[1];
+  },
+  { deep: true, immediate: true }
+);
 const confirmSelect = () => {
   gameStore.alreadySelectCard = true;
   gameStore.selectSpell(selectedSpellIndex.value).then(() => {
@@ -925,6 +1006,13 @@ const addChangeCardCount = (index: number) => {
 };
 const removeChangeCardCount = (index: number) => {
   roomStore.updateChangeCardCount(roomData.value.names[index], roomData.value.change_card_count[index] - 1);
+};
+
+const switchDualBoardSide = () => {
+  gameStore.currentBoard = 1 - gameStore.currentBoard;
+  if (roomStore.isPlayerA || roomStore.isPlayerB) {
+    ws.send(WebSocketActionType.NORMAL_DUAL_BOARD_CHANGE, {player: roomStore.isPlayerA ? 0:1, to: gameStore.currentBoard});
+  }
 };
 </script>
 

@@ -9,6 +9,7 @@ import {
 } from "./types";
 import { v4 } from "uuid";
 import { ElMessage } from "element-plus";
+import config from "@/config";
 
 export class WebSocketBingo extends WS {
   protected autoSendHeartBeat = true;
@@ -73,7 +74,10 @@ export class WebSocketBingo extends WS {
         if (action === WebSocketActionType.HEART && this.heartBeatOption) {
           this.heartBeatSendTime = new Date().getTime();
           this.heartBeatTimeOutTimer = setTimeout(() => {
-            this.reconnect();
+            if(++this.heartbeat_miss > config.webSocket.heartBeatMaxFailureTimes) {
+              this.reconnect();
+              this.heartbeat_miss = 0;
+            }
           }, WS.timeOutSeconds * 1000);
         }
       };

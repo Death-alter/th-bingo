@@ -20,7 +20,7 @@
               v-for="(item, index) in needWinArr"
               :key="index"
             ></div
-          ></template>
+            ></template>
         </div>
       </div>
       <div class="player-B">{{ roomData.names[1] }}</div>
@@ -41,8 +41,8 @@
               @click="onMenuClick"
             >
               <div class="bingo-items">
-                <template v-if="gameStore.spells">
-                  <div class="spell-card" v-for="(item, index) in gameStore.spells" :key="index">
+                <template v-if="gameStore.currentBoard == 0 ? gameStore.spells : gameStore.spells2">
+                  <div class="spell-card" v-for="(item, index) in gameStore.currentBoard == 0 ? gameStore.spells : gameStore.spells2" :key="index">
                     <spell-card-cell
                       :name="item.name"
                       :desc="item.desc"
@@ -53,6 +53,11 @@
                       :selected="selectedSpellIndex === index"
                       :status="gameStore.spellStatus[index]"
                       :index="index"
+                      :isPortalA="gameStore.normalGameData.is_portal_a[index] > 0"
+                      :isPortalB="gameStore.normalGameData.is_portal_b[index] > 0"
+                      :isACurrentBoard="gameStore.currentBoard == 0"
+                      :isBCurrentBoard="gameStore.currentBoard == 1"
+                      :spellIndex="index"
                     ></spell-card-cell>
                   </div>
                 </template>
@@ -94,6 +99,13 @@
     <div class="audio">
       <bgm ref="spellCardGrabbedAudioRef" :src="require('@/assets/audio/spell_card_grabbed.mp3')"></bgm>
       <bgm ref="gamePointAudioRef" :src="require('@/assets/audio/game_point.wav')"></bgm>
+      <bgm ref="lineWarnAudioRef" :src="require('@/assets/audio/se_ufoalert.mp3')"></bgm>
+      <bgm ref="pauseAudioRef" :src="require('@/assets/audio/se_pause.mp3')"></bgm>
+      <bgm ref="startGameAudioRef" :src="require('@/assets/audio/start_game.mp3')"></bgm>
+      <bgm ref="captureCardAudioRef" :src="require('@/assets/audio/se_cardget.mp3')"></bgm>
+      <bgm ref="captureCardFailureAudioRef" :src="require('@/assets/audio/se_pldead00.mp3')"></bgm>
+      <bgm ref="winGameAudioRef" :src="require('@/assets/audio/se_extend.mp3')"></bgm>
+      <bgm ref="loseGameAudioRef" :src="require('@/assets/audio/se_fault.mp3')"></bgm>
       <bgm
         ref="turn1CountdownAudioRef"
         src="http://link.hhtjim.com/163/22636828.mp3"
@@ -155,6 +167,13 @@ const gamePointAudioRef = ref<InstanceType<typeof bgm>>();
 const turn1CountdownAudioRef = ref<InstanceType<typeof bgm>>();
 const turn2CountdownAudioRef = ref<InstanceType<typeof bgm>>();
 const turn3CountdownAudioRef = ref<InstanceType<typeof bgm>>();
+const lineWarnAudioRef = ref<InstanceType<typeof bgm>>();
+const pauseAudioRef = ref<InstanceType<typeof bgm>>();
+const startGameAudioRef = ref<InstanceType<typeof bgm>>();
+const captureCardAudioRef = ref<InstanceType<typeof bgm>>();
+const captureCardFailureAudioRef = ref<InstanceType<typeof bgm>>();
+const winGameAudioRef = ref<InstanceType<typeof bgm>>();
+const loseGameAudioRef = ref<InstanceType<typeof bgm>>();
 
 const muted = computed(() => roomStore.roomSettings.bgmMuted);
 const roomData = computed(() => roomStore.roomData);
@@ -177,25 +196,35 @@ const selectSpellCard = (index: number) => {
     selectedSpellIndex.value = -1;
   } else {
     if (props.multiple) {
-      if (gameStore.spellStatus[index] === 0) selectedSpellIndex.value = index;
+      if (gameStore.spellStatus[index] === 0 || canSelectBlindCard(gameStore.spellStatus[index])) selectedSpellIndex.value = index;
     } else {
       if (
         gameStore.spellStatus[index] === 0 ||
         (isPlayerB.value && gameStore.spellStatus[index] === 1) ||
-        (isPlayerA.value && gameStore.spellStatus[index] === 3)
+        (isPlayerA.value && gameStore.spellStatus[index] === 3) ||
+        canSelectBlindCard(gameStore.spellStatus[index])
       ) {
         selectedSpellIndex.value = index;
       }
     }
   }
 };
+
+function canSelectBlindCard (status: number) {
+  return status === 0x1000 || status === 0x1010 || status === 0x1011 || status === 0x1012
+}
+
 const onMenuClick = ({ event, target, item }: any) => {
   const index = target.getAttribute("index");
   if (index !== null) {
     if (item.isReset != null && item.isReset == false) {
       gameStore.finishSpell(parseInt(index), false, gameStore.spellStatus[index] === 5 ? 0 : 1);
     } else {
-      gameStore.updateSpellStatus(parseInt(index), item.value);
+      if(item.value == 0x100){
+        gameStore.refreshSpell(parseInt(index))
+      }else{
+        gameStore.updateSpellStatus(parseInt(index), item.value);
+      }
     }
   }
 };
@@ -218,8 +247,36 @@ const hideAlert = () => {
 };
 
 const warnGamePoint = () => {
-  gamePointAudioRef.value?.play();
+  //gamePointAudioRef.value?.play();
+  lineWarnAudioRef.value?.play();
 };
+
+const infoCaptureCard = () => {
+  captureCardAudioRef.value?.play();
+};
+
+const infoFailCard = () => {
+  captureCardFailureAudioRef.value?.play();
+};
+
+const infoWinGame = () => {
+  muteSFXOnGameEnd();
+  winGameAudioRef.value?.play()
+}
+
+const infoLoseGame = () => {
+  muteSFXOnGameEnd();
+  loseGameAudioRef.value?.play()
+}
+
+const muteSFXOnGameEnd = () =>{
+  captureCardAudioRef.value?.stop();
+  captureCardFailureAudioRef.value?.stop();
+  lineWarnAudioRef.value?.stop();
+  spellCardGrabbedAudioRef.value?.stop();
+  startGameAudioRef.value?.stop();
+  pauseAudioRef.value?.stop();
+}
 
 watch(
   () => gameStore.spellCardGrabbedFlag,
@@ -230,10 +287,28 @@ watch(
   }
 );
 
+const gameStarted = computed(() => gameStore.gameStatus === GameStatus.STARTED)
+watch(gameStarted,
+  (started) =>{
+    if(started){
+      startGameAudioRef.value?.play();
+    }
+  }
+)
+
+const gameCountDown = computed(() => gameStore.gameStatus === GameStatus.COUNT_DOWN);
+watch(gameCountDown,
+  (started) =>{
+    if(started){
+      startGameAudioRef.value?.play();
+    }
+  }
+)
+
 const gamePaused = computed(() => gameStore.gameStatus === GameStatus.PAUSED);
 watch(gamePaused, (paused) => {
   if (paused) {
-    spellCardGrabbedAudioRef.value?.play();
+    pauseAudioRef.value?.play();
   }
 });
 
@@ -280,7 +355,8 @@ watch(
   }
 );
 
-defineExpose({ showAlert, hideAlert, warnGamePoint });
+defineExpose({ showAlert, hideAlert, warnGamePoint,
+  infoCaptureCard, infoFailCard, infoWinGame, infoLoseGame });
 </script>
 
 <style lang="scss" scoped>
