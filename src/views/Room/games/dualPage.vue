@@ -124,7 +124,7 @@ import OwnerButton from "../components/ownerButton.vue";
 import SideButtonSolo from "../components/sideButtonSolo.vue";
 import SwitchButton from "../components/switchButton.vue";
 import ConfirmSelectButton from "@/components/button-with-cooldown.vue";
-import { ElButton } from "element-plus";
+import { ElButton, ElMessage } from "element-plus";
 import ws from "@/utils/webSocket/WebSocketBingo";
 import { useRoomStore } from "@/store/RoomStore";
 import { useGameStore } from "@/store/GameStore";
@@ -364,7 +364,10 @@ const removeChangeCardCount = (index: number) => {
   roomStore.updateChangeCardCount(roomData.value.names[index], roomData.value.change_card_count[index] - 1);
 };
 const confirmSelect = () => {
-  switchToSelfPage();
+  if (!gameStore.isSelfPage) {
+    ElMessage.warning("请切换到所选盘面再选卡");
+    return;
+  }
   gameStore.alreadySelectCard = true;
   gameStore.selectSpell(selectedSpellIndex.value).then(() => {
     selectedSpellIndex.value = -1;

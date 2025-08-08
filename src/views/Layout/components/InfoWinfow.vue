@@ -411,20 +411,41 @@ const leaveRoom = () => {
 };
 
 const copyPassword = () => {
-  navigator.clipboard
-    .writeText(roomStore.roomId)
-    .then(() => {
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard
+      .writeText(roomStore.roomId)
+      .then(() => {
+        ElMessage({
+          message: "已复制密码到剪切板",
+          type: "success",
+        });
+      })
+      .catch(() => {
+        ElMessage({
+          message: "复制失败",
+          type: "error",
+        });
+      });
+  } else {
+    const textArea = document.createElement("textarea");
+    textArea.value = roomStore.roomId;
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    const flag = document.execCommand("copy");
+    textArea.remove();
+    if (flag) {
       ElMessage({
         message: "已复制密码到剪切板",
         type: "success",
       });
-    })
-    .catch(() => {
+    } else {
       ElMessage({
         message: "复制失败",
         type: "error",
       });
-    });
+    }
+  }
 };
 
 const editType = () => {

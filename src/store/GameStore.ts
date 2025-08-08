@@ -403,6 +403,9 @@ export const useGameStore = defineStore("game", () => {
   const playerBPage = computed(() =>
     dualPageGameData.extra_spells.length ? dualPageGameData.player_current_page[1] : -1
   );
+  const isSelfPage = computed(() =>
+    (roomStore.isPlayerA && page.value === playerAPage.value) || (roomStore.isPlayerB && page.value === playerBPage.value)
+  );
 
   const switchPageLocal = (p: number) => {
     page.value = p;
@@ -444,6 +447,7 @@ export const useGameStore = defineStore("game", () => {
     page,
     playerAPage,
     playerBPage,
+    isSelfPage,
     startGame,
     getGameData,
     stopGame,

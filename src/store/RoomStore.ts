@@ -83,6 +83,14 @@ export const useRoomStore = defineStore("room", () => {
     for (const i in savedSettings) {
       roomSettings[i] = savedSettings[i];
     }
+    for (const item of Config.gameTypeList) {
+      if (!roomSettings.gameTimeLimit[item.type]) {
+        roomSettings.gameTimeLimit[item.type] = item.timeLimit;
+      }
+      if (!roomSettings.countdownTime[item.type]) {
+        roomSettings.countdownTime[item.type] = item.countdown;
+      }
+    }
   };
   loadRoomSettings();
 
