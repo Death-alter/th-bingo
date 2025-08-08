@@ -181,7 +181,34 @@
                     }}</el-radio>
                   </el-radio-group>
                 </el-form-item>
+                <el-form-item label="转换格数：" v-if="roomData.type === BingoType.DUAL_PAGE">
+                  <el-input-number
+                    class="input-number"
+                    v-model="roomSettings.transitionCount"
+                    :min="0"
+                    :max="25"
+                    :step="1"
+                    :disabled="inMatch"
+                    size="small"
+                    controls-position="right"
+                    @change="roomStore.updateRoomConfig('transition_count')"
+                  />
+                </el-form-item>
+                <el-form-item label="差异等级：" v-if="roomData.type === BingoType.DUAL_PAGE">
+                  <el-input-number
+                    class="input-number"
+                    v-model="roomSettings.diffLevel"
+                    :min="0"
+                    :max="5"
+                    :step="1"
+                    :disabled="inMatch"
+                    size="small"
+                    controls-position="right"
+                    @change="roomStore.updateRoomConfig('diff_level')"
+                  />
+                </el-form-item>
               </el-form>
+
               <el-divider style="margin: 10px 0"></el-divider>
             </template>
             <div class="setting-title">左侧玩家设置</div>
@@ -197,7 +224,7 @@
                 />
               </el-form-item>
               <template v-if="isHost">
-                <el-form-item label="延迟时间：" v-if="roomData.type !== 2">
+                <el-form-item label="延迟时间：">
                   <el-input-number
                     class="input-number"
                     v-model="roomSettings.playerA.delay"
@@ -209,7 +236,7 @@
                   />
                   <span class="input-number-text">秒</span>
                 </el-form-item>
-                <el-form-item label="换卡次数：" v-if="roomData.type === 1">
+                <el-form-item label="换卡次数：" v-if="roomData.type !== BingoType.BP">
                   <el-input-number
                     class="input-number"
                     v-model="roomSettings.playerA.changeCardCount"
@@ -236,7 +263,7 @@
                 />
               </el-form-item>
               <template v-if="isHost">
-                <el-form-item label="延迟时间：" v-if="roomData.type !== 2">
+                <el-form-item label="延迟时间：">
                   <el-input-number
                     class="input-number"
                     v-model="roomSettings.playerB.delay"
@@ -248,7 +275,7 @@
                   />
                   <span class="input-number-text">秒</span>
                 </el-form-item>
-                <el-form-item label="换卡次数：" v-if="roomData.type === 1">
+                <el-form-item label="换卡次数：" v-if="roomData.type !== BingoType.BP">
                   <el-input-number
                     class="input-number"
                     v-model="roomSettings.playerB.changeCardCount"
@@ -277,6 +304,24 @@
                   @change="saveRoomSettings"
                 />
                 <span class="input-number-text">秒</span>
+              </el-form-item>
+              <el-form-item label="盘面背景：" v-if="roomData.type === BingoType.DUAL_PAGE">
+                <el-color-picker
+                  v-model="roomSettings.backgroundColor"
+                  size="small"
+                  color-format="hsl"
+                  show-alpha
+                  :predefine="predefineColors"
+                  @change="saveRoomSettings"
+                />
+                <el-color-picker
+                  v-model="roomSettings.backgroundColorReverse"
+                  size="small"
+                  color-format="hsl"
+                  show-alpha
+                  :predefine="predefineColors"
+                  @change="saveRoomSettings"
+                />
               </el-form-item>
             </el-form>
           </el-scrollbar>
@@ -332,9 +377,9 @@ const difficultyList = Config.difficultyList;
 const predefineColors = Config.predefineColors;
 const gameTypeList = computed(() => {
   if (soloMode.value) {
-    return [...Config.gameTypeList].slice(0, 1);
+    return [Config.gameTypeList[0], Config.gameTypeList[3]];
   } else {
-    return [...Config.gameTypeList].slice(0, 2);
+    return [Config.gameTypeList[0], Config.gameTypeList[1], Config.gameTypeList[3]];
   }
 });
 const roomSettings = computed(() => roomStore.roomSettings);
@@ -350,16 +395,11 @@ const inGame = computed(() => roomStore.inGame);
 const inMatch = computed(() => roomStore.inMatch);
 
 const roomTypeText = computed(() => {
-  switch (roomData.value.type) {
-    case 1:
-      return "bingo 标准赛";
-    case 2:
-      return "bingo BP赛";
-    case 3:
-      return "bingo link赛";
-    default:
-      return "未选择比赛类型";
+  const typeData = Config.gameTypeList[roomData.value.type - 1];
+  if (!typeData) {
+    return "未选择比赛类型";
   }
+  return typeData.name;
 });
 
 const logout = () => {
@@ -392,7 +432,7 @@ const editType = () => {
     showTypeInput.value = true;
   } else {
     if (roomStore.roomConfig.type !== roomSettings.value.type) {
-      roomStore.updateRoomConfig("type").then(() => {
+      roomStore.updateRoomConfig().then(() => {
         showTypeInput.value = false;
       });
     } else {

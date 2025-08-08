@@ -6,6 +6,10 @@
     :multiple="gameStore.gameStatus !== GameStatus.COUNT_DOWN"
   >
     <template #left>
+      <div
+        :class="{ 'page-icon': playerAPage === 0, 'page-icon-reverse': playerAPage === 1 }"
+        @click="gameStore.switchPageLocal(playerAPage)"
+      ></div>
       <score-board
         class="change-card"
         :size="48"
@@ -16,7 +20,13 @@
         @minus="removeChangeCardCount(0)"
         :disabled="!inGame"
       ></score-board>
-      <score-board class="spell-card-score-card" :size="30" label="得分" v-model="playerAScore"></score-board>
+      <score-board
+        class="spell-card-score-card"
+        :size="30"
+        label="得分"
+        v-model="playerAScore"
+        @click="gameStore.switchPageLocal(playerBPage)"
+      ></score-board>
       <el-button
         class="alert-button"
         type="primary"
@@ -29,6 +39,10 @@
     </template>
 
     <template #right>
+      <div
+        :class="{ 'page-icon': playerBPage === 0, 'page-icon-reverse': playerBPage === 1 }"
+        @click="gameStore.switchPageLocal(playerBPage)"
+      ></div>
       <score-board
         class="change-card"
         :size="48"
@@ -49,6 +63,10 @@
       >
         警告
       </el-button>
+    </template>
+
+    <template #extra>
+      <div :class="{ page: page === 0, 'page-reverse': page === 1 }"></div>
     </template>
 
     <template #widget>
@@ -77,17 +95,19 @@
           text="确认收取"
         ></confirm-select-button>
       </template>
+      <switch-button v-if="isWatcher" />
     </template>
 
     <template #button-left-1>
       <template v-if="!soloMode && isHost">
-        <reset-button :disabled="inGame" />
+        <reset-button :disabled="inGame" v-if="!inGame" />
+        <pause-button :disabled="!inGame" v-else />
       </template>
       <side-button-solo v-if="soloMode && isPlayerA" />
     </template>
 
     <template #button-right-1>
-      <pause-button :disabled="!inGame" v-if="isOwner" />
+      <switch-button v-if="(isHost || inGame) && !isWatcher" />
     </template>
   </room-layout>
 </template>
@@ -102,6 +122,7 @@ import PauseButton from "../components/pauseButton.vue";
 import ResetButton from "../components/resetButton.vue";
 import OwnerButton from "../components/ownerButton.vue";
 import SideButtonSolo from "../components/sideButtonSolo.vue";
+import SwitchButton from "../components/switchButton.vue";
 import ConfirmSelectButton from "@/components/button-with-cooldown.vue";
 import { ElButton } from "element-plus";
 import ws from "@/utils/webSocket/WebSocketBingo";
@@ -127,6 +148,7 @@ const isPlayer = computed(() => roomStore.isPlayer);
 const isPlayerA = computed(() => roomStore.isPlayerA);
 const isPlayerB = computed(() => roomStore.isPlayerB);
 const isOwner = computed(() => (soloMode.value ? isPlayerA.value : isHost.value));
+const isWatcher = computed(() => roomStore.isWatcher);
 const playerASelectedIndex = computed(() => gameStore.playerASelectedIndex);
 const playerBSelectedIndex = computed(() => gameStore.playerBSelectedIndex);
 const spellCardSelected = computed(() => {
@@ -139,6 +161,7 @@ const spellCardSelected = computed(() => {
   return false;
 });
 const inGame = computed(() => roomStore.inGame);
+const page = computed(() => gameStore.page);
 
 const validOperations = computed(() =>
   soloMode.value || isHost.value ? [MenuOperationType.SET_NONE, MenuOperationType.SELECT, MenuOperationType.ATTAIN] : []
@@ -166,6 +189,8 @@ watch(
   }
 );
 
+const playerAPage = computed(() => gameStore.playerAPage);
+const playerBPage = computed(() => gameStore.playerBPage);
 const oldSumArr = ref<number[]>([]);
 const playerAScore = ref(0);
 const playerBScore = ref(0);
@@ -181,7 +206,7 @@ const setCdTime = () => {
   gameStore.leftCdTime = -1;
 };
 
-const decideStandard = (status: string[]) => {
+const decideDualPage = (status: string[]) => {
   const available: number[] = new Array(12).fill(2);
   const sumArr: number[] = new Array(12).fill(0);
   winFlag.value = 0;
@@ -308,7 +333,7 @@ watch(
   () => gameStore.spellStatus,
   (status) => {
     if (status && status.length) {
-      decideStandard(status);
+      decideDualPage(status);
     }
   },
   { deep: true, immediate: true }
@@ -339,13 +364,22 @@ const removeChangeCardCount = (index: number) => {
   roomStore.updateChangeCardCount(roomData.value.names[index], roomData.value.change_card_count[index] - 1);
 };
 const confirmSelect = () => {
+  switchToSelfPage();
   gameStore.alreadySelectCard = true;
   gameStore.selectSpell(selectedSpellIndex.value).then(() => {
     selectedSpellIndex.value = -1;
   });
 };
 const confirmAttained = () => {
+  switchToSelfPage();
   gameStore.finishSpell(isPlayerA.value ? playerASelectedIndex.value : playerBSelectedIndex.value);
+};
+const switchToSelfPage = () => {
+  gameStore.switchPageLocal(
+    isPlayerA.value
+      ? gameStore.dualPageGameData.player_current_page[0]
+      : gameStore.dualPageGameData.player_current_page[1]
+  );
 };
 </script>
 
@@ -356,5 +390,46 @@ const confirmAttained = () => {
   left: 0;
   pointer-events: none;
   z-index: 99;
+}
+
+.page-icon {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #000;
+  background-color: var(--bg-color);
+  cursor: pointer;
+}
+
+.page-icon-reverse {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #000;
+  background-color: var(--bg-color-reverse);
+  cursor: pointer;
+}
+
+.page {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc(100% - 8px);
+  height: calc(100% - 8px);
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 95%, var(--bg-color)),
+    linear-gradient(180deg, transparent 95%, var(--bg-color)), linear-gradient(270deg, transparent 95%, var(--bg-color)),
+    linear-gradient(360deg, transparent 95%, var(--bg-color));
+}
+
+.page-reverse {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc(100% - 8px);
+  height: calc(100% - 8px);
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 95%, var(--bg-color-reverse)),
+    linear-gradient(180deg, transparent 95%, var(--bg-color-reverse)),
+    linear-gradient(270deg, transparent 95%, var(--bg-color-reverse)),
+    linear-gradient(360deg, transparent 95%, var(--bg-color-reverse));
 }
 </style>

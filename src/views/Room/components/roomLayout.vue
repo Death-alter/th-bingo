@@ -36,29 +36,29 @@
           <div class="bingo-wrap">
             <right-click-menu
               style="width: 100%; height: 100%"
-              :menuData="menu"
-              :disabled="!menu || menu.length === 0 || !inGame"
-              @click="onMenuClick"
+              :validOperations="validOperations"
+              :disabled="!validOperations || validOperations.length === 0 || !inGame"
             >
               <div class="bingo-items">
                 <template v-if="gameStore.spells">
                   <div class="spell-card" v-for="(item, index) in gameStore.spells" :key="index">
                     <spell-card-cell
-                      :name="item.name"
-                      :desc="item.desc"
-                      :level="isBingoStandard ? undefined : item.star"
+                      :spell-data="item"
+                      :reverse-spell-data="gameStore.dualPageGameData?.extra_spells[index]"
                       :failCountA="gameStore.bpGameData.spell_failed_count_a[index]"
                       :failCountB="gameStore.bpGameData.spell_failed_count_b[index]"
                       @click="selectSpellCard(index)"
                       :selected="selectedSpellIndex === index"
                       :status="gameStore.spellStatus[index]"
                       :index="index"
+                      :showLevel="isBingoBp"
                     ></spell-card-cell>
                   </div>
                 </template>
               </div>
             </right-click-menu>
             <game-alert ref="gameAlertRef" />
+            <game-bp v-if="isBpPhase" v-model="bpCode"></game-bp>
             <slot name="extra"></slot>
           </div>
         </el-col>
@@ -81,10 +81,35 @@
           <slot name="button-left-1"></slot>
         </div>
         <div class="main-button">
-          <slot name="button-center"></slot>
+          <template v-if="isBpPhase">
+            <el-button
+              type="primary"
+              v-if="isHost || (isOwner && banPick.phase === 9999)"
+              @click="bpFinish"
+              :disabled="banPick.phase < 99"
+            >
+              抽取符卡
+            </el-button>
+            <template v-if="isPlayer">
+              <el-button
+                type="primary"
+                v-if="banPick.phase < 11"
+                :disabled="!(isPlayerA && playerACanBP) && !(isPlayerB && playerBCanBP)"
+                @click="playerBanPick"
+                >确定</el-button
+              >
+              <el-button type="primary" v-if="banPick.phase === 11" @click="confirmOpenEX(true)">开启</el-button>
+              <el-button type="primary" v-if="banPick.phase === 11" @click="confirmOpenEX(false)">不开启</el-button>
+            </template>
+          </template>
+
+          <slot v-else name="button-center"></slot>
         </div>
         <div class="sub-button">
-          <slot name="button-right-1"></slot>
+          <el-button :disabled="bpStatus !== 5" size="small" v-if="isBpPhase && isOwner" @click="startBP"
+            >重新BP</el-button
+          >
+          <slot v-else name="button-right-1"></slot>
         </div>
         <div class="sub-button">
           <slot name="button-right-2"></slot>
@@ -127,23 +152,24 @@ import { computed, ref, onMounted, onUnmounted, watch } from "vue";
 import SpellCardCell from "@/components/spell-card-cell.vue";
 import RightClickMenu from "@/components/right-click-menu.vue";
 import GameAlert from "./gameAlert.vue";
-import { ElRow, ElCol } from "element-plus";
+import GameBp from "@/components/game-bp.vue";
+import { ElRow, ElCol, ElButton, ElMessageBox } from "element-plus";
 import bgm from "@/components/bgm.vue";
 import { useRoomStore } from "@/store/RoomStore";
 import { useGameStore } from "@/store/GameStore";
 import ws from "@/utils/webSocket/WebSocketBingo";
 import { WebSocketPushActionType } from "@/utils/webSocket/types";
-import { BingoType, GameStatus } from "@/types";
+import { BingoType, BpStatus, GameStatus, MenuOperationType, SpellStatus } from "@/types";
 
 const roomStore = useRoomStore();
 const gameStore = useGameStore();
 
 const props = withDefaults(
   defineProps<{
-    menu: { label: string; value: number; tag?: string }[];
+    validOperations: MenuOperationType[];
     multiple?: boolean;
   }>(),
-  { multiple: false }
+  { validOperations: () => [], multiple: false }
 );
 const selectedSpellIndex = defineModel();
 
@@ -156,19 +182,25 @@ const turn1CountdownAudioRef = ref<InstanceType<typeof bgm>>();
 const turn2CountdownAudioRef = ref<InstanceType<typeof bgm>>();
 const turn3CountdownAudioRef = ref<InstanceType<typeof bgm>>();
 
+const roomSettings = computed(() => roomStore.roomSettings);
 const muted = computed(() => roomStore.roomSettings.bgmMuted);
 const roomData = computed(() => roomStore.roomData);
 const isWatcher = computed(() => roomStore.isWatcher);
+const isPlayer = computed(() => roomStore.isPlayer);
 const isPlayerA = computed(() => roomStore.isPlayerA);
 const isPlayerB = computed(() => roomStore.isPlayerB);
+const isHost = computed(() => roomStore.isHost);
+const isOwner = computed(() => (soloMode.value ? isPlayerA.value : isHost.value));
 const inGame = computed(() => roomStore.inGame);
+const soloMode = computed(() => {
+  return roomStore.soloMode;
+});
 const needWin = computed(() => roomStore.roomConfig.need_win);
-const isBingoStandard = computed(() => roomData.value.type === BingoType.STANDARD);
+const isBingoBp = computed(() => roomData.value.type === BingoType.BP);
 const BGMpaused = computed(
   () =>
     turn1CountdownAudioRef.value?.paused && turn2CountdownAudioRef.value?.paused && turn3CountdownAudioRef.value?.paused
 );
-
 const selectSpellCard = (index: number) => {
   if (isWatcher.value) {
     return;
@@ -177,25 +209,15 @@ const selectSpellCard = (index: number) => {
     selectedSpellIndex.value = -1;
   } else {
     if (props.multiple) {
-      if (gameStore.spellStatus[index] === 0) selectedSpellIndex.value = index;
-    } else {
       if (
-        gameStore.spellStatus[index] === 0 ||
-        (isPlayerB.value && gameStore.spellStatus[index] === 1) ||
-        (isPlayerA.value && gameStore.spellStatus[index] === 3)
+        (isPlayerA.value && gameStore.spellStatus[index][1] === SpellStatus.NONE) ||
+        (isPlayerB.value && gameStore.spellStatus[index][3] === SpellStatus.NONE)
       ) {
         selectedSpellIndex.value = index;
       }
-    }
-  }
-};
-const onMenuClick = ({ event, target, item }: any) => {
-  const index = target.getAttribute("index");
-  if (index !== null) {
-    if (item.isReset != null && item.isReset == false) {
-      gameStore.finishSpell(parseInt(index), false, gameStore.spellStatus[index] === 5 ? 0 : 1);
     } else {
-      gameStore.updateSpellStatus(parseInt(index), item.value);
+      if (gameStore.spellStatus[index][1] === SpellStatus.NONE && gameStore.spellStatus[index][3] === SpellStatus.NONE)
+        selectedSpellIndex.value = index;
     }
   }
 };
@@ -211,10 +233,10 @@ watch(
   }
 );
 const showAlert = (text?: string, color?: string) => {
-  gameAlertRef.value.show(text, color);
+  gameAlertRef.value?.show(text, color);
 };
 const hideAlert = () => {
-  gameAlertRef.value.hide();
+  gameAlertRef.value?.hide();
 };
 
 const warnGamePoint = () => {
@@ -280,7 +302,94 @@ watch(
   }
 );
 
-defineExpose({ showAlert, hideAlert, warnGamePoint });
+//赛前BP
+const bpCode = ref("");
+const bpStatus = computed(() => roomStore.bpStatus);
+const banPick = computed(() => roomStore.banPick);
+const playerACanBP = computed(
+  () =>
+    bpStatus.value === BpStatus.IS_A_BAN ||
+    bpStatus.value === BpStatus.IS_A_PICK ||
+    bpStatus.value === BpStatus.SELECT_OPEN_EX
+);
+const playerBCanBP = computed(
+  () =>
+    bpStatus.value === BpStatus.IS_B_BAN ||
+    bpStatus.value === BpStatus.IS_B_PICK ||
+    bpStatus.value === BpStatus.SELECT_OPEN_EX
+);
+
+const startBP = () => {
+  roomStore.startBanPick();
+};
+const playerBanPick = () => {
+  if (!bpCode.value) {
+    ElMessageBox.confirm("你没有选择作品，是否确认不选择？", "提示", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning",
+    })
+      .then(() => {
+        roomStore.banPickCard("");
+      })
+      .catch(() => {});
+  } else {
+    roomStore.banPickCard(bpCode.value);
+  }
+};
+const confirmOpenEX = (flag: boolean) => {
+  if (flag) {
+    roomStore.banPickCard("1");
+  } else {
+    roomStore.banPickCard("-1");
+  }
+};
+const bpFinish = () => {
+  gameStore.startGame().then(() => {
+    roomStore.updateChangeCardCount(roomData.value.names[0], roomSettings.value.playerA.changeCardCount);
+    roomStore.updateChangeCardCount(roomData.value.names[1], roomSettings.value.playerB.changeCardCount);
+    hideAlert();
+  });
+};
+
+onMounted(() => {
+  if (!inGame.value) {
+    if (soloMode.value) {
+      if (!isBpPhase.value) showAlert("等待左侧玩家开始比赛", "#000");
+    } else {
+      if (!isBpPhase.value) showAlert("等待房主开始比赛", "#000");
+    }
+  } else {
+    hideAlert();
+  }
+});
+const isBpPhase = computed(
+  () => roomStore.banPick.phase > 0 && (roomStore.banPick.phase < 99 || gameStore.gameStatus === GameStatus.NOT_STARTED)
+);
+watch(
+  isBpPhase,
+  (value) => {
+    if (value) {
+      hideAlert();
+    }
+  },
+  {
+    immediate: true,
+  }
+);
+watch([inGame, isBpPhase], ([inGame, isBpPhase]) => {
+  if (!inGame && !isBpPhase) {
+    if (soloMode.value) {
+      showAlert("等待左侧玩家开始比赛", "#000");
+    } else {
+      showAlert("等待房主开始比赛", "#000");
+    }
+  } else {
+    hideAlert();
+  }
+});
+
+defineExpose({ showAlert, hideAlert, warnGamePoint, startBP });
 </script>
 
 <style lang="scss" scoped>

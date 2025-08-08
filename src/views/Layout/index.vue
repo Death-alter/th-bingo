@@ -6,6 +6,8 @@
       '--B-color': roomSettings.playerB && roomSettings.playerB.color,
       '--A-color-dark': roomSettings.playerA && getDarkColor(roomSettings.playerA.color),
       '--B-color-dark': roomSettings.playerB && getDarkColor(roomSettings.playerB.color),
+      '--bg-color': roomSettings.backgroundColor,
+      '--bg-color-reverse': roomSettings.backgroundColorReverse,
     }"
   >
     <div class="layout-inner">

@@ -8,6 +8,7 @@ export const enum BingoType {
   STANDARD = 1,
   BP = 2,
   LINK = 3,
+  DUAL_PAGE = 4,
 }
 
 export const enum BpStatus {
@@ -20,14 +21,18 @@ export const enum BpStatus {
 }
 
 export const enum SpellStatus {
-  BANNED = -1,
-  NONE = 0,
-  A_SELECTED = 1,
-  BOTH_SELECTED = 2,
-  B_SELECTED = 3,
-  A_ATTAINED = 5,
-  BOTH_ATTAINED = 6,
-  B_ATTAINED = 7,
+  NONE = "0",
+  SELECTED = "1",
+  ATTAINED = "2",
+  BANNED = "3",
+}
+
+export const enum MenuOperationType {
+  ATTAINED_FAIL = -1,
+  SET_NONE = 0,
+  SELECT = 1,
+  ATTAIN = 2,
+  BAN = 3,
 }
 
 export const enum GameStatus {
@@ -52,6 +57,7 @@ export interface Spell {
   three: number; // AI参数
   final: number; // AI参数
   bonus_rate: number; // AI参数
+  is_transition: boolean; //是否为转换格
 }
 
 export interface GameData {
@@ -69,6 +75,10 @@ export interface GameData {
     spell_failed_count_b: number[]; // 右边玩家25张符卡的失败次数
   };
   link_data: { [index: string]: any } | null; // BP赛相关数据，同push_link_data协议的参数，如果不是BP赛则为null
+  dual_page_data: {
+    spells2: Spell[]; // 双面模式有两页符卡，这是第二页符卡
+    player_current_page: number[]; // 玩家所在的页面
+  };
 }
 
 export interface RoomConfig {

@@ -1,12 +1,12 @@
 import { BingoType, BpStatus } from "@/types";
 import { defineStore } from "pinia";
-import { computed, ref, reactive, watch, nextTick } from "vue";
+import { computed, ref, reactive, watch } from "vue";
 import { useLocalStore } from "./LocalStore";
 import ws from "@/utils/webSocket/WebSocketBingo";
 import { WebSocketActionType, WebSocketPushActionType } from "@/utils/webSocket/types";
 import { local } from "@/utils/Storage";
 import Config from "@/config";
-import { useRoute, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
 
 export const useRoomStore = defineStore("room", () => {
   const localStore = useLocalStore();
@@ -57,6 +57,8 @@ export const useRoomStore = defineStore("room", () => {
     checkList: ["6", "7", "8", "10", "11", "12", "13", "14", "15", "16", "17", "18"],
     rankList: ["L", "EX"],
     difficulty: 3,
+    transitionCount: 5,
+    diffLevel: 3,
     bgmMuted: false,
     gamebp: false,
     matchbp: false,
@@ -71,6 +73,8 @@ export const useRoomStore = defineStore("room", () => {
       delay: 5,
       changeCardCount: 2,
     },
+    backgroundColor: "hsl(58, 63%, 79%)",
+    backgroundColorReverse: "hsl(258, 100%, 77%)",
   });
 
   //加载本地设置
@@ -111,7 +115,17 @@ export const useRoomStore = defineStore("room", () => {
     if (id) getRoomConfig();
   });
   const updateRoomConfig = (
-    key?: "type" | "game_time" | "countdown" | "games" | "ranks" | "need_win" | "difficulty" | "cd_time"
+    key?:
+      | "type"
+      | "game_time"
+      | "countdown"
+      | "games"
+      | "ranks"
+      | "need_win"
+      | "difficulty"
+      | "cd_time"
+      | "transition_count"
+      | "diff_level"
   ) => {
     saveRoomSettings();
     const allParams = {
@@ -121,6 +135,8 @@ export const useRoomStore = defineStore("room", () => {
       countdown: roomSettings.countdownTime && roomSettings.countdownTime[roomSettings.type],
       games: roomSettings.checkList,
       ranks: roomSettings.rankList,
+      transition_count: roomSettings.transitionCount,
+      diff_level: roomSettings.diffLevel,
       need_win: (roomSettings.format + 1) / 2,
       difficulty: roomSettings.difficulty,
       cd_time: roomSettings.cdTime,
@@ -166,6 +182,7 @@ export const useRoomStore = defineStore("room", () => {
   };
   const createRoom = (rid: string, soloMode: boolean, addRobot: boolean) => {
     roomSettings.type = BingoType.STANDARD;
+    saveRoomSettings();
     return ws
       .send(WebSocketActionType.CREATE_ROOM, {
         room_config: {

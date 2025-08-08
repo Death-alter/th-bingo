@@ -1,4 +1,3 @@
-import GameTime from "./GameTime";
 import Mit from "@/mitt";
 import { Spell } from "@/types";
 import { local } from "./Storage";
@@ -117,8 +116,6 @@ export class MaoYu {
     this.refreshLineWeights();
     this.timeWeight = this.getTimeWeights();
     this.status = AIStatus.INITIALIZED;
-    console.log(this.rowWeight, this.colWeight, this.diagonalWeight, this.timeWeight);
-    console.log(this.weights);
   }
 
   getLineWeight(status: number[]) {

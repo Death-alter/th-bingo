@@ -105,6 +105,12 @@ const gameTypeList = [
     timeLimit: 60,
     countdown: 300,
   },
+  {
+    name: "bingo 双重盘面",
+    type: 4,
+    timeLimit: 30,
+    countdown: 180,
+  },
 ];
 
 abstract class Config {

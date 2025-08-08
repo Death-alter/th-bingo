@@ -7,8 +7,8 @@ import { WebSocketActionType, WebSocketPushActionType } from "@/utils/webSocket/
 
 interface GameLog {
   index: number;
-  status: number;
-  oldStatus: number;
+  status: string;
+  oldStatus: string;
   causer: string;
   failCountA?: number;
   failCountB?: number;
@@ -19,7 +19,7 @@ export const useGameStore = defineStore("game", () => {
 
   //bigon对局相关
   const spells = ref<Spell[]>([]);
-  const spellStatus = ref<SpellStatus[]>([]);
+  const spellStatus = ref<string[]>([]);
   const leftTime = ref(0);
   const countDownTime = ref(0);
   const gameStatus = ref(GameStatus.NOT_STARTED);
@@ -39,14 +39,24 @@ export const useGameStore = defineStore("game", () => {
       });
     }
   });
-
-  const bothSelectedIndex = computed(() => spellStatus.value.indexOf(SpellStatus.BOTH_SELECTED));
-  const playerASelectedIndex = computed(() =>
-    bothSelectedIndex.value === -1 ? spellStatus.value.indexOf(SpellStatus.A_SELECTED) : bothSelectedIndex.value
-  );
-  const playerBSelectedIndex = computed(() =>
-    bothSelectedIndex.value === -1 ? spellStatus.value.indexOf(SpellStatus.B_SELECTED) : bothSelectedIndex.value
-  );
+  const playerASelectedIndex = computed(() => {
+    for (let i = 0; i < spellStatus.value.length; i++) {
+      const status = spellStatus.value[i];
+      if (status[1] == SpellStatus.SELECTED) {
+        return i;
+      }
+    }
+    return -1;
+  });
+  const playerBSelectedIndex = computed(() => {
+    for (let i = 0; i < spellStatus.value.length; i++) {
+      const status = spellStatus.value[i];
+      if (status[3] == SpellStatus.SELECTED) {
+        return i;
+      }
+    }
+    return -1;
+  });
 
   const linkGameData = reactive({});
 
@@ -55,7 +65,7 @@ export const useGameStore = defineStore("game", () => {
       .send(WebSocketActionType.GET_ALL_SPELLS)
       .then((data: GameData) => {
         spells.value = data.spells;
-        spellStatus.value = data.spell_status;
+        spellStatus.value = data.spell_status.map((status: number) => statusToString(status));
         leftTime.value = data.left_time;
         gameStatus.value = data.status;
         leftCdTime.value = data.left_cd_time;
@@ -63,8 +73,19 @@ export const useGameStore = defineStore("game", () => {
         for (const i in data.bp_data) {
           bpGameData[i] = data.bp_data[i];
         }
+        dualPageGameData.player_current_page = data.dual_page_data.player_current_page;
+        dualPageGameData.extra_spells = data.dual_page_data.spells2;
       })
       .catch(() => {});
+  };
+
+  const statusToString = (status: number) => {
+    let str = "";
+    while (str.length < 4) {
+      str = (status % 10) + str;
+      status = Math.floor(status / 10);
+    }
+    return str;
   };
   watch(
     () => roomStore.roomData.started,
@@ -86,6 +107,9 @@ export const useGameStore = defineStore("game", () => {
     bpGameData.ban_pick = 0;
     bpGameData.spell_failed_count_a = [];
     bpGameData.spell_failed_count_b = [];
+    dualPageGameData.player_current_page = [0, 0];
+    dualPageGameData.extra_spells = [];
+    page.value = 0;
   };
 
   const startGame = () => {
@@ -98,16 +122,6 @@ export const useGameStore = defineStore("game", () => {
     roomStore.roomData.started = true;
     roomStore.resetBanPick();
   });
-
-  // const setPhase = (p) => {
-  //   phase.value = p;
-  //   return ws.send(WebSocketActionType.SET_PHASE, { phase: p });
-  // };
-  // const getPhase = () => {
-  //   return ws.send(WebSocketActionType.GET_PHASE).then(({ phase }) => {
-  //     phase.value = phase;
-  //   });
-  // };
 
   const stopGame = (winner: -1 | 0 | 1) => {
     return ws.send(WebSocketActionType.STOP_GAME, { winner });
@@ -144,7 +158,7 @@ export const useGameStore = defineStore("game", () => {
     return ws.send(WebSocketActionType.FINISH_SPELL, { index, success, player_index: playerIndex });
   };
 
-  const updateSpellStatus = (index, status) => {
+  const updateSpellStatus = (index: number, status: number) => {
     return ws.send(WebSocketActionType.UPDATE_SPELL_STATUS, { index, status });
   };
   ws.on<{
@@ -156,7 +170,7 @@ export const useGameStore = defineStore("game", () => {
   }>(WebSocketPushActionType.PUSH_UPDATE_SEPLL_STATUS, (data) => {
     const log: GameLog = {
       index: data!.index,
-      status: data!.status,
+      status: statusToString(data!.status),
       oldStatus: spellStatus.value[data!.index],
       causer: data!.causer,
     };
@@ -178,98 +192,112 @@ export const useGameStore = defineStore("game", () => {
     if (roomStore.isHost) {
       if (data!.causer === roomStore.roomData.names[0]) {
         setTimeout(() => {
-          spellStatus.value[data!.index] = data!.status;
+          spellStatus.value[data!.index] = log.status;
         }, roomStore.roomSettings.playerA.delay * 1000);
       } else if (data!.causer === roomStore.roomData.names[1]) {
         setTimeout(() => {
-          spellStatus.value[data!.index] = data!.status;
+          spellStatus.value[data!.index] = log.status;
         }, roomStore.roomSettings.playerB.delay * 1000);
       } else {
-        spellStatus.value[data!.index] = data!.status;
+        spellStatus.value[data!.index] = log.status;
       }
     } else {
-      spellStatus.value[data!.index] = data!.status;
+      spellStatus.value[data!.index] = log.status;
     }
   });
 
-  const getSepllCardLog = ({
-    index,
-    status,
-    oldStatus,
-    causer,
-    failCountA,
-    failCountB,
-  }: {
-    index: number;
-    status: number;
-    oldStatus: number;
-    causer: string;
-    failCountA?: number;
-    failCountB?: number;
-  }) => {
+  const getSepllCardLog = ({ index, status, oldStatus, causer, failCountA, failCountB }: GameLog) => {
     let str = "";
     const playerA = `<span style="padding:0 2px;color:var(--A-color)">${roomStore.roomData.names[0]}</span>`;
     const playerB = `<span style="padding:0 2px;color:var(--B-color)">${roomStore.roomData.names[1]}</span>`;
     const host = `<span style="padding:0 2px;font-weight:600">${roomStore.roomData.host}</span>`;
-    const spellCard = `<span style="padding:0 2px;font-weight:600">${spells.value[index].name}</span>`;
+    const spell1 = `<span style="padding:0 2px;font-weight:600">${spells.value[index].name}</span>`;
+
+    let spellCard: string;
+    if (roomStore.roomData.type === BingoType.DUAL_PAGE) {
+      const spell2 = `<span style="padding:0 2px;font-weight:600">${dualPageGameData.extra_spells[index]?.name}</span>`;
+      if (roomStore.roomData.names[0] === causer) {
+        spellCard = status[0] === "0" ? spell1 : spell2;
+      } else if (roomStore.roomData.names[1] === causer) {
+        spellCard = status[2] === "0" ? spell1 : spell2;
+      } else {
+        if (status[1] === oldStatus[1]) {
+          spellCard = status[2] === "0" ? spell1 : spell2;
+        } else if (status[3] === oldStatus[3]) {
+          spellCard = status[0] === "0" ? spell1 : spell2;
+        } else {
+          if (status[1] === SpellStatus.ATTAINED) {
+            spellCard = status[0] === "0" ? spell1 : spell2;
+          } else {
+            spellCard = status[2] === "0" ? spell1 : spell2;
+          }
+        }
+      }
+    } else {
+      spellCard = spell1;
+    }
 
     if (roomStore.roomData.names[0] === causer) {
       str += playerA;
-      switch (status) {
-        case -1:
-          str += "禁用了符卡";
-          break;
-        case 0:
-        case 3:
-          if (roomStore.isPlayerA) {
-            if (oldStatus === 5) {
-              str += "取消收取符卡";
-            } else {
+      switch (status[1]) {
+        case SpellStatus.NONE:
+          switch (oldStatus[1]) {
+            case SpellStatus.SELECTED:
               str += "取消选择符卡";
-            }
+              break;
+            case SpellStatus.ATTAINED:
+              str += "取消收取符卡";
+              break;
+            case SpellStatus.BANNED:
+              str += "取消禁用";
+              break;
           }
           break;
-        case 1:
-        case 2:
+        case SpellStatus.SELECTED:
           str += "选择了符卡";
           break;
-        case 5:
-          if (roomStore.isPlayerB && (oldStatus === 3 || oldStatus === 2)) {
+        case SpellStatus.ATTAINED:
+          if (roomStore.isPlayerB && oldStatus[3] === SpellStatus.SELECTED) {
             str += "抢了你选择的符卡";
             spellCardGrabbedFlag.value = true;
           } else {
             str += "收取了符卡";
           }
+          break;
+        case SpellStatus.BANNED:
+          str += "禁用了符卡";
           break;
       }
       str += spellCard;
     } else if (roomStore.roomData.names[1] === causer) {
       str += playerB;
-      switch (status) {
-        case -1:
-          str += "禁用了符卡";
-          break;
-        case 0:
-        case 1:
-          if (roomStore.isPlayerB) {
-            if (oldStatus === 7) {
-              str += "取消收取符卡";
-            } else {
+      switch (status[3]) {
+        case SpellStatus.NONE:
+          switch (oldStatus[3]) {
+            case SpellStatus.SELECTED:
               str += "取消选择符卡";
-            }
+              break;
+            case SpellStatus.ATTAINED:
+              str += "取消收取符卡";
+              break;
+            case SpellStatus.BANNED:
+              str += "取消禁用";
+              break;
           }
           break;
-        case 2:
-        case 3:
+        case SpellStatus.SELECTED:
           str += "选择了符卡";
           break;
-        case 7:
-          if (roomStore.isPlayerA && (oldStatus === 1 || oldStatus === 2)) {
+        case SpellStatus.ATTAINED:
+          if (roomStore.isPlayerA && oldStatus[1] === SpellStatus.SELECTED) {
             str += "抢了你选择的符卡";
             spellCardGrabbedFlag.value = true;
           } else {
             str += "收取了符卡";
           }
+          break;
+        case SpellStatus.BANNED:
+          str += "禁用了符卡";
           break;
       }
       str += spellCard;
@@ -284,32 +312,56 @@ export const useGameStore = defineStore("game", () => {
           return `${playerB}收取符卡${spellCard}失败`;
         }
       }
-      str = `${host}把符卡${spellCard}`;
-      switch (status) {
-        case -1:
-          str += "设置为禁用";
-          break;
-        case 0:
-          str += "状态置空";
-          break;
-        case 1:
-          str += `设置为${playerA}选择`;
-          break;
-        case 2:
-          str += "设置为双方选择";
-          break;
-        case 3:
-          str += `设置为${playerB}选择`;
-          break;
-        case 5:
-          str += `设置为${playerA}收取`;
-          break;
-        case 6:
-          str += "设置为双方收取";
-          break;
-        case 7:
-          str += `设置为${playerB}收取`;
-          break;
+
+      if (status[1] === oldStatus[1]) {
+        switch (status[3]) {
+          case SpellStatus.NONE:
+            if (oldStatus[3] == SpellStatus.SELECTED) {
+              str += `${host}取消了${playerB}对符卡${spellCard}的选择`;
+            } else if (oldStatus[3] == SpellStatus.ATTAINED) {
+              str += `${host}取消了${playerB}对符卡${spellCard}的收取`;
+            } else {
+              str += `${host}把符卡${spellCard}状态置空`;
+            }
+            break;
+          case SpellStatus.SELECTED:
+            str += `${host}添加了${playerB}对符卡${spellCard}的选择`;
+            break;
+          case SpellStatus.ATTAINED:
+            str += `${host}把符卡${spellCard}设置为${playerB}收取`;
+            break;
+        }
+      } else if (status[3] === oldStatus[3]) {
+        switch (status[1]) {
+          case SpellStatus.NONE:
+            if (oldStatus[1] == SpellStatus.SELECTED) {
+              str += `${host}取消了${playerA}对符卡${spellCard}的选择`;
+            } else if (oldStatus[1] == SpellStatus.ATTAINED) {
+              str += `${host}取消了${playerA}对符卡${spellCard}的收取`;
+            } else {
+              str += `${host}把符卡${spellCard}状态置空`;
+            }
+            break;
+          case SpellStatus.SELECTED:
+            str += `${host}添加了${playerA}对符卡${spellCard}的选择`;
+            break;
+          case SpellStatus.ATTAINED:
+            str += `${host}把符卡${spellCard}设置为${playerA}收取`;
+            break;
+        }
+      } else {
+        if (status[1] === SpellStatus.ATTAINED) {
+          str += `${host}把符卡${spellCard}设置为${playerA}收取`;
+        }
+        if (status[3] === SpellStatus.ATTAINED) {
+          str += `${host}把符卡${spellCard}设置为${playerB}收取`;
+        }
+        if (status[1] === SpellStatus.BANNED) {
+          str += `${host}把符卡${spellCard}设置为禁用`;
+        }
+        if (oldStatus[1] === SpellStatus.BANNED) {
+          str += `${host}把符卡${spellCard}取消禁用`;
+        }
       }
     }
 
@@ -336,6 +388,43 @@ export const useGameStore = defineStore("game", () => {
     bpGameData.ban_pick = data!.ban_pick;
   });
 
+  //双重盘面
+  const dualPageGameData = reactive<{
+    player_current_page: number[];
+    extra_spells: Spell[];
+  }>({
+    player_current_page: [0, 0],
+    extra_spells: [],
+  });
+  const page = ref<number>(0);
+  const playerAPage = computed(() =>
+    dualPageGameData.extra_spells.length ? dualPageGameData.player_current_page[0] : -1
+  );
+  const playerBPage = computed(() =>
+    dualPageGameData.extra_spells.length ? dualPageGameData.player_current_page[1] : -1
+  );
+
+  const switchPageLocal = (p: number) => {
+    page.value = p;
+  };
+
+  const switchPage = () => {
+    return ws.send(WebSocketActionType.SWITCH_PAGE, {
+      page: roomStore.isPlayerA
+        ? 1 - dualPageGameData.player_current_page[0]
+        : 1 - dualPageGameData.player_current_page[1],
+    });
+  };
+  ws.on<{
+    player_index: number;
+    page: number;
+  }>(WebSocketPushActionType.PUSH_SWITCH_PAGE, (data) => {
+    dualPageGameData.player_current_page[data!.player_index] = data!.page;
+    if ((roomStore.isPlayerA && data!.player_index === 0) || (roomStore.isPlayerB && data!.player_index === 1)) {
+      page.value = data!.page;
+    }
+  });
+
   return {
     spells,
     spellStatus,
@@ -350,7 +439,11 @@ export const useGameStore = defineStore("game", () => {
     inited,
     spellCardGrabbedFlag,
     bpGameData,
+    dualPageGameData,
     alreadySelectCard,
+    page,
+    playerAPage,
+    playerBPage,
     startGame,
     getGameData,
     stopGame,
@@ -361,5 +454,7 @@ export const useGameStore = defineStore("game", () => {
     updateSpellStatus,
     bpGameBanPick,
     bpGameNextRound,
+    switchPageLocal,
+    switchPage,
   };
 });
