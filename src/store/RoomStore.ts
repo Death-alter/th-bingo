@@ -75,6 +75,8 @@ export const useRoomStore = defineStore("room", () => {
     },
     backgroundColor: "hsl(58, 63%, 79%)",
     backgroundColorReverse: "hsl(258, 100%, 77%)",
+    autoSwitchPage: false,
+    switchInterval: 15,
   });
 
   //加载本地设置

@@ -323,6 +323,27 @@
                   @change="saveRoomSettings"
                 />
               </el-form-item>
+              <el-form-item label="自动翻面：" v-if="roomData.type === BingoType.DUAL_PAGE && isHost">
+                <el-checkbox
+                  v-model="roomSettings.autoSwitchPage"
+                  @change="saveRoomSettings"
+                  style="margin-right: 0"
+                ></el-checkbox>
+              </el-form-item>
+              <el-form-item
+                label="翻面间隔："
+                v-if="roomData.type === BingoType.DUAL_PAGE && isHost && roomSettings.autoSwitchPage"
+              >
+                <el-input-number
+                  class="input-number"
+                  v-model="roomSettings.switchInterval"
+                  :min="0"
+                  size="small"
+                  controls-position="right"
+                  @change="saveRoomSettings"
+                />
+                <span class="input-number-text">秒</span>
+              </el-form-item>
             </el-form>
           </el-scrollbar>
         </el-tab-pane>
@@ -339,7 +360,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch, nextTick } from "vue";
+import { computed, ref, watch, nextTick, onMounted } from "vue";
 import {
   ElTabs,
   ElTabPane,
@@ -497,6 +518,60 @@ watch(
     nextTick(() => {
       scrollbar.value?.setScrollTop((scrollbar.value as any)?.wrap$?.offsetHeight as number);
     });
+  }
+);
+
+let autoSwitchTimer: number = 0;
+
+const startAutoSwitch = () => {
+  if (!autoSwitchTimer) {
+    autoSwitchTimer = setInterval(() => {
+      gameStore.switchPageLocal(1 - gameStore.page);
+    }, roomSettings.value.switchInterval * 1000);
+  }
+};
+
+const stopAutoSwitch = () => {
+  if (autoSwitchTimer) {
+    clearInterval(autoSwitchTimer);
+    autoSwitchTimer = 0;
+  }
+};
+
+watch(
+  () => roomSettings.value.autoSwitchPage,
+  (value) => {
+    if (!inGame.value) return;
+    if (value) {
+      startAutoSwitch();
+    } else {
+      stopAutoSwitch();
+    }
+  }
+);
+
+watch(
+  () => roomSettings.value.switchInterval,
+  (value) => {
+    if (!inGame.value) return;
+    if (autoSwitchTimer) clearInterval(autoSwitchTimer);
+    autoSwitchTimer = setInterval(() => {
+      gameStore.switchPageLocal(1 - gameStore.page);
+    }, value * 1000);
+  }
+);
+
+watch(
+  () => inGame.value,
+  (value) => {
+    if (value) {
+      startAutoSwitch();
+    } else {
+      stopAutoSwitch();
+    }
+  },
+  {
+    immediate: true,
   }
 );
 </script>
