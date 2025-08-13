@@ -524,6 +524,11 @@ watch(
 let autoSwitchTimer: number = 0;
 
 const startAutoSwitch = () => {
+  // Only start auto-switch if we're in dual-page mode and auto-switch is enabled
+  if (roomData.value.type !== BingoType.DUAL_PAGE || !roomSettings.value.autoSwitchPage) {
+    return;
+  }
+  
   stopAutoSwitch();
   autoSwitchTimer = setTimeout(() => {
     gameStore.switchPageLocal(1 - gameStore.page);
@@ -533,7 +538,7 @@ const startAutoSwitch = () => {
 
 const stopAutoSwitch = () => {
   if (autoSwitchTimer) {
-    clearInterval(autoSwitchTimer);
+    clearTimeout(autoSwitchTimer);
     autoSwitchTimer = 0;
   }
 };
@@ -542,10 +547,13 @@ watch(
   () => roomSettings.value.autoSwitchPage,
   (value) => {
     if (!inGame.value) return;
-    if (value) {
-      startAutoSwitch();
-    } else {
-      stopAutoSwitch();
+    // Only start auto-switch if we're in dual-page mode
+    if (roomData.value.type === BingoType.DUAL_PAGE) {
+      if (value) {
+        startAutoSwitch();
+      } else {
+        stopAutoSwitch();
+      }
     }
   }
 );
@@ -554,10 +562,13 @@ watch(
   () => roomSettings.value.switchInterval,
   (value) => {
     if (!inGame.value) return;
-    if (autoSwitchTimer) clearInterval(autoSwitchTimer);
-    nextTick(() => {
-      startAutoSwitch();
-    });
+    // Only restart auto-switch if we're in dual-page mode and auto-switch is enabled
+    if (roomData.value.type === BingoType.DUAL_PAGE && roomSettings.value.autoSwitchPage) {
+      if (autoSwitchTimer) clearTimeout(autoSwitchTimer);
+      nextTick(() => {
+        startAutoSwitch();
+      });
+    }
   }
 );
 
@@ -566,7 +577,10 @@ watch(
   (value) => {
     if (!isHost.value) return;
     if (value) {
-      startAutoSwitch();
+      // Only start auto-switch if we're in dual-page mode and auto-switch is enabled
+      if (roomData.value.type === BingoType.DUAL_PAGE && roomSettings.value.autoSwitchPage) {
+        startAutoSwitch();
+      }
     } else {
       stopAutoSwitch();
     }
@@ -580,8 +594,11 @@ watch(
   () => gameStore.page,
   () => {
     if (!inGame.value) return;
-    if (autoSwitchTimer) clearInterval(autoSwitchTimer);
-    startAutoSwitch();
+    // Only restart auto-switch if we're in dual-page mode and auto-switch is enabled
+    if (roomData.value.type === BingoType.DUAL_PAGE && roomSettings.value.autoSwitchPage) {
+      if (autoSwitchTimer) clearTimeout(autoSwitchTimer);
+      startAutoSwitch();
+    }
   }
 );
 </script>
