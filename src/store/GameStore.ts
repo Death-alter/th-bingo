@@ -403,15 +403,19 @@ export const useGameStore = defineStore("game", () => {
   const playerBPage = computed(() =>
     dualPageGameData.extra_spells.length ? dualPageGameData.player_current_page[1] : -1
   );
-  const isSelfPage = computed(() =>
-    (roomStore.isPlayerA && page.value === playerAPage.value) || (roomStore.isPlayerB && page.value === playerBPage.value)
+  const isSelfPage = computed(
+    () =>
+      (roomStore.isPlayerA && page.value === playerAPage.value) ||
+      (roomStore.isPlayerB && page.value === playerBPage.value)
   );
 
   const switchPageLocal = (p: number) => {
+    if (roomStore.roomData.type !== BingoType.DUAL_PAGE) return;
     page.value = p;
   };
 
   const switchPage = () => {
+    if (roomStore.roomData.type !== BingoType.DUAL_PAGE) return new Promise(() => {});
     return ws.send(WebSocketActionType.SWITCH_PAGE, {
       page: roomStore.isPlayerA
         ? 1 - dualPageGameData.player_current_page[0]
@@ -426,6 +430,71 @@ export const useGameStore = defineStore("game", () => {
     if ((roomStore.isPlayerA && data!.player_index === 0) || (roomStore.isPlayerB && data!.player_index === 1)) {
       page.value = data!.page;
     }
+  });
+
+  let autoSwitchTimer: number = 0;
+
+  const startAutoSwitch = () => {
+    stopAutoSwitch();
+    autoSwitchTimer = setTimeout(() => {
+      switchPageLocal(1 - page.value);
+      startAutoSwitch();
+    }, roomStore.roomSettings.switchInterval * 1000);
+  };
+
+  const stopAutoSwitch = () => {
+    if (autoSwitchTimer) {
+      clearTimeout(autoSwitchTimer);
+      autoSwitchTimer = 0;
+    }
+  };
+
+  watch(
+    () => roomStore.roomSettings.autoSwitchPage,
+    (value) => {
+      if (!roomStore.inGame) return;
+      if (value) {
+        startAutoSwitch();
+      } else {
+        stopAutoSwitch();
+      }
+    }
+  );
+
+  watch(
+    () => roomStore.roomSettings.switchInterval,
+    (value) => {
+      if (!roomStore.inGame) return;
+      if (autoSwitchTimer) clearTimeout(autoSwitchTimer);
+      nextTick(() => {
+        startAutoSwitch();
+      });
+    }
+  );
+
+  watch(
+    () => roomStore.inGame,
+    (value) => {
+      if (!roomStore.isHost) return;
+      if (roomStore.roomData.type !== BingoType.DUAL_PAGE) return;
+      if (!roomStore.roomSettings.autoSwitchPage) return;
+      if (value) {
+        startAutoSwitch();
+      } else {
+        stopAutoSwitch();
+      }
+    },
+    {
+      immediate: true,
+    }
+  );
+
+  watch(page, () => {
+    if (!roomStore.inGame) return;
+    if (roomStore.roomData.type !== BingoType.DUAL_PAGE) return;
+    if (!roomStore.roomSettings.autoSwitchPage) return;
+    if (autoSwitchTimer) clearTimeout(autoSwitchTimer);
+    startAutoSwitch();
   });
 
   return {
