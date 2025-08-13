@@ -524,11 +524,11 @@ watch(
 let autoSwitchTimer: number = 0;
 
 const startAutoSwitch = () => {
-  if (!autoSwitchTimer) {
-    autoSwitchTimer = setInterval(() => {
-      gameStore.switchPageLocal(1 - gameStore.page);
-    }, roomSettings.value.switchInterval * 1000);
-  }
+  stopAutoSwitch();
+  autoSwitchTimer = setTimeout(() => {
+    gameStore.switchPageLocal(1 - gameStore.page);
+    startAutoSwitch();
+  }, roomSettings.value.switchInterval * 1000);
 };
 
 const stopAutoSwitch = () => {
@@ -555,15 +555,16 @@ watch(
   (value) => {
     if (!inGame.value) return;
     if (autoSwitchTimer) clearInterval(autoSwitchTimer);
-    autoSwitchTimer = setInterval(() => {
-      gameStore.switchPageLocal(1 - gameStore.page);
-    }, value * 1000);
+    nextTick(() => {
+      startAutoSwitch();
+    });
   }
 );
 
 watch(
   () => inGame.value,
   (value) => {
+    if (!isHost.value) return;
     if (value) {
       startAutoSwitch();
     } else {
@@ -572,6 +573,15 @@ watch(
   },
   {
     immediate: true,
+  }
+);
+
+watch(
+  () => gameStore.page,
+  () => {
+    if (!inGame.value) return;
+    if (autoSwitchTimer) clearInterval(autoSwitchTimer);
+    startAutoSwitch();
   }
 );
 </script>
