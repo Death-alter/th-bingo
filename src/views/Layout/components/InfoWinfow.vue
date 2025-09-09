@@ -207,11 +207,13 @@
                     @change="roomStore.updateRoomConfig('diff_level')"
                   />
                 </el-form-item>
-                <el-checkbox
-                  v-model="roomSettings.randDiffLevel"
-                  @change="roomStore.updateRoomConfig('diff_level')"
-                  style="margin-right: 0"
-                >随机差异</el-checkbox>
+                <el-form-item label="随机差异：" v-if="roomData.type === BingoType.DUAL_PAGE">
+                  <el-checkbox
+                    v-model="roomSettings.randDiffLevel"
+                    @change="roomStore.updateRoomConfig('diff_level')"
+                    style="margin-right: 0"
+                  ></el-checkbox>
+                </el-form-item>
               </el-form>
 
               <el-divider style="margin: 10px 0"></el-divider>
