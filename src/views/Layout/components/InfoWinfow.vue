@@ -201,12 +201,17 @@
                     :min="0"
                     :max="5"
                     :step="1"
-                    :disabled="inMatch"
+                    :disabled="inMatch || roomSettings.randDiffLevel"
                     size="small"
                     controls-position="right"
                     @change="roomStore.updateRoomConfig('diff_level')"
                   />
                 </el-form-item>
+                <el-checkbox
+                  v-model="roomSettings.randDiffLevel"
+                  @change="roomStore.updateRoomConfig('diff_level')"
+                  style="margin-right: 0"
+                >随机差异</el-checkbox>
               </el-form>
 
               <el-divider style="margin: 10px 0"></el-divider>
