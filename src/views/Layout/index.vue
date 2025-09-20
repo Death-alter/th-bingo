@@ -30,6 +30,9 @@ const roomStore = useRoomStore();
 const roomSettings = computed(() => roomStore.roomSettings);
 
 const getDarkColor = (color: string) => {
+  if (!color) {
+    return "";
+  }
   const arr = color.match(/\((.*),(.*)%,(.*)%(,(.*))?\)/);
   if (arr === null) {
     return "";
