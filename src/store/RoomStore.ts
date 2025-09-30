@@ -155,7 +155,13 @@ export const useRoomStore = defineStore("room", () => {
     const params: any = {};
     if (key) {
       params.rid = allParams.rid;
-      params[key] = allParams[key];
+      if(key === "type"){
+        params.type = allParams.type
+        params.game_time = allParams.game_time
+        params.countdown = allParams.countdown
+      }else{
+        params[key] = allParams[key];
+      }
     }
     return ws.send(WebSocketActionType.UPDATE_ROOM_CONFIG, key ? params : allParams);
   };
