@@ -228,7 +228,8 @@ const stopBGM = () => {
 };
 watch(
   () => roomStore.roomData.started,
-  () => {
+  (value) => {
+    console.log(value);
     stopBGM();
   }
 );

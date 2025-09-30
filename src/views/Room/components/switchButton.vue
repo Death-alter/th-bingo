@@ -16,12 +16,12 @@ const isPlayer = computed(() => roomStore.isPlayer);
 
 const switchPage = () => {
   if (inGame.value) {
-    if (isPlayer.value) {
-      if (gameStore.gameStatus === GameStatus.COUNT_DOWN) {
-        gameStore.switchPage();
-      } else {
-        gameStore.switchPageLocal(1 - gameStore.page);
-      }
+    if (
+      gameStore.gameStatus === GameStatus.COUNT_DOWN &&
+      ((roomStore.isPlayerA && gameStore.playerASelectedIndex === -1) ||
+        (roomStore.isPlayerB && gameStore.playerBSelectedIndex === -1))
+    ) {
+      gameStore.switchPage();
     } else {
       gameStore.switchPageLocal(1 - gameStore.page);
     }

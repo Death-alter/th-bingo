@@ -481,7 +481,7 @@ const editType = () => {
     showTypeInput.value = true;
   } else {
     if (roomStore.roomConfig.type !== roomSettings.value.type) {
-      roomStore.updateRoomConfig().then(() => {
+      roomStore.updateRoomConfig("type").then(() => {
         showTypeInput.value = false;
       });
     } else {
