@@ -155,11 +155,14 @@ export const useRoomStore = defineStore("room", () => {
     const params: any = {};
     if (key) {
       params.rid = allParams.rid;
-      if(key === "type"){
-        params.type = allParams.type
-        params.game_time = allParams.game_time
-        params.countdown = allParams.countdown
-      }else{
+      if (key === "type") {
+        params.type = allParams.type;
+        params.game_time = allParams.game_time;
+        params.countdown = allParams.countdown;
+        if (roomSettings.type === BingoType.DUAL_PAGE) {
+          params.diff_level = allParams.diff_level;
+        }
+      } else {
         params[key] = allParams[key];
       }
     }
