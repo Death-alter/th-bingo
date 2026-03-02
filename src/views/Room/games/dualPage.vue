@@ -20,12 +20,12 @@
         @minus="removeChangeCardCount(0)"
         :disabled="!inGame"
       ></score-board>
+      <score-board class="spell-card-score-card" :size="30" label="得分" v-model="playerAScore"></score-board>
       <score-board
         class="spell-card-score-card"
         :size="30"
-        label="得分"
-        v-model="playerAScore"
-        @click="gameStore.switchPageLocal(playerBPage)"
+        label="收卡总等级"
+        v-model="playerASpellCardLevel"
       ></score-board>
       <el-button
         class="alert-button"
@@ -54,6 +54,12 @@
         :disabled="!inGame"
       ></score-board>
       <score-board class="spell-card-score-card" :size="30" label="得分" v-model="playerBScore"></score-board>
+      <score-board
+        class="spell-card-score-card"
+        :size="30"
+        label="收卡总等级"
+        v-model="playerBSpellCardLevel"
+      ></score-board>
       <el-button
         class="alert-button"
         type="primary"
@@ -194,6 +200,8 @@ const playerBPage = computed(() => gameStore.playerBPage);
 const oldSumArr = ref<number[]>([]);
 const playerAScore = ref(0);
 const playerBScore = ref(0);
+const playerASpellCardLevel = ref(0);
+const playerBSpellCardLevel = ref(0);
 const selectCooldown = computed(() => {
   if (!gameStore.inited) {
     return -1;
@@ -214,12 +222,19 @@ const decideDualPage = (status: string[]) => {
   let countB = 0;
   let scoreA = 0;
   let scoreB = 0;
+  let levelA = 0;
+  let levelB = 0;
   status.forEach((item: string, index: number) => {
     const rowIndex = Math.floor(index / 5);
     const columnIndex = index % 5;
     if (item[1] === SpellStatus.ATTAINED) {
       countA++;
       scoreA += 1;
+      if (item[0] === "0") {
+        levelA += gameStore.spells[index].star;
+      } else {
+        levelA += gameStore.dualPageGameData.extra_spells[index].star;
+      }
       if (available[rowIndex] > 0) available[rowIndex] -= 2;
       if (available[columnIndex + 5] > 0) available[columnIndex + 5] -= 2;
       sumArr[rowIndex] -= 1;
@@ -236,6 +251,11 @@ const decideDualPage = (status: string[]) => {
     if (item[3] === SpellStatus.ATTAINED) {
       countB++;
       scoreB += 1;
+      if (item[2] === "0") {
+        levelB += gameStore.spells[index].star;
+      } else {
+        levelB += gameStore.dualPageGameData.extra_spells[index].star;
+      }
       if (available[rowIndex] % 2 === 0) available[rowIndex] -= 1;
       if (available[columnIndex + 5] % 2 === 0) available[columnIndex + 5] -= 1;
       sumArr[rowIndex] += 1;
@@ -273,6 +293,8 @@ const decideDualPage = (status: string[]) => {
 
   playerAScore.value = scoreA;
   playerBScore.value = scoreB;
+  playerASpellCardLevel.value = levelA;
+  playerBSpellCardLevel.value = levelB;
 
   if (countA >= 13) {
     winFlag.value = -13;

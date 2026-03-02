@@ -147,7 +147,7 @@ const onClick = () => {
     .transition {
       position: absolute;
       top: 2px;
-      left: 2px;
+      right: 2px;
       z-index: -1;
       background-color: var(--el-color-primary);
       color: white;

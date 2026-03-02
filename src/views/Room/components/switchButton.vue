@@ -12,7 +12,6 @@ import { computed } from "vue";
 const roomStore = useRoomStore();
 const gameStore = useGameStore();
 const inGame = computed(() => roomStore.inGame);
-const isPlayer = computed(() => roomStore.isPlayer);
 
 const switchPage = () => {
   if (inGame.value) {

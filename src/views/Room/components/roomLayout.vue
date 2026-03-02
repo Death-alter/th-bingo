@@ -51,7 +51,7 @@
                       :selected="selectedSpellIndex === index"
                       :status="gameStore.spellStatus[index]"
                       :index="index"
-                      :showLevel="isBingoBp"
+                      :showLevel="true"
                     ></spell-card-cell>
                   </div>
                 </template>

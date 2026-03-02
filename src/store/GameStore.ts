@@ -438,7 +438,6 @@ export const useGameStore = defineStore("game", () => {
     stopAutoSwitch();
     autoSwitchTimer = setTimeout(() => {
       switchPageLocal(1 - page.value);
-      startAutoSwitch();
     }, roomStore.roomSettings.switchInterval * 1000);
   };
 
@@ -448,6 +447,15 @@ export const useGameStore = defineStore("game", () => {
       autoSwitchTimer = 0;
     }
   };
+
+  //自动翻面逻辑
+  watch(page, () => {
+    if (!roomStore.isHost) return;
+    if (!roomStore.inGame) return;
+    if (roomStore.roomData.type !== BingoType.DUAL_PAGE) return;
+    if (!roomStore.roomSettings.autoSwitchPage) return;
+    startAutoSwitch();
+  });
 
   watch(
     () => roomStore.roomSettings.autoSwitchPage,
@@ -488,14 +496,6 @@ export const useGameStore = defineStore("game", () => {
       immediate: true,
     }
   );
-
-  watch(page, () => {
-    if (!roomStore.inGame) return;
-    if (roomStore.roomData.type !== BingoType.DUAL_PAGE) return;
-    if (!roomStore.roomSettings.autoSwitchPage) return;
-    if (autoSwitchTimer) clearTimeout(autoSwitchTimer);
-    startAutoSwitch();
-  });
 
   return {
     spells,
